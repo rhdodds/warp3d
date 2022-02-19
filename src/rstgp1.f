@@ -5447,7 +5447,7 @@ c     *                 subroutine mm_return_values                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/27/21 rhd                *
+c     *                   last modified : 2/19/22 rhd                *
 c     *                                                              *
 c     *  return requested results for an element if available        *
 c     *                                                              *
@@ -5497,7 +5497,7 @@ c
          call mm_return_values_eps_plas
        case( "avg_mises" )
          call mm_return_values_avg_mises
-       case( "avg_princ_stress" )
+       case( "avg_princ_stress" ) ! in decreasing order
          call mm_return_values_avg_princ_stress
        case default
          write(out,9000) elem, value_type, 1
@@ -5516,13 +5516,15 @@ c     ========
       subroutine mm_return_values_avg_princ_stress
       implicit none
 c 
-      integer :: gp, j
+      integer :: gp, j, k
       double precision :: sig(6), evec(3,3), evals(3)
 c
       if( npts /= ngp ) then
         write(out,9020) elem, npts, ngp, 3
         call die_gracefully
       end if
+c
+c              average of integration point stresses
 c
       do gp = 1, ngp    
         do j = 1, 6                                                     
@@ -5531,10 +5533,21 @@ c
         sigoffset = sigoffset + nstrs                                        
       end do 
 c
-      sig = sig / dble( ngp )
-      call principal_values( sig, evec, evals )
-      vec(1:3) = evals(1:3)
+c              principal stresses in decreasing order
+c              gfortran has troubles with principal_values code
+c              evcmp1_new returns principal values in
+c              increasing order.
 c
+      sig = sig / dble( ngp )
+      call evcmp1_new( 1, 1, sig, evals )
+      if( npts <= 2 ) then ! see size of vec on entry
+        write(out,9020) elem, npts, ngp, 4
+        call die_gracefully 
+      end if
+      vec(1) = evals(3)
+      vec(2) = evals(2)
+      vec(3) = evals(1)
+c      call principal_values( sig, evec, evals )
       return 
 c
  9020 format(/,'FATAL ERROR: mm_return_values. Contact WARP3D group',             

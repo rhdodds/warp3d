@@ -1013,7 +1013,7 @@ c     *                      subroutine ivcmp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/1/2018 rhd               *
+c     *                   last modified : 2/19/2022 rhd              *
 c     *                                                              *
 c     *     this subroutine computes the invariants of the right     *
 c     *     stretch tensor, the metric tensor, and its square.       *
@@ -1069,18 +1069,17 @@ c
 c              old or new algorithm to get eivenvalues. old
 c              uses vectroized Givens rotations to diagonalize
 c              the 3x3 symmetric, real matrix. New uses closed
-c              form Cardano extraction of eigenvales for this
+c              form Cardano extraction of eigenvalues for this
 c              specific type & size of matrix. New is
-c              considerable faster.
+c              considerable faster. evcmp1_new returns principal
+c              values in increasing order.
+c
+c              old: copy the metric tensor to stress vector
+c                   form then get principal values.
 c
       if( new ) then
         call evcmp1_new( span, mxvl, c, ev )
-      end if
-      if( .not. new ) then
-c
-c              copy the metric tensor to stress vector
-c              form then get principal values.
-c
+      else ! use old eigenvalue routine
 !DIR$ VECTOR ALIGNED
           do i = 1, span
              ct(i,1)= c(i,1)
@@ -1097,9 +1096,9 @@ c              set the principal values.
 c
 !DIR$ VECTOR ALIGNED
       do i = 1, span
-         ev(i,1)= sqrt(ev(i,1))
-         ev(i,2)= sqrt(ev(i,2))
-         ev(i,3)= sqrt(ev(i,3))
+         ev(i,1) = sqrt(ev(i,1))
+         ev(i,2) = sqrt(ev(i,2))
+         ev(i,3) = sqrt(ev(i,3))
       end do
 c
 c              invariants of right stretch tensor.
@@ -1121,7 +1120,9 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 09/6/2016                  *
 c     *                                                              *
-c     *     eigenvalues of metric tensor. symmetric, real 3x3
+c     *    eigenvalues of metric tensor. symmetric, real 3x3.        *
+c     *    eigenvalues returned in increasing order.                 *                
+c     *    eigenvectors stored to match.                             *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -1141,13 +1142,6 @@ c
      &  m11, m12, m13, m22, m23, m33, e1, e2, e3,
      &  swap1, swap2, swap3,
      &  de, dd, ee, ff, m, c1, c0,p, q, sqrtp,phi, cphi, sphi
-
-c      double precision, parameter ::
-c     &  zero = 0.0d0, one = 1.0d0, two = 2.0d0, three = 3.0d0,
-c     &  third = 1.0d0/3.0d0, oneptfive = 1.5d0,
-c     &  thirteenptfive = 13.5d0, twentyseven = 27.0d0,
-c     &  quarter = 0.25d0, sixpt75 = 6.75d0,
-c     &  oneroot3 = 0.5773502691896258d0
 c
 c              calculates the eigenvalues of a symmetric 3x3 matrix
 c              using Cardano's analytical algorithm.

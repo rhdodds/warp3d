@@ -358,9 +358,10 @@ c     *                    subroutine principal_values               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                last modified : 12/18/2020 rhd                *          
+c     *                last modified : 2/19/22 rhd                   *          
 c     *                                                              *          
-c     *  eigenvalues of symmetric 3x3 returned in descending order   *
+c     *  eigenvalues of symmetric 3x3 returned in descending order.  *
+c     *  eigenvectors stored to match.                               *                 
 c     *                                                              *          
 c     ****************************************************************          
 c

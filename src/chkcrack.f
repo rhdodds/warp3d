@@ -492,7 +492,7 @@ c
       if( smcs_d_values(elem_ptr) > tol_regular ) return ! already fully killed
 c
 c              current plastic strain and mises stress averages
-c              for element
+c              for element. avg_sig_1 is *max* principal stress
 c
       call chk_get_ele_vals( elem, avg_eps_plas, avg_sig_mises, 
      &                       avg_sig_1, max_eps_plas )
@@ -640,7 +640,7 @@ c
       call mm_return_values( "avg_mises", elem, workvec, ngp )
       avg_sig_mises = workvec(1)
       call mm_return_values( "avg_princ_stress", elem, workvec, ngp )
-      avg_sig_1 = workvec(1)
+      avg_sig_1 = workvec(1) ! maximum value
       if( ldebug ) then
         write(out,9010) avg_eps_plas, avg_sig_mises
       end if
@@ -984,7 +984,7 @@ c
         elseif( use_mesh_regularization ) then
           call chk_get_ele_vals( elem, eps_plas_at_death,
      &                           mises_at_death_local, 
-     &                           sig_1_at_death_local,
+     &                           sig_1_at_death_local, ! max prin value
      &                           max_eps_plas )
           smcs_eps_plas_at_death(elem_ptr) = eps_plas_at_death
           smcs_stress_at_death(elem_ptr) = sig_1_at_death_local
