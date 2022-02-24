@@ -1839,6 +1839,8 @@ c
          next_blank = iatchar + index( inline(iatchar:), " " ) - 1
          j = next_blank - 1
          if( inline(j:j) == "," ) next_blank = next_blank - 1
+         if( inline(j:j) == char(39) ) next_blank = next_blank - 1 ! '
+         if( inline(j:j) == char(34) ) next_blank = next_blank - 1 ! "
          start_col = iatchar + 1
          end_col = next_blank - 1
          param_name(1:) = inline(start_col:end_col)
