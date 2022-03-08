@@ -1,116 +1,127 @@
-c
-c ========================================================================
-c
-c        3D C(T) specimen, plane-sided. 1/4 symmetric model. straight
-c        crack front. Blunted notch at front
-c
-c     
-c ========================================================================
-c
-c
-c        Dimensions:
-c           a = 1.0 in
-c           B = 1.0 in
-c           W = 2.0 in
-c           H = 2.2 in
-c           a/W = 0.50
-c
-c =======================================================================
-c
-c
-c        15 (variable) layers through half-thickness in tube mesh region
-c        along crack front. 
-c
-c        focused mesh for non-growth analysis. finite root radius of
-c        initially 0.15 mils
-c
-c        pin hole filled with linear elastic elements with connection
-c        to specimen only along top of hole.
-c   
-c        8-node elements. finite strain formulation.
-c
-c        displacement control (center of loading pin)
-c
-c        loading control at center of pin available as option in
-c        the input
-c    
-c     Non-linear material:  
-c  
-c         E      = 30,000  ksi (Al 6061-T1)
-c         sig_ys = 60.0 ksi
-c         n = 10 (for finite strains)
-c
-c     Model is loaded by imposed displacements (v) art the center
-c     of the pin (modeled with stiffer, linear-elastic elements).
-c     The same v displacement is imposed at each through-thickness 
-c     node.
-c
-c     Pin loading of 1 mils leads to:
-c
-c      ---> these numbers are for a zero radius initial crack front
-c
-c     J average = 0.003206 kip-in/in**2
-c     KI = 10.28068 ksi-in**0.5
-c     The total LLD displacement (=2 x v @ @ node 11878) 
-c     is 2 * 0.00089298 in.)
-c     The pin loading for this displacement is: 2 x 0.712 kips
-c      (2 because only 1/2 of the thickness is modeled)
-c
-c     The 2-D analytical SIF for this specimen:
-c        KI = 6.830 * load ksi-in**0.5 (7% difference)
-c
-c     The load / LLD stiffness is = (2 x 0.712) / (2 x 0.00089298)
-c                                 = 797.3302 kips/in
-c     KI factor.  KI = f * pin load (total)
-c                 f = 10.28068 / (2 x 0.712) = 7.2196 ksi-in**0.5 / kips
-c
-c
-c     Nonlinear solution ok thru step 250
-c
-c     J-avg = 1.16, M = 52
-c
-c     Look like solution will to higher levels of deformation
-c
-c
- structure ct
-c
+!
+!       repeated parameters are simply overwritten with new values
+!
+*parameter solver = "sparse iterative"
+!
+!         pressure vessel steel
+!
+*parameter ymod = "206850", nu = "0.3", n = "10", yld = "413.7"
+*parameter epin = "413700"
+!
+!         Zr2.5Nb
+!
+*parameter ymod = "88000", nu = "0.4", n = "10", yld = "450"
+*parameter epin = "440000"
+!
+*parameter lgsmeps = "linear"
+!
+!         incremental or deformation plasticity
+!
+*parameter plasticity = "mises"
+!
+*parameter display
+!
+! ========================================================================
+!
+!        3D C(T) specimen, plane-sided. 1/4 symmetric model. straight
+!        crack front. Blunted notch at front to support finite strain
+!        solution if desired
+!     
+! ========================================================================
+!
+!        Dimensions:             Model units:  N, mm, MPa
+!           a = 25.0 mm
+!           B = 25.0 mm
+!           W = 50.0 mm
+!           H = 55 mm
+!           a/W = 0.50
+!
+! =======================================================================
+!
+!        8-node hex elements, B-bar
+!
+!        focused (spider web) mesh at crack front with 40+ rings
+!        of elements for KI, J, eta-plastic computation.
+!        finite root radius of initially 0.15 mils = 0.003807 mm
+!        model can be run with small or finite strain formulation
+!
+!        15 (variable) layers through half-thickness in tube mesh region
+!        along crack front. 
+!
+!        pin hole filled with stiff, linear elastic elements with 
+!        connection to specimen only along top of hole.
+!   
+!        displacement control (center of loading pin)
+!
+!        loading control at center of pin available as option in
+!        the input
+!
+!        orientation:  
+!           (0,0,0) is at crack front on centerplane
+!           Y-direction is thickness
+!           Z-direction for loading, CMOD, CTOD, ....
+!           crack plane Z = 0, centerplane Y = 0
+!           crack front lies along Z = X = 0 line (the Y-axis)
+!    
+!     Non-linear material:  
+!  
+!         see *parameter sets at top
+!
+!     Model is loaded by imposed displacements (v) art the center
+!     of the pin (modeled with stiffer, linear-elastic elements).
+!     The same v displacement is imposed at each through-thickness 
+!     node.
+!
+!     Run time:
+!
+!        model set up to run 175 load steps to get enough
+!        plasticity for a stabilized eta-plastic value
+!
+!        runs ~430 wall-seconds using 9 cores (threads) on an iMacPro
+!
+ structure ct 
+!
  number of nodes 26754 elements 23055
-c
+!
  material specimen
-   properties mises e 30000 nu 0.3 yld_pt 60.0,
-                          n_power 10 rho 0.0
+   properties @plasticity e @ymod nu @nu yld_pt @yld,
+                          n_power @n rho 0.0
+!            
  material pin $ stiffer, linear elastic
-   properties linear_elastic e 60000  nu 0.3  rho  0.0
-c 
-elements
-  1-22515 type l3disop  linear material specimen,
-               order 2x2x2 bbar center_output short
-  22516-23055 type l3disop linear material pin,
-             order 2x2x2 bbar center_output short
-c             
-*input from 'coordinates.inp'
+   properties @plasticity e @epin nu @nu yld_pt 1.0e10,
+              n_power 10 rho 0.0
+! 
+ elements
+   1-22515 type l3disop @lgsmeps material specimen,
+                order 2x2x2 bbar center_output short
+!
+   22516-23055 type l3disop @lgsmeps material pin,
+              order 2x2x2 bbar center_output short
+!             
+*input from 'coordinates_mm.inp'
 *input from 'incidences.inp'
-blocking automatic
-c 
-list "pin nodes"  26677-26682 
-constraints
-   "pin nodes" u 0 w -1.0
- plane y=0 symmetry
- plane z=0 symmetry
-c 
+ blocking automatic
+! 
+ list "pin nodes"  26677-26682 
+!
+ constraints
+   "pin nodes" w -1.0
+    22195-22200 u = 0 
+    plane y=0 symmetry
+    plane z=0 symmetry
+! 
  loading test
   nonlinear
-    step 1-300 constraints 0.0001 
-c 
+    step 1-500 constraints 0.009 $ run 175 steps
+! 
  nonlinear analysis parameters
-   solution technique direct sparse 
+   solution technique @solver
    maximum iterations 5
    minimum iterations 2
    convergence test norm res tol 0.005
    nonconvergent solutions stop
    adaptive on
-   linear stiffness for iteration one off 
-   batch messages on
+   batch messages off
    cpu time limit off
    material messages off
    bbar stabilization factor 0.0
@@ -119,36 +130,8 @@ c
    trace solution on 
    extrapolate off
    display tied mesh mpcs off
-c  
- compute displacements for loading test step 100
-c output patran formatted displacements
-c output patran formatted stresses
-c output reactions for nodes  "pin nodes"
-c output displacements for nodes  "pin nodes"
-c
- *input get_j_values
-c 
- compute displacements for loading test step 150
-c output patran formatted displacements
-c output patran formatted stresses
-c output reactions for nodes  "pin nodes"
-c output displacements for nodes  "pin nodes"
-c
- *input get_j_values
-c 
- compute displacements for loading test step 200
-c output patran formatted displacements
-c output patran formatted stresses
-c output reactions for nodes  "pin nodes"
-c output displacements for nodes  "pin nodes"
-c
- *input get_j_values
-c 
- compute displacements for loading test step 250
-c output patran formatted displacements
-c output patran formatted stresses
-c output reactions for nodes  "pin nodes"
-c output displacements for nodes  "pin nodes"
-c
- *input get_j_values
-stop
+!
+ output commands use file "get_output.inp" steps 1-500 by 1
+! 
+ *input from "commands.inp"
+ stop

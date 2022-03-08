@@ -1,0 +1,528 @@
+
+!
+compute displacements for loading test step 1
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 2
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 3
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 4
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 5
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 6
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 7
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 8
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 9
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 10
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 11
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 12
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 13
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 14
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 15
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 16
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 17
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 18
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 19
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 20
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 21
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 22
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 23
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 24
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 25
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 26
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 27
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 28
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 29
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 30
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 31
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 32
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 33
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 34
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 35
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 36
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 37
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 38
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 39
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 40
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 41
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 42
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 43
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 44
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 45
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 46
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 47
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 48
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 49
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 50
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 51
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 52
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 53
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 54
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 55
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 56
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 57
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 58
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 59
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 60
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 61
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 62
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 63
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 64
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 65
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 66
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 67
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 68
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 69
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 70
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 71
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 72
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 73
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 74
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 75
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 76
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 77
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 78
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 79
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 80
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 81
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 82
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 83
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 84
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 85
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 86
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 87
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 88
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 89
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 90
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 91
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 92
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 93
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 94
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 95
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 96
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 97
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 98
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 99
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 100
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 101
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 102
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 103
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 104
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 105
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 106
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 107
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 108
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 109
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 110
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 111
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 112
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 113
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 114
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 115
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 116
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 117
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 118
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 119
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 120
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 121
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 122
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 123
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 124
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 125
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 126
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 127
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 128
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 129
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 130
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 131
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 132
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 133
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 134
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 135
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 136
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 137
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 138
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 139
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 140
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 141
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 142
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 143
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 144
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 145
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 146
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 147
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 148
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 149
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 150
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 151
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 152
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 153
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 154
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 155
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 156
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 157
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 158
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 159
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 160
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 161
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 162
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 163
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 164
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 165
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 166
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 167
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 168
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 169
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 170
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 171
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 172
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 173
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 174
+*input './get_J_average.inp'
+!
+compute displacements for loading test step 175
+*input './get_J_average.inp'
+!
+stop
