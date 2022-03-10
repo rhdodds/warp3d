@@ -36,6 +36,11 @@
 !           H = 55 mm
 !           a/W = 0.50
 !
+!        Note: the "cutouts" for LLD measurement in the model are
+!              not those of either E1820 std. geometries.
+!              impacts (slightly) K_I and eta plastic relative to the std.
+!              configuration
+!
 ! =======================================================================
 !
 !        8-node hex elements, B-bar
