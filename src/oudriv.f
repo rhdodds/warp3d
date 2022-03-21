@@ -487,7 +487,7 @@ c     *                 subroutine oudriv_cmds                       *
 c     *                                                              *
 c     *                    written by : rhd                          *
 c     *                                                              *
-c     *                   last modified : 12/3/2019 rhd              *
+c     *                   last modified : 3/21/2022 rhd              *
 c     *                                                              *
 c     *     scan store the file name for output commands file ...    *
 c     *     get the integerlist of load steps and convert to a bit   *
@@ -538,6 +538,7 @@ c
         return
       end if
 c
+      call infile_zap_blanks( output_command_file )
       inquire( file = output_command_file, exist = ok )
       if( .not. ok ) then
          write(out,9300) output_command_file

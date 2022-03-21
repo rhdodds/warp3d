@@ -4,7 +4,7 @@ c     *                      subroutine infile                       *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified :  02/12/2022 rhd            *          
+c     *                   last modified :  03/21 2022 rhd            *          
 c     *                                                              *          
 c     *     gets the name of a file for input as part of the         *
 c     *     *input from <...>  command                               *          
@@ -62,7 +62,8 @@ c
          call entits( filnam, filchr )                                            
          infil = filnam(1:filchr)                                               
       else if( string(dum) ) then                                               
-         call entits( filnam, filchr )                                            
+         call entits( filnam, filchr )   
+         call infile_zap_blanks( filnam ) ! delete blanks in file name                                           
          call tilde( filnam, infil, nameok )                                       
          if( .not. nameok ) then                                                 
             call errmsg( 189, dum, infil, dumr, dumd )                                
@@ -71,7 +72,7 @@ c
       else                                                                      
          call errmsg( 175, dum, dums, dumr, dumd)                                    
          return                                                                 
-      end if                                                                     
+      end if  
 c                                                                               
 c              file must exist. add to input file stack. 
 c              open file, attach to scan as current source
@@ -103,6 +104,37 @@ c
       end                                                                       
                                                                                 
                                                                                 
+c     ****************************************************************          
+c     *                                                              *          
+c     *               subroutine infile_zap_blanks                   *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 03/22/20222 rhd            *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+c                                                                               
+      subroutine infile_zap_blanks( file_name ) 
+c                                                      
+      implicit none
+c                                                    
+      character(len=80) :: file_name, temp_name 
+      integer :: i, j    
+c
+      temp_name = " "
+      j = 0
+      do i = 1, 80
+        if( file_name(i:i) == " " ) cycle
+        j = j + 1
+        temp_name(j:j) = file_name(i:i)
+      end do
+c
+      file_name = temp_name     
+c
+      return
+      end
 c     ****************************************************************          
 c     *                                                              *          
 c     *               subroutine infile_stpdrv_open                  *          
