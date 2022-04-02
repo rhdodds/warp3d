@@ -801,7 +801,7 @@ c
       implicit none
 c
       integer :: incpos, k1, k2, i1, i2, i3, enode, snode
-      logical, parameter :: local_debug = .true.
+      logical, parameter :: local_debug = .false.
 c
       seg_curves_flag = .false.
 c
