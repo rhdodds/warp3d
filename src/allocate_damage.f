@@ -345,15 +345,15 @@ c
       case( 11 )  ! dowhat                                                              
 c                                                                               
 c           calculate number of nodes in between growth increments.             
-c                                                                               
+c              
          num_nodes_grwinc = max( init_ctoa_dist,ctoa_dist ) /
-     &                      char_length + 1          
-         num_nodes_grwinc = max( num_nodes_grwinc,100 )                              
+     &                      char_length + 1   
+         num_nodes_grwinc = max( num_nodes_grwinc,200 )                              
 c                                                                               
          if( allocated(crack_front_list) )                                        
      &       deallocate( crack_front_list )                                       
          allocate( crack_front_list(num_crack_fronts * num_nodes_grwinc,           
-     &             num_nodes_thick) )                                                   
+     &             num_nodes_thick) )   
          crack_front_list(1:num_crack_fronts*num_nodes_grwinc,                     
      &                    1:num_nodes_thick) = 0                              
 c                                                                               
