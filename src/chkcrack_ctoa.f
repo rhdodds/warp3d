@@ -117,24 +117,24 @@ c
          if( crkpln_nodes_state(inv_crkpln_nodes(neighbor_node) )               
      &        .eq. 0 ) then                                                     
             if( first_entry ) then                                              
-               write(out,"(6x,i5,9x,i5,7x,f7.2,a1,11x,f4.1,3x,'<=')")           
+               write(out,"(6x,i7,9x,i7,7x,f7.2,a1,11x,f4.1,3x,'<=')")           
      &              node, neighbor_node,                                        
      &              angle, star, angle/(init_crit_ang*two)                      
                first_entry = .false.                                            
             else                                                                
-               write(out,"(20x,i5,7x,f7.2,a1,11x,f4.1,3x,'<=')")                
+               write(out,"(20x,i7,7x,f7.2,a1,11x,f4.1,3x,'<=')")                
      &              neighbor_node,                                              
      &              angle, star, angle/(init_crit_ang*two)                      
             end if                                                              
          else                                                                   
             if( first_entry ) then                                              
-               write(out,"(6x,i5,9x,i5,7x,f7.2,12x,f4.1,3x,'<=')")              
+               write(out,"(6x,i7,9x,i7,7x,f7.2,12x,f4.1,3x,'<=')")              
      &              node, neighbor_node,                                        
      &              angle,angle/(critical_angle*two)                            
                first_entry = .false.                                            
                local_node_list(num_local_list,3) = 1                            
             else                                                                
-               write(out,"(20x,i5,7x,f7.2,12x,f4.1,3x,'<=')")                   
+               write(out,"(20x,i7,7x,f7.2,12x,f4.1,3x,'<=')")                   
      &              neighbor_node,                                              
      &              angle, angle/(critical_angle*two)                           
                local_node_list(num_local_list,3) = 1                            
@@ -251,10 +251,10 @@ c
          special_char(1:3) = ' '                                                
          if( use_init ) special_char(1:3) = '(*)'                               
          if( use_init ) then                                                    
-          write(out,"(6x,i5,7x,f7.2,a3,11x,f4.1,3x,'<=')")                      
+          write(out,"(6x,i7,7x,f7.2,a3,11x,f4.1,3x,'<=')")                      
      &        node, angle, special_char, angle/(init_crit_ang*two)              
          else                                                                   
-          write(out,"(6x,i5,7x,f7.2,a3,11x,f4.1,3x,'<=')")                      
+          write(out,"(6x,i7,7x,f7.2,a3,11x,f4.1,3x,'<=')")                      
      &        node, angle, special_char, angle/(critical_angle*two)             
          end if                                                                 
 c                                                                               
@@ -1017,7 +1017,7 @@ c     *                      subroutine release_front                *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 6/22/21 rhd (cleanup)      *          
+c     *                   last modified : 4/19/22 rhd (cleanup)      *          
 c     *                                                              *          
 c     *    Used in the const_front algorithm. This routine, given a  *          
 c     *    master node, finds the attatched crack front, stores it   *          
@@ -1050,11 +1050,13 @@ c
       double precision :: dumd                                              
       real :: dumr                                                                 
 c                                                                               
-      logical :: crack_node
-      logical, external :: same_front                                     
+      logical :: crack_node, ldebug
+      logical, external :: same_front  
+c
+      ldebug = .false.                                   
 c                                                                               
 c                                                                               
-      if( debug ) write(out,*) '>> releasing front...'                            
+      if( ldebug ) write(out,*) '>> releasing front...'                            
 c                                                                               
 c           check if master node has already been released. This can happen     
 c           if two cracks are just about to coalese, such that there is         
@@ -1069,17 +1071,16 @@ c           we find it.  This will be used by the reaction force
 c           relaxation algorithm.                                               
 c                                                                               
       entry = 0                                                                 
-      do while (.true.)                                                         
+      do while( .true. )                                                         
          entry = entry + 1                                                      
 c                                                                               
 c               if no free space in the const_front_list                        
 c               is found, then stop execution                                   
 c                                                                               
-         if( entry .gt. num_crack_fronts * num_nodes_grwinc ) then               
-            call errmsg(285, idum, dums, dumr, dumd)                            
+         if( entry .gt. num_crack_fronts * num_nodes_grwinc ) then
+            write(out,9110)  num_crack_fronts, num_nodes_grwinc
             call die_gracefully                                                 
-            stop                                                                
-         endif                                                                  
+         end if                                                                  
 c                                                                               
 c               free space found; start the list                                
 c                                                                               
@@ -1087,8 +1088,8 @@ c
             list_entry = entry                                                  
             crack_front_list(list_entry,1) = master_node                        
             exit                                                                
-         endif                                                                  
-      enddo                                                                     
+         end if                                                                  
+      end do                                                                     
 c                                                                               
 c           loop over the crack front node list.  For each node, release        
 c           it, then check each of its neighbors to find out if they are        
@@ -1098,12 +1099,12 @@ c           list.  In this way, the crack_front_node list will be both
 c           processed such that each node on it is released, and the list       
 c           will be expanded as new crack front nodes are found.                
 c                                                                               
-      if( debug ) write(out,*) '> check crack_front_list'                       
+      if( ldebug ) write(out,*) '> check crack_front_list'                       
       ptr = 0                                                                   
       ptr_last = 1                                                              
-      do while (.true.)                                                         
+      do while( .true. )                                                         
          ptr = ptr + 1                                                          
-         if( debug ) write(out,*) '  - ptr = ', ptr                             
+         if( ldebug ) write(out,*) '  - ptr = ', ptr                             
 c                                                                               
 c              check if we have processed all the nodes on the list; exit       
 c              if we have.                                                      
@@ -1162,9 +1163,8 @@ c                          from, or if node found is not on same crack
 c                          front.                                               
 c                                                                               
                if( neigh2 .eq. node ) cycle                                      
-           if( .not. same_front(neighbor_node, neighbor_data_entry,             
+               if( .not. same_front(neighbor_node, neighbor_data_entry,             
      &               node) ) cycle                                              
-c                                                                               
                crack_node = .true.                                              
                exit                                                             
             end do                                                              
@@ -1174,15 +1174,14 @@ c                       crack_front_list
 c                                                                               
             if( crack_node ) then                                                
                ptr_last = ptr_last + 1                                          
-               if( debug ) write(out,*) '     cfn neighbor:',                   
+               if( ldebug ) write(out,*) '     cfn neighbor:',                   
      &                neighbor_node,' into ',ptr_last                           
-               if( ptr_last .gt. num_nodes_thick ) then                          
-                  call errmsg(285, idum, dums, dumr, dumd)                      
+               if( ptr_last .gt. num_nodes_thick ) then    
+                  write(out,9100)  num_nodes_thick                     
                   call die_gracefully                                           
-                  stop                                                          
                endif                                                            
                crack_front_list(list_entry,ptr_last) = neighbor_node            
-            endif                                                               
+            end if                                                               
 c                                                                               
  100        continue                                                            
          end do                                                                 
@@ -1195,17 +1194,33 @@ c              if we are using release by steps, then we don't a
 c              need the nodal list anymore.  Clear it out.                      
 c                                                                               
       if( release_type .eq. 1 ) then                                             
-         do i = 1, num_nodes_thick                                                
+         do i = 1, size( crack_front_list, 2 )
             crack_front_list(list_entry,i) = 0                                  
          end do                                                                 
-      endif                                                                     
+      end if                                                                     
 c                                                                               
 c                                                                               
  9999 continue                                                                  
       if( debug ) write(out,*) '<< finished releasing front..'                    
 c                                                                               
-      return                                                                    
+      return  
+                                                                 
  9000 format('         node: ',i7,' connected to master node: ',i7)          
+ 9100 format(
+     &/1x,'>>>>> FATAL ERROR: inconsistency detected processing front',
+     &/1x,'                   nodes to enforce release. The specified',
+     &/1x,'                   number of crack front nodes over the',
+     &/1x,'                   thickness like is incorrect.',
+     &/1x,'                   input value is: ',i6,
+     &/1x,'                   ** job terminated **',//)
+ 9110 format(
+     &/1x,'>>>>> FATAL ERROR: inconsistency detected processing front',
+     &/1x,'                   nodes to enforce release.',
+     &/1x,'                   num_crack_front: ',i3,
+     &/1x,'                   num_nodes_grwinc: ',i5,
+     &/1x,'                   => verify # nodes over thickess',
+     &/1x,'                   for node release',
+     &/1x,'                   ** job terminated **',//)
       end                                                                       
 c                                                                               
 c     ****************************************************************          
@@ -1560,7 +1575,7 @@ c
 c                                                                               
 c                  check distance -- if further than we want to go,             
 c                  calculate the angle                                          
-c                                                                               
+c                                                                                
          if( dist + d_dist .ge. ctoa_dist_back ) then                            
 c                                                                               
             factor = ( ctoa_dist_back - dist ) / d_dist                         
