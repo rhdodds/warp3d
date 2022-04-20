@@ -2703,8 +2703,7 @@ c
  2850 continue
       num_fatal = num_fatal + 1
       write(out,9303)
- 9303 format(/1x,'>>>>> Fatal Error: Programmer Error in ',
-     &           'const_front routines. Stopping.',/)
+ 9303 format(/1x,'   available  ' )
       goto 9999
 c
  2860 continue
