@@ -4,7 +4,7 @@ c     *                    f-90 module j_data                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 1/7/22 rhd                      *
+c     *              last modified : 4/21/2022 rhd                   *
 c     *     define the variables and data structures to support      *
 c     *     j-integral and i-integral computations                   *
 c     *                                                              *
@@ -84,7 +84,8 @@ c
      & output_packet_j, output_packet_i, comput_j, comput_i,
      & out_pstress, out_pstrain, cf_traction_flags(3), j_to_k,
      & process_temperatures, face_loading, tangent_vector_defined,
-     & process_initial_state, temperatures_on_model
+     & process_initial_state, temperatures_on_model,
+     & compute_domain_extents
 c
       logical, allocatable, dimension (:) :: block_seg_curves
 c

@@ -11,18 +11,21 @@ c *                 drive the computation of mixed-mode         *
 c *                 stress intensity factors and t-stress       *
 c *                 using the interaction integral.             *
 c *                                                             *
-c *                 last modified: 1/17/22 rhd                  *
+c *                 last modified: 4/21/2022 rhd                *
 c *                                                             *
 c ***************************************************************
 c
 c
       subroutine diexp4( ring, node_map, nonode, noelem, incmap,
-     &                   eprops, incid, out, q_map_len, bits )
+     &                   eprops, incid, out, q_map_len, bits,
+     &                   compute_domain_extents, domain_extents )
 c
       use constants 
       use j_data, only : debug_driver, num_front_nodes, q_values,
-     &                   expanded_front_nodes, q_element_maps
-      use main_data, only : inverse_incidences
+     &                   expanded_front_nodes, q_element_maps,
+     &                   max_domain_rings
+      use main_data, only : inverse_incidences, crdmap
+      use global_data, only : iprops, coords => c
       implicit none
       include 'param_def'
 c
@@ -31,15 +34,21 @@ c
       integer :: ring, nonode, noelem, out, q_map_len
       integer :: node_map(*), incmap(*), eprops(mxelpr,*), incid(*),
      &           bits(*)
+      double precision :: domain_extents(max_domain_rings,6)
+      logical :: compute_domain_extents
 c
 c                     local declarations
 c
       integer :: front_pos, i, ii, snode, elem, incptr, nnode, elnd,
      &           count, index
-      integer :: local_list(10)
+      integer :: local_list(10), num_enodes, enode
       logical :: same_q_values, local_debug_1
       logical, external :: dibmck
       real :: q1
+      double precision :: xenode, yenode, zenode, domain_x_min,
+     &                    domain_x_max, domain_y_min, domain_y_max,
+     &                    domain_z_min, domain_z_max
+
 c
 c             build list of all nodes for elements appearing in
 c             the previous domain. if ring = 1 we use the list of
@@ -101,6 +110,42 @@ c
             call diadit( q_element_maps, elem, bits )
          end do
       end do
+c
+c              if requested, compute the min, max extent of the
+c              domain in each global coordinate direction. use
+c              coordinates of each node for each element in domain.
+c
+      if( compute_domain_extents ) then
+        domain_x_min = 1.0d10
+        domain_x_max = -1.0d0
+        domain_y_min = 1.0d10
+        domain_y_max = -1.0d0
+        domain_z_min = 1.0d10
+        domain_z_max = -1.0d0
+c
+        do elem = 1, noelem
+          if( .not. dibmck( elem, q_element_maps, bits ) ) cycle
+          num_enodes = iprops(2,elem)
+          do enode = 1, num_enodes                                                     
+            snode  = incid(incmap(elem)+(enode-1))                  
+            xenode = coords(crdmap(snode)+0)                                
+            yenode = coords(crdmap(snode)+1)                                  
+            zenode = coords(crdmap(snode)+2)   
+            domain_x_min = min( domain_x_min, xenode ) 
+            domain_y_min = min( domain_y_min, yenode ) 
+            domain_z_min = min( domain_z_min, zenode ) 
+            domain_x_max = max( domain_x_max, xenode )
+            domain_y_max = max( domain_y_max, yenode )
+            domain_z_max = max( domain_z_max, zenode )
+          end do   
+        end do  
+        domain_extents(ring,1) = domain_x_min
+        domain_extents(ring,2) = domain_y_min
+        domain_extents(ring,3) = domain_z_min
+        domain_extents(ring,4) = domain_x_max
+        domain_extents(ring,5) = domain_y_max
+        domain_extents(ring,6) = domain_z_max
+      end if                                              
 c
 c              debug for list of elements to be in domain.
 c
@@ -172,13 +217,16 @@ c *                                                             *
 c ***************************************************************
 c
       subroutine diexp13( ring, nonode, noelem, incmap, eprops, incid,
-     &                    out, bits, newmap, nodmap, q_map_len )
+     &                    out, bits, newmap, nodmap, q_map_len,
+     &                    compute_domain_extents, domain_extents )
 c
       use constants
       use j_data, only : debug_driver, q_values, domain_type,
      a  q_element_maps, num_front_nodes, front_order,
-     b  expanded_front_nodes
-      use main_data, only : inverse_incidences
+     b  expanded_front_nodes, max_domain_rings
+      use main_data, only : inverse_incidences, crdmap
+      use global_data, only : iprops, coords => c
+c
       implicit none
       include 'param_def'
 c
@@ -187,16 +235,22 @@ c
       integer :: ring, nonode, noelem, out, q_map_len
       integer :: incmap(*), eprops(mxelpr,*), incid(*), bits(*),
      &           nodmap(q_map_len,*), newmap(q_map_len,*)
+      double precision :: domain_extents(max_domain_rings,6)
+      logical :: compute_domain_extents
 c
 c                     local declarations
 c
       integer :: ii, elem, cornno, frnpos, count, fnode, snode, elenum,
      &           incptr, jj, edge, nenode, ecorn1, ecorn2, scorn1,
-     &           scorn2, i, index, nnode, numedge, mapno, nownod
+     &           scorn2, i, index, nnode, numedge, mapno, nownod,
+     &           num_enodes, enode
       integer :: local_list(10), corner(3), enodes(30),
      &           edge_table(0:3,20)
       logical, external :: dibmck
       logical :: flags1(3), flags2(3), fl1, fl2
+      double precision :: xenode, yenode, zenode, domain_x_min,
+     &                    domain_x_max, domain_y_min, domain_y_max,
+     &                    domain_z_min, domain_z_max
 c
       if( debug_driver ) write(out,9000) ring
       if( ring == 1 ) call diexp13_ring_1
@@ -227,6 +281,42 @@ c
         nodmap(ii,2) = newmap(ii,2)
         nodmap(ii,3) = newmap(ii,3)
       end do
+c
+c              if requested, compute the min, max extent of the
+c              domain in each global coordinate direction. use
+c              coordinates of each node for each element in domain.
+c
+      if( compute_domain_extents ) then
+        domain_x_min = 1.0d10
+        domain_x_max = -1.0d0
+        domain_y_min = 1.0d10
+        domain_y_max = -1.0d0
+        domain_z_min = 1.0d10
+        domain_z_max = -1.0d0
+c
+        do elem = 1, noelem
+          if( .not. dibmck( elem, q_element_maps, bits ) ) cycle
+          num_enodes = iprops(2,elem)
+          do enode = 1, num_enodes                                                     
+            snode  = incid(incmap(elem)+(enode-1))                  
+            xenode = coords(crdmap(snode)+0)                                
+            yenode = coords(crdmap(snode)+1)                                  
+            zenode = coords(crdmap(snode)+2)   
+            domain_x_min = min( domain_x_min, xenode ) 
+            domain_y_min = min( domain_y_min, yenode ) 
+            domain_z_min = min( domain_z_min, zenode ) 
+            domain_x_max = max( domain_x_max, xenode )
+            domain_y_max = max( domain_y_max, yenode )
+            domain_z_max = max( domain_z_max, zenode )
+          end do   
+        end do  
+        domain_extents(ring,1) = domain_x_min
+        domain_extents(ring,2) = domain_y_min
+        domain_extents(ring,3) = domain_z_min
+        domain_extents(ring,4) = domain_x_max
+        domain_extents(ring,5) = domain_y_max
+        domain_extents(ring,6) = domain_z_max
+      end if                                              
 c
 c             all done building domains.
 c

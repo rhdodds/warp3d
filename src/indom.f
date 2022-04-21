@@ -4,7 +4,7 @@ c     *                      subroutine indom                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/6/22 rhd                 *
+c     *                   last modified : 4/21/2022 rhd              *
 c     *                                                              *
 c     *                   input a domain definition                  *
 c     *                                                              *
@@ -13,7 +13,7 @@ c
 c
 c
       subroutine indom( sbflg1, sbflg2 )
-
+c
       use global_data, only : nonode, noelem, bits, out, input_ok,
      &                        num_error  
       use j_data
@@ -450,6 +450,11 @@ c
       if( matchs( 'element', 4 ) ) then
          if( matchs( 'values', 4 ) ) call splunj
          print_elem_values = .true.
+         go to 10
+      end if
+      if( matchs( 'domain', 4 ) ) then
+         if( matchs( 'extents', 4 ) ) call splunj
+         compute_domain_extents = .true.
          go to 10
       end if
 c
@@ -1063,7 +1068,7 @@ c     *                      subroutine initdm                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/6/22 rhd                 *
+c     *                   last modified : 4/21/22 rhd                *
 c     *                                                              *
 c     *     initializes various variables and arrays                 *
 c     *     that define a domain for j-integral computations         *
@@ -1128,6 +1133,7 @@ c
       j_to_k                 = .false.
       crack_curvature(1:7)   = zero
       temperatures_on_model  = .false.
+      compute_domain_extents = .false.
 c
       return
       end

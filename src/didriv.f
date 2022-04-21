@@ -11,7 +11,7 @@ c *                 drive the computation of mixed-mode         *
 c *                 stress intensity factors and t-stress       *
 c *                 using the interaction integral.             *
 c *                                                             *
-c *                 last modified: 1/10/22 rhd                  *
+c *                 last modified: 4/21/22 rhd                  *
 c *                                                             *
 c ***************************************************************
 c
@@ -47,7 +47,9 @@ c
      j  nowring, j_storage, i_storage, j_from_ks, ks_from_j, ring_list,
      k  max_domain_rings, q_element_maps, num_auto_rings, static_j,
      l  j_geonl_formulation, j_linear_formulation,
-     m  temperatures_on_model, domain_node_sets
+     m  temperatures_on_model, domain_node_sets, 
+     n  compute_domain_extents
+
 c
       implicit none
 c
@@ -420,6 +422,9 @@ c
       subroutine didrive_auto_domains
       implicit none
 c
+      double precision :: domain_extents(max_domain_rings,6)
+c
+c
 c              14. user wants automatic construction of domains.
 c
 c              14a. get last ring at which output will be
@@ -477,20 +482,35 @@ c
       do ring = 1, last_ring
          if( domain_type .eq. 4 ) then
             call diexp4( ring, q_node_map, nonode, noelem, incmap,
-     &                   iprops, incid, out, q_map_len, bits )
+     &                   iprops, incid, out, q_map_len, bits,
+     &                   compute_domain_extents, domain_extents  )
          else
             call diexp13( ring, nonode, noelem, incmap, iprops, incid,
-     &                    out, bits, q_new_map, q_old_map, q_map_len )
+     &                    out, bits, q_new_map, q_old_map, q_map_len,
+     &                    compute_domain_extents, domain_extents )
         end if
          if( ring_list(ring) .eq. 1 ) then
             last_domain = ring .eq. last_ring
-            nowring = ring
+            nowring = ring 
             call dicmj  !  do calcs over elements, runs MPI parallel
             first_domain = .false.
          end if
       end do
 c
+      if( compute_domain_extents ) then 
+        write(out,9000)
+        write(out,9005)
+        do ring = 1, last_ring
+          write(out,9010) ring, domain_extents(ring,1:6)
+        end do
+      end if
+c
       return
+c
+ 9000 format(/," Physical Extents of Domains in Global Coordinates")
+ 9005 format("    Domain        X-min          Y-min         Z-min",
+     &  "          X-max          Y-max          Z-max")
+ 9010 format(5x, i3, 6f15.5)     
 c
       end subroutine didrive_auto_domains
 c
