@@ -184,7 +184,8 @@ c
      &              divergence_check, diverge_check_strict,
      &              line_search, ls_details, initial_stresses_exist,
      &              initial_stresses_user_routine,
-     &              initial_state_option, initial_stresses_input
+     &              initial_state_option, initial_stresses_input,
+     &              cp_elems_present
       write(fileno) sparse_stiff_file_name, packet_file_name,
      &              initial_stresses_file
       write (fileno) check_data_key
@@ -1068,7 +1069,7 @@ c     *               subroutine write_cry_data                      *
 c     *                                                              *
 c     *                    written by : mcm                          *
 c     *                                                              *
-c     *                last modified : 12/23/2015 rhd                *
+c     *                last modified : 3/27/2022 rhd                 *
 c     *                                                              *
 c     *           Write the CP crystal definitions to file           *
 c     *                                                              *
@@ -1093,7 +1094,7 @@ c
         mxcry = size(angle_input,2)
         write(fileno) nelem
         write(fileno) mxcry
-        write(fileno) data_offset
+        write(fileno) crystal_data_offset
         write(fileno) angle_input
         write(fileno) crystal_input
       end if
