@@ -1558,7 +1558,7 @@ c     *                   subroutine setup_mm10_rknstr               *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : 3/27/2022 rhd              *
 c     *                                                              *
 c     *     set up material model #10 (crystal plasticity)           *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1571,7 +1571,7 @@ c
       use segmental_curves
       use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp
       use crystal_data, only : c_array, angle_input, crystal_input,
-     &                              data_offset
+     &                         crystal_data_offset
 c
       implicit none
       include 'param_def'
@@ -1772,7 +1772,7 @@ c
         if( imatprp(104,matnum) .eq. 1 ) then
               cnum = imatprp(105,matnum)
         elseif( imatprp(104,matnum) .eq. 2 ) then
-              osn = data_offset(elnum)
+              osn = crystal_data_offset(elnum)
               cnum = crystal_input(osn,c)
 c
 c             couldn't do this earlier, so check here
@@ -1795,7 +1795,7 @@ c
              angles(2) = dmatprp(109,matnum)
              angles(3) = dmatprp(110,matnum)
         elseif( imatprp(107,matnum) .eq. 2 ) then
-             osn = data_offset(elnum)
+             osn = crystal_data_offset(elnum)
              angles(1:3) = angle_input(osn,c,1:3)
         else
              write (out,9502)

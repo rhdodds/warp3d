@@ -228,7 +228,7 @@ c           Data structures for mm11 Monte Carlo angles
             double precision, allocatable :: angle_input(:,:,:)
             double precision, allocatable :: simple_angles(:,:)
             integer, allocatable :: crystal_input(:,:)
-            integer, allocatable :: data_offset(:)
+            integer, allocatable :: crystal_data_offset(:)
             double precision :: cry_multiplier
             logical :: defined_crystal, srequired
             integer :: nangles
@@ -2014,88 +2014,44 @@ c                 Debug routine, dump the definition to STDOUT
 c
             end subroutine
       end module crystal_data
+
 c
 c     ****************************************************************
 c     *                                                              *
-c     *                       subroutine read_simple_angles          *
+c     *                      subroutine crystal_chk_presence         *
 c     *                                                              *
-c     *                       written by: mcm                        *
-c     *                       last modified: 3/10/14                 *
+c     *                       written by : rhd                       *
 c     *                                                              *
-c     *     Read angles to file for the damaged interface material   *
+c     *                   last modified : 3/25/2022 RHD              *
+c     *                                                              *
+c     *           do any elements reference a CP material            *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine read_simple_angles
-      use global_data ! old common.main
-      use main_data
-      use crystal_data, only: simple_angles, nangles, srequired,
-     &      mc_array
-      implicit integer (a-z)
+      subroutine crystal_chk_presence( )
 c
-      integer :: inter_mat, nlines, avail_device
-      integer, external :: warp3d_get_device_number
-      character(len=24) :: filen
-      double precision :: t1, t2, t3
-      real, dimension(max_crystals) :: rand_reals
+      use main_data, only : elstor, matprp, cp_elems_present
+      use global_data, only : noelem, out
 c
-c           Check to see if the simple angles are required
+      implicit none
 c
-      srequired = .false.
-      do el=1,noelem
-            inter_mat = elstor(11,el)
-            if (inter_mat .ne. -1) then
-                  srequired = .true.
-                  filen = smatprp(112,inter_mat) 
-                  exit
-            end if
+c              locals
+c
+      integer :: el, matnum, mattype
+c
+      cp_elems_present = .false. 
+c
+      do el = 1, noelem
+        matnum = elstor(2,el)
+        mattype = int( matprp(9,matnum) )
+        if( mattype ==  10 ) then
+          cp_elems_present = .true.
+         return
+        end if
       end do
 c
-      if (.not. srequired) return
-c
-      avail_device = warp3d_get_device_number()
-      if (avail_device .eq. -1) then
-         write(*,*) "No device available."
-         call die_gracefully
-      end if
-c
-c     Count the number of lines
-      nlines = 0
-      open(avail_device, file=filen)
-      do
-        read(avail_device,*,END=100)
-        nlines = nlines + 1
-      end do
- 100  close(avail_device)
-c
-c     Read in all the data
-      nangles = nlines
-      allocate(simple_angles(nangles,3))
-c
-      i = 1
-      open(avail_device, file=filen)
-      do
-        read(avail_device, *, end=200) t1, t2, t3
-        simple_angles(i,1) = t1
-        simple_angles(i,2) = t2
-        simple_angles(i,3) = t3
-        i = i + 1
-      end do
- 200  close(avail_device)
-c
-c
-c           This is an overly-expensive way of doing this, but oh well
-c           Setup mc_array
-      allocate(mc_array(noelem, max_crystals))
-      call init_random_seed()
-      do i=1,noelem
-        call random_number(rand_reals)
-        mc_array(i,1:max_crystals) = int(rand_reals*nangles)+1
-      end do
-c
-      call wmpi_send_simple_angles
-c
-      end subroutine
+      return
+      end
 c
 c     ****************************************************************
 c     *                                                              *
@@ -2103,7 +2059,7 @@ c     *                      subroutine read_crystal_data            *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 11/11/20 RHD               *
+c     *                   last modified : 3/27/2022 rhd              *
 c     *                                                              *
 c     *      read in crystal data from file to in memory structures  *
 c     *                                                              *
@@ -2112,51 +2068,74 @@ c
       subroutine read_crystal_data
 c
       use crystal_data, only : angle_input, crystal_input,
-     &                         data_offset, defined_crystal
+     &                         crystal_data_offset, defined_crystal
       use main_data, only : elstor, matprp, imatprp, smatprp
       use global_data, only : noelem, out
+      use constants, only : zero
+c
       implicit none
 c
 c              locals
 c
       integer :: mxcry, nelem, ncry, matnum, el, iodev, p_matnum,
      &           mattype
-      logical :: countme, crystalsl, anglesl, open_file, send_mess
+      logical :: countme, crystalsl, anglesl, open_file, send_mess,
+     &           file_read_needed, is_cp_model 
+      logical :: ldebug = .false.
       character(len=24) :: filen
-      double precision, parameter :: dzero = 0.0d0
       integer, allocatable :: temp_vec(:)
       double precision, allocatable :: temp_array(:,:)
 c 
-c              Just skip if we don't have a crystal
+c              This routine is no longer called unless
+c              elements in the model are associated with CP materials.
+c              Input files can now have crystals and CP materials
+c              defined by not actually used.
 c
-      if( .not. defined_crystal ) return
+c              Forward pass: get numbers to allocate and indexes.
+c              crystal_input and angles_inout are created with only
+c              the number of rows actually needed. This requires
+c              creation of an indexing vector, data_vector, such that
+c              the row to use in angles_input/crystal_input = 
+c              crystal_data_offset(element number).
+c              Must have to support input when some elements may not be
+c              associated with a CP material.
 c
-c              Forward pass: get numbers to allocate and offsets
+      if( allocated(crystal_data_offset) )
+     &    deallocate( crystal_data_offset )
+      allocate( crystal_data_offset(noelem) )
 c
-      if( allocated(data_offset) ) deallocate( data_offset )
-      allocate( data_offset(noelem) )
-      data_offset = 0
+      crystal_data_offset = 0
       mxcry = 0
       nelem = 0
+      file_read_needed = .false.
 c
       do el = 1, noelem
         matnum = elstor(2,el)
         mattype = int( matprp(9,matnum) )
-        if( mattype .ne. 10 ) cycle  ! cp material model
-        countme = (imatprp(104,matnum) .eq. 2) .or.
+        is_cp_model = mattype .eq. 10
+        if( .not. is_cp_model ) cycle  ! cp material model
+        countme = (imatprp(104,matnum) .eq. 2) .or. ! data from file
      &            (imatprp(107,matnum) .eq. 2)
         if( countme ) then
           nelem = nelem + 1
-          data_offset(el) = nelem
+          crystal_data_offset(el) = nelem 
           ncry = imatprp(101,matnum)
           if( ncry .gt. mxcry ) mxcry = ncry
+          file_read_needed = .true.
         end if
       end do
+c
+      if( ldebug ) then
+        write(out,9000) noelem, mxcry
+        do el = 1, noelem
+         write(out,9005) el, crystal_data_offset(el)
+        end do
+      end if
 c        
 c              Backward pass: actual data
 c
       send_mess = .false.
-      if( any(data_offset .gt. 0 ) ) call read_crystal_data_a
+      if( file_read_needed ) call read_crystal_data_a
 c
 c           If we're using MPI, send out the arrays (including the
 c           general crystal struct).  If not it's a dummy routine
@@ -2170,11 +2149,18 @@ c
 c
       return
 c
+ 9000 format(/,"... debug: read_crystal_data. # elems, mxcry:",i10,i3,
+     &       /,"       element #     data_offset")
+ 9005 format( 3x,2i10)
+c
       contains
 c     ========
 c
       subroutine read_crystal_data_a
       implicit none
+c
+      integer :: row
+      logical :: ok
 c
       write(out,*) '' 
       write(out,'(a)') '>> Reading crystal definitions ...'
@@ -2182,18 +2168,20 @@ c
       send_mess = .true.
       if( allocated(angle_input) ) deallocate( angle_input )
       if( allocated(crystal_input) ) deallocate( crystal_input )
-      allocate( angle_input(noelem,mxcry,3) )
-      allocate( crystal_input(noelem,mxcry) )
+      allocate( angle_input(nelem,mxcry,3) )
+      allocate( crystal_input(nelem,mxcry) )
       allocate( temp_vec(mxcry), temp_array(mxcry,3) )
-      angle_input = dzero
+c
+      angle_input   = zero ! double p.
       crystal_input = 0
-      p_matnum = -1
-      open_file = .false.
+      p_matnum      = -1   ! previous material number
+      open_file     = .false.
 c
       do el = 1, noelem
-        if( data_offset(el) == 0 ) cycle
+        row = crystal_data_offset(el) 
+        if( row == 0 ) cycle ! element not using CP w/ file input
         matnum = elstor(2,el)
-        if( matnum .ne. p_matnum ) then
+        if( matnum .ne. p_matnum ) then ! switching CP materials file
           if( el .ne. 1 ) close(iodev)
           filen = smatprp(112,matnum)
           open(newunit=iodev,file=filen,readonly)
@@ -2204,12 +2192,17 @@ c
         if( imatprp(104,matnum) .eq. 2 ) crystalsl = .true.
         anglesl = .false.
         if( imatprp(107,matnum) .eq. 2 ) anglesl = .true.
-        temp_array = dzero ! temp to eliminate Mark's code
-        temp_vec = 0       ! that caused copyin - copyout: slow
+        ok = crystalsl .or. anglesl
+        if( .not. ok ) then
+          write(out,9000) 
+          call die_gracefully
+        end if
+        temp_array = zero ! temp to eliminate Mark's code
+        temp_vec = 0      ! that caused copyin - copyout: slow
         call read_defs( iodev, el, ncry, anglesl, crystalsl,
-     &                  mxcry, temp_array,  temp_vec, out )
-        angle_input(el,1:ncry,1:3) = temp_array(1:ncry,1:3)
-        crystal_input(el,1:ncry) = temp_vec(1:ncry)
+     &                  mxcry, temp_array, temp_vec, out, filen )
+        angle_input(row,1:ncry,1:3) = temp_array(1:ncry,1:3)
+        crystal_input(row,1:ncry)   = temp_vec(1:ncry) ! 0 if only 1 crystal
         p_matnum = matnum
       end do ! on el
 c
@@ -2217,6 +2210,10 @@ c
       if( open_file ) close(iodev)
 c
       return
+c
+ 9000 format(">> FATAL ERROR: read_crystal_data_a @ 1",
+     &  /,   '                job terminated' )
+c
       end subroutine read_crystal_data_a
       end subroutine read_crystal_data
 c
@@ -2226,7 +2223,7 @@ c     *                   subroutine read_defs                       *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 11/11/2020 rhd             *
+c     *                   last modified : 3/25/2022 rhd              *
 c     *                                                              *
 c     *     Helper which reads crystal numbers and orientations from *
 c     *     a flat file                                              *
@@ -2234,56 +2231,64 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine read_defs( ionum, elnum, ncry, angles, crystals,
-     &                      mxcry, results_ang, results_cry, out )
+     &                      mxcry, results_ang, results_cry, out,
+     &                      filen )
       implicit none
 c
       integer, intent(in) :: ionum, elnum, ncry, out, mxcry
       logical, intent(in) :: angles, crystals
       double precision, dimension(mxcry,3), intent(out) :: results_ang
       integer, dimension(mxcry), intent(out) :: results_cry
+      character(len=*), intent(in) :: filen
 c
       double precision :: a,b,c
       integer :: n, d, i
 c
-c          Scan the file until we find the first entry which matches elnum
+c          Continue scanning file until we find the first entry which 
+c          matches this elnum. read data for that element. 
+c          these data files may now have comments
 c
       do
 c
-c          read forward in file
-c
+        call read_defs_chk_comment( ionum )
         if( angles .and. crystals ) then
-              read(ionum,*,end=10) n, a, b, c, d
+           read(ionum,*,end=10) n, a, b, c, d
         elseif( angles ) then
-              read(ionum,*,end=10) n, a, b, c
+           read(ionum,*,end=10) n, a, b, c
         elseif( crystals ) then
-              read(ionum,*,end=10) n, d
-        else
-              exit
+           read(ionum,*,end=10) n, d
+        else     !  should never get here
+           write(out,9000) 1
+           call die_gracefully
         endif
 c
-c          is this element element line? then process
+c          is this element the element line in file? then process
 c
-        i = 1
         if( n .ne. elnum ) cycle
 c
         if( angles .and. crystals ) then
-           results_ang(i,1) = a
-           results_ang(i,2) = b
-           results_ang(i,3) = c
-           results_cry(i) = d
+           results_ang(1,1) = a
+           results_ang(1,2) = b
+           results_ang(1,3) = c
+           results_cry(1) = d
         elseif( angles ) then
-           results_ang(i,1) = a
-           results_ang(i,2) = b
-           results_ang(i,3) = c
+           results_ang(1,1) = a
+           results_ang(1,2) = b
+           results_ang(1,3) = c
         elseif( crystals ) then
-           results_cry(i) = d
-        else
-           exit
+           results_cry(1) = d
+        else            !  should never get here
+           write(out,9000) 2
+           call die_gracefully
         endif
 c
-c             loop to read data lines for element if needed
+c             loop to read data lines for element with more than
+c             1 crystal
 c
-        do i = 2, ncry ! skips loop if ncry = 1
+        if( ncry == 1 ) exit ! done with element
+c
+        do i = 2, ncry 
+          call read_defs_chk_comment( ionum )
           if( angles .and. crystals ) then
             read(ionum,*,end=12) n, results_ang(i,1:3),
      &                 results_cry(i)
@@ -2291,33 +2296,77 @@ c
             read(ionum, *,end=12) n, results_ang(i,1:3)
           elseif( crystals ) then
             read(ionum,*,end=12) n, results_cry(i)
-          else
-            exit
+          else               !  should never get here
+            write(out,9000) 3 
+            call die_gracefully
           endif
           if( n .ne. elnum ) then
-             write(out,13) elnum
+             write(out,13) elnum, filen
              call die_gracefully
           end if
         end do !  on i
 c
         exit ! out of main loop. done with angles for element
 c
-      end do ! main loop
+      end do ! main loop reading thru file
 c
       return
 c
-10    continue
-      write (out,14) elnum
+ 10   continue
+      write(out,14) elnum, filen
       call die_gracefully
-12    continue
-      write (out,13) elnum
+ 12   continue
+      write(out,13) elnum, filen
       call die_gracefully
 c
-13    format(/1x,'>>>>> Parse Error: insufficient data for element ',
-     &            i4/)
-14    format(/1x,'>>>>> Parse Error: element ', i4, ' not found.' /)
+ 13   format(/1x,'>>>>> Crystal Plasticity Parse Error: insufficient ',
+     &       /1x,'      data for element: ', i10,' => Please check',
+     &       /1x,'      file for other elements.',
+     &       /1x,'      Reading file: ',a,
+     &       /1x,'      Job terminated.', //)
+ 14   format(/1x,'>>>>>  Crystal Plasticity Parse Error: ',
+     &       /1x,'       element ', i10, ' not found. => Please check',
+     &       /1x,'       for other missing elements.',
+     &       /1x,'       Reading file: ',a,
+     &       /1x,'       Job terminated', // )
+ 9000 format(">> FATAL ERROR: read_defs @ location: "i2,
+     &  /,   '                job terminated' )
 c
       end subroutine
+c
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                   subroutine read_defs_chk_comment           *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 3/27/2022                  *
+c     *                                                              *
+c     *     skip over comment lines in CP bulk data files            *                                                  *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine read_defs_chk_comment( fileno ) 
+      implicit none
+c
+      integer :: fileno
+      character(len=1) :: first_char
+      logical :: comment
+c
+      do
+        read(fileno,9000) first_char
+        comment = first_char == "c" .or. first_char == "C" 
+     &       .or. first_char == "!" .or. first_char == "#"
+        if( comment ) cycle
+        backspace fileno
+        return
+      end do
+c
+      return
+ 9000 format(a1)
+      end
+c
 c
 c     ****************************************************************
 c     *                                                              *
@@ -2325,7 +2374,7 @@ c     *                   subroutine cleanup_crystal                 *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 04/18/2012                 *
+c     *                   last modified : 3/27/2022 rhd              *
 c     *                                                              *
 c     *     Call at the end of everything to clean up allocatable    *
 c     *     arrays.                                                  *
@@ -2334,31 +2383,27 @@ c     ****************************************************************
 c
       subroutine cleanup_crystal
       use crystal_data, only : angle_input, crystal_input,
-     &            data_offset, simple_angles, mc_array
-      use global_data ! old common.main
-      implicit integer (a-z)
+     &            crystal_data_offset, simple_angles, mc_array
+      implicit none
 c
-      if (allocated(angle_input)) deallocate(angle_input)
-      if (allocated(crystal_input)) deallocate(crystal_input)
-      if (allocated(data_offset)) deallocate(data_offset)
-      if (allocated(simple_angles)) deallocate(simple_angles)
-      if (allocated(mc_array)) deallocate(mc_array)
-
+      if( allocated(angle_input) ) deallocate(angle_input)
+      if( allocated(crystal_input) ) deallocate(crystal_input)
+      if( allocated(crystal_data_offset) )
+     &    deallocate(crystal_data_offset)
+      if( allocated(simple_angles) ) deallocate(simple_angles)
+      if( allocated(mc_array) ) deallocate(mc_array)
+c
       call wmpi_dealloc_crystals
-
-      return
-
-      end subroutine
-
-
 c
+      return
+      end 
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine avg_cry_elast_props          *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 12/13/2018 rhd             *
+c     *                   last modified : 3/26/2022 rhd              *
 c     *                                                              *
 c     *      Set average elastic properties.  For elastic materials  *
 c     *           this will be exact, for anisotropic materials we   *
@@ -2367,152 +2412,102 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine avg_cry_elast_props
-      use crystal_data, only : crystal_input,
-     &            data_offset, c_array, defined_crystal
-      use main_data
-      use global_data !  old common.main
+c
+      use crystal_data, only :
+     &                  crystal_input, crystal_data_offset, 
+     &                  c_array, defined_crystal
+      use main_data, only : cp_elems_present, matprp, imatprp
+      use global_data, only : noelem, nummat, max_crystals, out, 
+     &                        props, iprops
+c
       implicit none
 c
-      integer :: i, j, k, ncrystals, cnum, osn, num, ecount
+      integer :: ncrystals, matnum, el, cnum, osn, ecount, el_matnum,
+     &           now_cry, kk 
       real :: e_avg, nu_avg
+      logical :: is_cp_model, crystals_from_file, bad_crystal, ok
 c
+c              stop if we don't have elements associated with
+c              a CP material. Should not be here !
 c
-c     Just skip if we don't have a crystal
+      if( .not. cp_elems_present ) then
+         write(out,9000)
+         call die_gracefully
+      end if 
 c
-      if (.not. defined_crystal) then
-            return
-      end if
+c              Run through all user-defined CP materials.
+c              For each, average their elastic constants.
+c              Replace existing values with average values
 c
-c     Run through our materials, find the CP materials, average their elastic
-c     constants
-      do i=1,nummat
-      if (matprp(9,i) .eq. 10) then
-        matprp(1,i) = 0.0
-        matprp(2,i) = 0.0
-        ecount = 0
-        do j = 1, noelem
-          if (iprops(38,j)  .eq. i) then
-            ecount = ecount + 1
-            e_avg = 0.0
-            nu_avg = 0.0
-            ncrystals = imatprp(101, i)
-            do k = 1, ncrystals
-c             Get the local crystal number
-              if (imatprp(104,i) .eq. 1) then
-                cnum = imatprp(105,i)
-              elseif (imatprp(104,i) .eq. 2) then
-                osn = data_offset(j)
-                cnum = crystal_input(osn,k)
-c               Couldn't do this earlier, so check here
-                if ((cnum .gt. max_crystals) .or. 
-     &                (cnum .lt. 0)) then
-                  write (out,'("Crystal ", i3, " not valid")')
-     &                 cnum
-                  call die_gracefully
-                 end if
-              else
-                write(out,9502) 
+      do matnum = 1, nummat
+       is_cp_model = matprp(9,matnum) == 10
+       if( .not. is_cp_model ) cycle
+       kk = imatprp(104,matnum)
+       ok = kk .eq. 1 .or. kk .eq. 2
+       if( .not. ok ) then 
+         write(out,9502) 
+         call die_gracefully
+       end if
+       crystals_from_file = kk .eq. 2 
+       matprp(1,matnum) = 0.0  ! modulus. matprp is single precision
+       matprp(2,matnum) = 0.0  ! Poisson's ratio
+       ecount = 0
+       do el = 1, noelem
+          el_matnum = iprops(38,el)
+          if( el_matnum .ne. matnum ) cycle
+          ecount = ecount + 1
+          e_avg  = 0.0
+          nu_avg = 0.0
+          ncrystals = imatprp(101,matnum)
+c
+          do now_cry = 1, ncrystals
+            if( .not. crystals_from_file ) then ! single crystal for matl
+              cnum = imatprp(105,matnum)
+            elseif( crystals_from_file ) then ! multiple crys for matl
+              osn  = crystal_data_offset(el)
+              cnum = crystal_input(osn,now_cry)
+              bad_crystal = cnum > max_crystals .or. cnum < 0
+              if( bad_crystal ) then
+                write (out,9005) cnum, matnum, el
                 call die_gracefully
               end if
-c              
-c             INSERT AVERAGING
-c   
-              e_avg = e_avg + SNGL(c_array(cnum)%e)
-              nu_avg = nu_avg + SNGL(c_array(cnum)%nu)
-            end do
-            e_avg = e_avg / real(ncrystals)
-            nu_avg = nu_avg / real(ncrystals)
-            props(7,j) = e_avg
-            props(8,j) = nu_avg
-            matprp(1,i) = matprp(1,i) + e_avg
-            matprp(2,i) = matprp(2,i) + nu_avg
-          end if
-        end do
-        matprp(1,i) = matprp(1,i) / real(ecount)
-        matprp(2,i) = matprp(2,i) / real(ecount)
-      end if
-      end do
-c
-c     I maintain this is not my fault, we now need to go fix the element props
-c
-      do i=1,noelem
-            if (iprops(25, i) .eq. 10) then
-                  num = iprops(38,i)
-                  props(7,i) = matprp(1,num)
-                  props(8,i) = matprp(2,num)
             end if
+            e_avg  = e_avg  + sngl( c_array(cnum)%e )
+            nu_avg = nu_avg + sngl( c_array(cnum)%nu )
+          end do ! over number of crystals
+c
+          e_avg  = e_avg  / real(ncrystals)
+          nu_avg = nu_avg / real(ncrystals)
+          props(7,el) = e_avg    ! not sure needed. overwritten below
+          props(8,el) = nu_avg   !  "      " 
+          matprp(1,matnum) = matprp(1,matnum) + e_avg
+          matprp(2,matnum) = matprp(2,matnum) + nu_avg
+        end do ! over elements
+        matprp(1,matnum) = matprp(1,matnum) / real(ecount)
+        matprp(2,matnum) = matprp(2,matnum) / real(ecount)
       end do
-
+c
+c              Not quite sure this is needed....
+c
+      do el = 1, noelem
+       is_cp_model = matprp(9,matnum) == 10
+       if( .not. is_cp_model ) cycle
+       matnum = iprops(38,el)
+       props(7,el) = matprp(1,matnum)
+       props(8,el) = matprp(2,matnum)
+      end do
+c
       return
-
+c
+ 9000 format(/1x,'>>>>> System error: routine avg_cry_elast_props',
+     &       /1x,'                    should not be here. ',
+     &       /1x,'                    job terminated.',//)
+ 9005 format(/1x,'>>>>> System error: invalid crystal number found.',
+     & /3x,'routine avg_cry_elast_props.',
+     & /3x,'cnum, material number, element number: ',i3,i3,i10,
+     & /3x,'Job terminated.'//)
  9502 format(/,1x,
      & '>>>> System error: unexpected input type in avg_elast_props!',
      &       ' Aborting.'/)
-
+c
       end subroutine 
-c
-c
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                      subroutine init_random_see              *
-c     *                                                              *
-c     *                       written by : mcm                       *
-c     *                                                              *
-c     *                   last modified : 3/24/14                    *
-c     *                                                              *
-c     *      Setup the random seed for number generation             *
-c     *      This function copied from the GNU documentation         *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine init_random_seed()
-#ifdef __INTEL_COMPILER
-      use ifport, only: getpid
-#endif
-      implicit none
-      integer, allocatable :: seed(:)
-      integer :: i, n, un, istat, dt(8), pid, t(2), s
-      integer(8) :: count, tms
-          
-      call random_seed(size = n)
-      allocate(seed(n))
-      ! First try if the OS provides a random number generator
-      open(newunit=un, file="/dev/urandom", access="stream", 
-     &   form="unformatted", action="read", status="old", iostat=istat)
-      if (istat == 0) then
-         read(un) seed
-         close(un)
-      else
-         ! Fallback to XOR:ing the current time and pid. The PID is
-         ! useful in case one launches multiple instances of the same
-         ! program in parallel.
-         call system_clock(count)
-         if (count /= 0) then
-            t = transfer(count, t)
-         else
-            call date_and_time(values=dt)
-            tms = (dt(1) - 1970) * 365_8 * 24 * 60 * 60 * 1000 
-     &           + dt(2) * 31_8 * 24 * 60 * 60 * 1000
-     &           + dt(3) * 24 * 60 * 60 * 60 * 1000
-     &           + dt(5) * 60 * 60 * 1000 
-     &           + dt(6) * 60 * 1000 + dt(7) * 1000
-     &           + dt(8)
-            t = transfer(tms, t)
-         end if
-         s = ieor(t(1), t(2))
-         pid = getpid() + 1099279 ! Add a prime
-         s = ieor(s, pid)
-         if (n >= 3) then
-            seed(1) = t(1) + 36269
-            seed(2) = t(2) + 72551
-            seed(3) = pid
-            if (n > 3) then
-               seed(4:) = s + 37 * (/ (i, i = 0, n - 4) /)
-            end if
-         else
-            seed = s + 37 * (/ (i, i = 0, n - 1 ) /)
-         end if
-      end if
-      call random_seed(put=seed)
-      end subroutine init_random_seed

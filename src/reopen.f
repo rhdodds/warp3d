@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 1/31/2022 rhd              *
+c     *                   last modified : 3/25/2022 rhd              *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -170,7 +170,8 @@ c
      &             divergence_check, diverge_check_strict,
      &             line_search, ls_details, initial_stresses_exist,
      &             initial_stresses_user_routine,
-     &             initial_state_option, initial_stresses_input
+     &              initial_state_option, initial_stresses_input,
+     &              cp_elems_present
       read(fileno) sparse_stiff_file_name, packet_file_name,
      &             initial_stresses_file
       call chk_data_key( fileno, 1, 1 )
@@ -2715,7 +2716,7 @@ c     *               subroutine read_alloc_cry                      *
 c     *                                                              *
 c     *                    written by : mcm                          *
 c     *                                                              *
-c     *                last modified : 12/23/2105 rhd                *
+c     *                last modified : 3/27/2022 rhd                 *
 c     *                                                              *
 c     *      Read the crystal data from file while allocating the    *
 c     *      appropriate structures.                                 *
@@ -2723,8 +2724,9 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine read_alloc_cry( fileno )
-      use global_data ! old common.main
-      use crystal_data, only: c_array,data_offset,angle_input,
+      use global_data 
+      use crystal_data, only:
+     &      c_array, crystal_data_offset,  angle_input,
      &      crystal_input, srequired, nangles, simple_angles,
      &      mc_array, defined_crystal
       implicit integer (a-z)
@@ -2739,8 +2741,8 @@ c
         read(fileno) c_array
         read(fileno) nelem
         read(fileno) mxcry
-        if( .not. allocated(data_offset) ) then
-            allocate( data_offset(noelem) )
+        if( .not. allocated(crystal_data_offset) ) then
+            allocate( crystal_data_offset(noelem) )
         end if
         if( .not. allocated(angle_input) ) then
             allocate( angle_input(nelem,mxcry,3) )
@@ -2748,12 +2750,12 @@ c
         if( .not. allocated(crystal_input) ) then
             allocate( crystal_input(nelem,mxcry) )
         end if
-        read(fileno) data_offset
+        read(fileno) crystal_data_offset
         read(fileno) angle_input
         read(fileno) crystal_input
       end if
 c
-      read(fileno) srequired
+      read(fileno) srequired  ! deprecated w/ deletion of interface model ?
 c
       if( srequired ) then
         read(fileno) nangles

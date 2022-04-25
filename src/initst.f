@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/15/2022 rhd              *
+c     *                   last modified : 3/25/2022 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -21,7 +21,6 @@ c
       use main_data, only : output_packets, packet_file_name,
      &                      packet_file_no, ascii_packet_file_name,
      &                      ascii_packet_file_no, temperatures_ref,
-     &                      cp_matls_present,
      &                      cohesive_ele_types, linear_displ_ele_types,
      &                      adjust_constants_ele_types,
      &                      axisymm_ele_types, umat_used,
@@ -163,9 +162,6 @@ c                       initialize strings with names of WARP3D
 c                       material models to use, for example in output
 c                       messages.
 c
-c                       cp_matls_present flag. -1 to init. = 0 if
-c                       checked and no cp matls in model. = 1 if
-c                       checked and cp matls present in model
 c
       lword= 32460
       rword= 1
@@ -191,8 +187,6 @@ c
       material_model_names(9)(1:) = "not_used"
       material_model_names(10)(1:) = "crystal_plasticity"
       material_model_names(11)(1:) = "interface_damage"
-c
-      cp_matls_present = -1
 c
 c
 c                       initialize table library object and its

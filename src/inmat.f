@@ -261,21 +261,12 @@ c                      106-- crystal offset (for list)
 c                      107-- orientation input (1=single, 2=file)
 c                      108-110-- psi, theta, phi (for single)
 c                      111-- orientation offset (for list)
-c                      112-- STRING crystal list (for offset/list)
-c                      113-- STRING orientation list (for offset/list)
+c                      112-- STRING filename orientation list (for offset/list)
+c                      113-- <avail> no longer used
 c
-c                      115-- macroscale material model number
-c                      116-118-- s vector
-c                      119-121-- l vector
-c                      122-125-- t vector
-c                      126-- l_s
-c                      127-- l_l
-c                      128-- l_t
-c                      129-- alpha_dmg
-c                      130-- nstacks (temp, should calculate from element sz)
-c                      131-- nfail ("")
-c                       132-- macro_sz
-c                       133-- cp_sz
+c                            115 - 133 no longer used by the deprecated
+c                            interface cp model
+c
 c
 c                      148-- link2 x-stiffness
 c                      149-- link2 y-stiffness
@@ -534,7 +525,6 @@ c
          if( matchs_exact( 'um_49') ) go to 1110
          if( matchs_exact( 'um_50') ) go to 1110
          if( matchs_exact('CP')     ) go to 2000
-         if( matchs_exact( 'interface_damage')) go to 2100
       if( matchs_exact('kx_stiff') ) go to 2200
       if( matchs_exact('ky_stiff') ) go to 2205
       if( matchs_exact('kz_stiff') ) go to 2210
@@ -1413,20 +1403,6 @@ c
       call inmat_cp( matnum  )
       go to 9998
 c
-c ***********************************************************************
-c *                                                                     *
-c *         properties for the interface damage model                   *
-c *                                                                     *
-c ***********************************************************************
-c
- 2100 continue
-      write(*,*) '... model not yet included in newest WARP3D'
-      call die_abort
-      matprp(9, matnum) = 11
-      call inmat_inter( matnum)
-      go to 9998
-
-c
 c **********************************************************************
 c *                                                                    *
 c *         link material stiffness, mass values                       *
@@ -1806,16 +1782,20 @@ c     *                      subroutine inmat_cp                     *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 3/21/12                    *
+c     *                   last modified : 3/24/22                    *
 c     *                                                              *
 c     *     input properties for the crystal plasticity model (#10)  *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine inmat_cp(matnum)
+      subroutine inmat_cp( matnum )
+c
       use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp
-      implicit integer (a-z)
+c
+      implicit none
+c
       integer, intent(in) :: matnum
+c
       integer :: dumi, nc
       real :: dumr
       double precision :: dumd
@@ -1827,13 +1807,12 @@ c
 c           See above for a detailed summary of each material option, in
 c           general, handle input for 6,7,9,13,22,25,100-113
 c
-c           Set defaults
       lmtprp(13,matnum)=.false.
       lmtprp(22,matnum)=.true.
       lmtprp(25,matnum)=.false.
-c           Read in properties
+c
       reading = .true.
-      do while (reading)
+      do while( reading )
             if ( matchs_exact('angle_convention')) then
                   if (.not. label(dumi)) then
                         call errmsg(356,dumi,dums,dumr,dumd)
@@ -1901,12 +1880,12 @@ c
                   else
                         call errmsg(361,dumi,lab(1:nc),dumr,dumd)
                   end if
-            elseif ( matchs_exact('crystal_type')) then
-                  if (.not. numi(imatprp(105,matnum))) then
+            elseif ( matchs_exact('crystal_type') ) then
+                  if (.not. numi(imatprp(105,matnum)) ) then
                         call errmsg(5,dumi,'crystal_type',dumr,dumd)
                   end if
-            elseif ( matchs_exact('orientation_input')) then
-                  if (.not. label(dumi)) then
+            elseif ( matchs_exact('orientation_input') ) then
+                  if (.not. label(dumi) ) then
                         call errmsg(360,dumi,dums,dumr,dumd)
                   else
                         lab = ' '
@@ -1926,7 +1905,7 @@ c
      &                       numd(dmatprp(110,matnum)))) then
                         call errmsg(362,dumi,dums,dumr,dumd)
                   end if
-            elseif ( matchs_exact('filename')) then
+            elseif ( matchs_exact('filename') ) then
                   call doscan()
                   if (.not. isstring()) then
                         call errmsg(363,dumi,dums,dumr,dumd)
@@ -1939,7 +1918,7 @@ c
                         call scan()
                         smatprp(112,matnum) = filen
                   end if
-            elseif ( matchs_exact('debug')) then
+            elseif ( matchs_exact('debug') ) then
                   if (.not. label(dumi)) then
                         call errmsg(364,dumi,dums,dumr,dumd)
                   else
@@ -1955,213 +1934,21 @@ c
                   end if
           elseif ( matchs_exact('killable') ) then
                   lmtprp(23,matnum) = .true.
-          elseif ( endcrd(dum) ) then
+          elseif ( endcrd(dumi) ) then
                   reading = .false.
                   cycle
-            elseif ( matchs(',',1) ) then
+          elseif ( matchs(',',1) ) then
                   call readsc()
-            else
+          else ! unrecognized property 
                   call entits(lab,nc)
                   call errmsg(355,dumi,lab(1:nc),dumr,dumd)
                   call scan()
                   cycle
                   end if
-            end do
-
+      end do ! big do while
+c
       return
       end subroutine
-
-c
-c     ****************************************************************
-c     *                                                              *
-c     *                      subroutine inmat_inter                  *
-c     *                                                              *
-c     *                       written by : mcm                       *
-c     *                                                              *
-c     *                   last modified : 3/10/14                    *
-c     *                                                              *
-c     *     input properties for the crystal interface damage model  *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine inmat_inter(matnum)
-      use global_data ! old common.main
-      use main_data, only : lmtprp, imatprp, dmatprp, smatprp
-      implicit integer (a-z)
-      integer, intent(in) :: matnum
-      integer :: dumi, nc
-      real :: dumr
-      double precision :: dumd
-      character :: dums, lab*24, filen*24, name*80, mname*24
-      logical :: reading, found
-      logical, external :: matchs_exact, isstring, label, numr, numd,
-     &                     matchs, numi, endcrd, scanms
-
-c           See above for a detailed summary of each material option, in
-c           general, handle input for 6,7,13,22,25,100,102,112,115-129
-c
-c           Set defaults
-      lmtprp(13,matnum)=.false.
-      lmtprp(22,matnum)=.true.
-      lmtprp(25,matnum)=.false.
-      imatprp(107,matnum) = 2
-      imatprp(101,matnum) = 50
-      mname(1:8) = 'nodefalt'
-c           Read in properties
-      reading = .true.
-      do while (reading)
-            if ( matchs_exact('angle_convention')) then
-                  if (.not. label(dumi)) then
-                        call errmsg(356,dumi,dums,dumr,dumd)
-                  else
-                        lab = ' '
-                        call entits(lab,nc)
-                  end if
-c
-                  if (lab(1:nc) .eq. 'kocks') then
-                        imatprp(102,matnum) = 1
-                  else
-                        call errmsg(357,dumi,lab(1:nc),dumr,dumd)
-                  end if
-            elseif ( matchs_exact('max_crystals')) then
-                  if (.not. numi(imatprp(101,matnum))) then
-                        call errmsg(5,dumi,'max_crystals',dumr,dumd)
-                  end if
-            elseif ( matchs_exact('tolerance')) then
-                  if (.not. numd(dmatprp(100,matnum))) then
-                        call errmsg(5,dumi,'tolerance',dumr,dumd)
-                  end if
-            elseif ( matchs_exact('angle_type')) then
-                  if (.not. label(dumi)) then
-                        call errmsg(358,dumi,dums,dumr,dumd)
-                  else
-                        lab = ' '
-                        call entits(lab,nc)
-                  end if
-c
-                  if (lab(1:nc) .eq. 'degrees') then
-                        imatprp(103,matnum) = 1
-                  elseif (lab(1:nc) .eq. 'radians') then
-                        imatprp(103,matnum) = 2
-                  else
-                        call errmsg(359,dumi,lab(1:nc),dumr,dumd)
-                  end if
-            elseif ( matchs_exact('crystal_type')) then
-                  if (.not. numi(imatprp(105,matnum))) then
-                        call errmsg(5,dumi,'crystal_type',dumr,dumd)
-                  end if
-            elseif ( matchs_exact('o_file')) then
-                  call doscan()
-                  if (.not. isstring()) then
-                        call errmsg(363,dumi,dums,dumr,dumd)
-                  else
-                        filen = ' '
-                        call entits(filen,nc)
-                        if (nc .gt. 24) then
-                              call errmsg(365,dumi,dums,dumr,dumd)
-                        end if
-                        call scan()
-                        smatprp(112,matnum) = filen
-                  end if
-            elseif ( matchs_exact('debug')) then
-                  if (.not. label(dumi)) then
-                        call errmsg(364,dumi,dums,dumr,dumd)
-                  else
-                        lab = ' '
-                        call entits(lab,nc)
-                        if (lab(1:nc) .eq. 'on') then
-                              lmtprp(13,matnum) = .true.
-                        elseif (lab(1:nc) .eq. 'off') then
-                              lmtprp(13,matnum) = .false.
-                        else
-                              call errmsg(364,dumi,dums,dumr,dumd)
-                        end if
-                  end if
-            elseif ( matchs_exact('macroscale')) then
-                  if (.not. label(dumi)) then
-                        call errmsg(364,dumi,dums,dumr,dumd)
-                  else
-                        name  = ' '
-                        mname = ' '
-                        call entits(name,nc)
-                        if( nc .gt. 24 ) nc = 24
-                        mname(1:nc) = name(1:nc)
-                        found = .false.
-                        matn = mathed/two16
- 5810                   if( matn .eq. 32460 ) go to 5820
-                         if( scanms(matnam(matn),mname,24) ) then
-                         imatprp(115, matnum) = matn
-                         found  = .true.
-                         go to 5820
-                        end if
-                        matn = matlst(matn)/two16
-                        go to 5810
- 5820                   if( .not. found ) then
-                          call errmsg(351,dum,dums,dumr,dumd)
-                          mname(1:8) = 'nodefalt'
-                        end if
-                  end if
-            elseif ( matchs_exact('s_v')) then
-                  if (.not. numd(dmatprp(116,matnum))) then
-                        call errmsg(5,dumi,'s_v(1)',dumr,dumd)
-                  end if
-                  if (.not. numd(dmatprp(117,matnum))) then
-                        call errmsg(5,dumi,'s_v(2)',dumr,dumd)
-                  end if
-                  if (.not. numd(dmatprp(118,matnum))) then
-                        call errmsg(5,dumi,'s_v(3)',dumr,dumd)
-                  end if
-            elseif ( matchs_exact('l_v')) then
-                  if (.not. numd(dmatprp(119,matnum))) then
-                        call errmsg(5,dumi,'l_v(1)',dumr,dumd)
-                  end if
-                  if (.not. numd(dmatprp(120,matnum))) then
-                        call errmsg(5,dumi,'l_v(2)',dumr,dumd)
-                  end if
-                  if (.not. numd(dmatprp(121,matnum))) then
-                        call errmsg(5,dumi,'l_v(3)',dumr,dumd)
-                  end if
-            elseif ( matchs_exact('t_v')) then
-                  if (.not. numd(dmatprp(122,matnum))) then
-                        call errmsg(5,dumi,'t_v(1)',dumr,dumd)
-                  end if
-                  if (.not. numd(dmatprp(123,matnum))) then
-                        call errmsg(5,dumi,'t_v(2)',dumr,dumd)
-                  end if
-                  if (.not. numd(dmatprp(124,matnum))) then
-                        call errmsg(5,dumi,'t_v(3)',dumr,dumd)
-                  end if
-            elseif ( matchs_exact('l_s')) then
-                  if (.not. numd(dmatprp(126,matnum))) then
-                        call errmsg(5,dumi,'l_s',dumr,dumd)
-                  end if
-            elseif ( matchs_exact('l_l')) then
-                  if (.not. numd(dmatprp(127,matnum))) then
-                        call errmsg(5,dumi,'l_l',dumr,dumd)
-                  end if
-            elseif ( matchs_exact('l_t')) then
-                  if (.not. numd(dmatprp(128,matnum))) then
-                        call errmsg(5,dumi,'l_t',dumr,dumd)
-                  end if
-            elseif ( matchs_exact('alpha_dmg')) then
-                  if (.not. numd(dmatprp(129,matnum))) then
-                        call errmsg(5,dumi,'alpha_dmg',dumr,dumd)
-                  end if
-            elseif ( endcrd(dum) ) then
-                  reading = .false.
-                  cycle
-            elseif ( matchs(',',1) ) then
-                  call readsc()
-            else
-                  call entits(lab,nc)
-                  call errmsg(355,dumi,lab(1:nc),dumr,dumd)
-                  call scan()
-                  cycle
-                  end if
-            end do
-      return
-      end subroutine
-
 c
 c     ****************************************************************
 c     *                                                              *
@@ -2169,7 +1956,7 @@ c     *                      subroutine inmat_cyclic                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/22/2020                  *
+c     *                   last modified : 3/24/2022                  *
 c     *                                                              *
 c     *     input properties for the cyclic plasticty model (#5)     *
 c     *                                                              *

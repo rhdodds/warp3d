@@ -4601,11 +4601,11 @@ c
 
 c     ****************************************************************
 c     *                                                              *
-c     *   ==> no longer called:  subroutine drive_10_update_b                 *
+c     *   ==> no longer called:  subroutine drive_10_update_b        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/9/2016 rhd               *
+c     *                   last modified : 3/27/2022 rhd              *
 c     *                                                              *
 c     *     support routine for mm10 material driver.                *
 c     *     should be inlined                                        *
@@ -4614,7 +4614,7 @@ c     ****************************************************************
 
       subroutine drive_10_update_b
       use crystal_data, only : c_array, angle_input, crystal_input,
-     &                         data_offset
+     &                         crystal_data_offset
       implicit none
 c
       integer :: i, elnum, ci, osn, cnum, ati, aci, tc
@@ -4637,7 +4637,7 @@ c
             if( imatprp(104,matnum) .eq. 1 ) then
                   cnum = imatprp(105,matnum)
             elseif( imatprp(104,matnum) .eq. 2 ) then
-                  osn = data_offset(elnum)
+                  osn = crystal_data_offset(elnum)
                   cnum = crystal_input(osn,ci)
                   if( (cnum .gt. max_crystals) .or.
      &                  (cnum .lt. 0) ) then
@@ -4655,7 +4655,7 @@ c
                   angles(2) = dmatprp(109,matnum)
                   angles(3) = dmatprp(110,matnum)
             elseif( imatprp(107,matnum) .eq. 2 ) then
-                  osn = data_offset(elnum)
+                  osn = crystal_data_offset(elnum)
                   angles(1:3) = angle_input(osn,ci,1:3)
             else
                   write(iout,9502)

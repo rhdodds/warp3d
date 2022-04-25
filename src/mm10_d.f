@@ -27,7 +27,7 @@ c
      & num_common_indexes, num_crystal_terms, length_crys_hist,
      & one_crystal_hist_size, common_hist_size, length_comm_hist
       use crystal_data, only : c_array, crystal_input,
-     &            data_offset
+     &                         crystal_data_offset
       use global_data  ! old common.main
       use main_data
       implicit none
@@ -94,7 +94,7 @@ c
               if( imatprp(104,i) == 1) then ! crystal number
                 cnum = imatprp(105,i)
               elseif( imatprp(104,i) == 2 ) then
-                osn  = data_offset(j)
+                osn  = crystal_data_offset(j)
                 cnum = crystal_input(osn,k)
 c                  couldn't do this earlier, so check here
                 if( (cnum > max_crystals) .or. (cnum < 0) ) then
