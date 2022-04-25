@@ -4,7 +4,7 @@ c     *                      Main program for WARP3D                 *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/15/2022 rhd              *
+c     *                   last modified : 3/25/2022 rhd              *
 c     *                                                              *
 c     *                      main program for WARP3D                 *
 c     *                                                              *
@@ -16,7 +16,7 @@ c
       use global_data !  replacement for common.main
       use file_info
       use main_data, only : output_packets, windows_os, osx_os,
-     &                      linux_os
+     &                      linux_os, cp_elems_present
       use performance_data
       use erflgs
       implicit none
@@ -30,9 +30,10 @@ c
       character(len=30) :: char_os
       character(len=11) :: compile_date
       character(len=8) :: compile_time
-      logical :: hilcmd, sbflg1, sbflg2, os_ok
-      logical :: endcrd, label, matchs, debug1, debug2, debug, endfil,
-     &           string, matchs_exact
+      logical :: hilcmd, sbflg1, sbflg2, os_ok, cp_found, debug1,
+     &           debug2, debug
+      logical, external :: endcrd, label, matchs, endfil,  string,
+     &                     matchs_exact
       double precision :: dumd
 c
 c                       MPI: initialize all processors
@@ -825,20 +826,29 @@ c                       element blocking command. the particulars of
 c                       the element blocking data structures are
 c                       input here.
 c
+c                       after blocking input, much of the bulk data for
+c                       mesh has been input.
+c 
+c                       process crystal plasticity data at this point if
+c                       defined. this needs to be done before solution for
+c                       step 1 and is not a user-requested action.
+c
  1800 continue
-      if(.not.numel) then
-         param= 2
+      if( .not. numel ) then ! elements have/have not been defined
+         param = 2
          call errmsg(11,param,dums,dumr,dumd)
          go to 10
-      else if(block) then
+      else if( block ) then ! blocking already defined
          call errmsg(154,idummy,dums,dumr,dumd)
          go to 10
       else
-         call inelbk(sbflg1,sbflg2)
-c                       Set up the crystal element properties as well
-         call read_crystal_data
-         call read_simple_angles
-         call avg_cry_elast_props
+         call inelbk( sbflg1, sbflg2 ) ! parse blocking command
+c
+         call crystal_chk_presence() ! set global cp_elems_present
+         if( cp_elems_present ) then
+           call read_crystal_data
+           call avg_cry_elast_props
+         end if
          go to 20
       end if
 c
