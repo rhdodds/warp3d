@@ -1273,7 +1273,7 @@ c     *                      subroutine wmpi_send_analysis           *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 6/29/20198 rhd             *
+c     *                   last modified : 3/25/2022 rhd              *
 c     *                                                              *
 c     *       send data from anaylsis parameters to all the MPI      *
 c     *       processors                                             *
@@ -1282,7 +1282,7 @@ c     ****************************************************************
 c
       subroutine wmpi_send_analysis
       use global_data ! old common.main
-      use main_data,only : umat_serial, cp_matls_present,
+      use main_data,only : umat_serial, cp_elems_present,
      &                     cp_unloading, creep_model_used,
      &                     initial_state_option, initial_state_step
       implicit none
@@ -1316,7 +1316,7 @@ c
      &                ierr )
       call MPI_BCAST( umat_serial, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD,
      &                ierr )
-      call MPI_BCAST( cp_matls_present, 1, MPI_INTEGER, 0,
+      call MPI_BCAST( cp_elems_present, 1, MPI_LOGICAL, 0,
      &                MPI_COMM_WORLD, ierr )
       call MPI_BCAST( cp_unloading, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD,
      &                ierr )
@@ -4263,7 +4263,7 @@ c     *                      subroutine wmpi_send_crystals           *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 5/12/2017 rhd              *
+c     *                   last modified : 3/27/2022 rhd              *
 c     *                                                              *
 c     *           Send all the crystal properties to the workers     *
 c     *                                                              *
@@ -4272,7 +4272,8 @@ c
       subroutine wmpi_send_crystals
       use global_data ! old common.main
       use crystal_data, only: c_array, angle_input,
-     &                        crystal_input, data_offset, print_crystal
+     &                        crystal_input, crystal_data_offset,
+     &                        print_crystal
       implicit none
       include 'mpif.h'
       integer, parameter :: count_struct=9
@@ -4296,14 +4297,14 @@ c
       if( nelem > 0 ) then
 c
         if( worker_processor ) then
-          if( .not. allocated(data_offset) )
+          if( .not. allocated(crystal_data_offset) )
      &          allocate( data_offset(noelem) )
           if( .not. allocated(angle_input) )
      &          allocate( angle_input(nelem,mxcry,3) )
           if( .not. allocated(crystal_input) )
      &          allocate( crystal_input(nelem,mxcry) )
         end if
-        call MPI_Bcast( data_offset, noelem, MPI_INTEGER, 0,
+        call MPI_Bcast( crystal_data_offset, noelem, MPI_INTEGER, 0,
      &                  MPI_COMM_WORLD, ierr )
         call MPI_Bcast( angle_input, nelem*mxcry*3,
      &                  MPI_DOUBLE_PRECISION, 0,
@@ -4402,7 +4403,7 @@ c     *               subroutine wmpi_dealloc_crystals               *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 4/26/2017 rhd              *
+c     *                   last modified : 3/27/2022 rhd              *
 c     *                                                              *
 c     *                Dealloc crystal data structures               *
 c     *                                                              *
@@ -4411,7 +4412,8 @@ c
       subroutine wmpi_dealloc_crystals
       use global_data ! old common.main
       use crystal_data, only: c_array, angle_input, crystal_input,
-     &                        data_offset, mc_array, simple_angles
+     &                        crystal_data_offset, mc_array,
+     &                        simple_angles
       implicit none
       include 'mpif.h'
 c
@@ -4420,7 +4422,8 @@ c
       else
          if( allocated(angle_input) )   deallocate( angle_input )
          if( allocated(crystal_input) ) deallocate( crystal_input )
-         if( allocated(data_offset) )   deallocate( data_offset )
+         if( allocated(crystal_data_offset) ) 
+     &             deallocate( crystal_data_offset )
          if( allocated(simple_angles) ) deallocate( simple_angles )
          if( allocated(mc_array) )      deallocate( mc_array )
       end if
