@@ -4298,7 +4298,7 @@ c
 c
         if( worker_processor ) then
           if( .not. allocated(crystal_data_offset) )
-     &          allocate( data_offset(noelem) )
+     &          allocate( crystal_data_offset(noelem) )
           if( .not. allocated(angle_input) )
      &          allocate( angle_input(nelem,mxcry,3) )
           if( .not. allocated(crystal_input) )
