@@ -4,7 +4,7 @@ c     *              f-90 module segmental_curves                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                    last modified : 12/13/2018 rhd            *          
+c     *                    last modified : 5/9/2022 rhd              *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     segmental stress-strain curves                           *          
@@ -17,7 +17,7 @@ c
       implicit none                                                 
 c                                                                               
       integer, parameter :: max_seg_curve_sets=10
-      integer, parameter :: max_seg_points=20
+      integer, parameter :: max_seg_points=200
       integer, parameter :: max_seg_curves=20
 
 c          This module has two sets of variables. The first                     
