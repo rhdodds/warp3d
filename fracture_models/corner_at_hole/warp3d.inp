@@ -1,0 +1,124 @@
+c  
+c  flat panel containing a circular hole. corner crack
+c  on one side of hole. model is 1/2 symmetric.
+c  remote tensile loading.
+c
+c  small strain analysis. 20-node brick elements collapsed at
+c  crack front with mid-side nodes. crack tip nodes
+c  allowed to "open" during deformation.
+c
+c  nonlinear, deformation plasticity model.
+c
+c  setup to run for 15 load steps.
+c
+c  get J at each point along crack front for each load step
+c 
+c  the J cutoff capability is employed to end (normally)
+c  the solution when the ratio of J_{total}{ / J_{elastic}
+c  exceeds 5 at any crack-front position.
+c
+c
+c  plate thickness:  1.5 in.
+c  hole radius:      1.0 in.
+c  circular corner
+c  crack (a=c):     0.5 in.
+c
+ structure plate
+c
+ number of nodes 34852 elements 7344
+c
+ material steel
+  properties  deformation  e  30000 nu 0.3  yld_pt 60  n_power 10
+c
+ elements
+    all type q3disop linear material steel,
+       order 2x2x2 nodpts short
+c
+*input from './coords.inp'
+*input from './incid.inp'
+*input from './constraints.inp'     
+*input from './unit_load.inp'
+c
+ blocking automatic
+c 
+ loading tension
+  nonlinear
+   step 1-11 unit_remote 5.0
+   step 12-20 unit_remote 2.0  $ near limit load
+c
+ nonlinear analysis parameters
+  solution technique sparse iterative $ faster that direct solver
+  time step  1.0e10	   $ use large time step for static analysis
+  maximum iterations 5
+  minimum iterations 2
+  extrapolate on
+  nonconvergent solutions stop
+  convergence test norm res tol 0.02 $ maximum residual tol 0.5
+  trace solution on
+  adaptive solution on
+  line search on
+  divergence check on
+  batch messages off
+  bbar stabilization factor 0.0
+  J cutoff on ratio 5 e 30000 nu 0.3 restart  $   J cutoff feature
+c
+  compute displacements for loading tension step 1
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 2
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 3
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 4
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 5
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 6
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 7
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 8
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 9
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 10
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 11
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 12
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 13
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 14
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 15
+  *input from  './get_j_values'
+c
+ stop

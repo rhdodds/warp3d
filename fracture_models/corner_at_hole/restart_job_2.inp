@@ -1,0 +1,16 @@
+c
+ restart from 'after_step_12.db'
+c
+c 
+  compute displacements for loading tension step 13
+  *input get_j_values
+c
+c 
+  compute displacements for loading tension step 14
+  *input get_j_values
+c
+c 
+  compute displacements for loading tension step 15
+  *input get_j_values
+c
+ stop
