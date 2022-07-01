@@ -253,7 +253,7 @@ c     *                 subroutine stpdrv_one_step                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/31/2022 rhd              *
+c     *                   last modified : 6/27/2022 rhd              *
 c     *                                                              *
 c     *            oversee setting up solution for one step          *
 c     *                                                              *
@@ -261,12 +261,34 @@ c     ****************************************************************
 c
 c
       subroutine stpdrv_one_step( now_step, stpdrv_error  )
+c
+      use j_data, only : J_cutoff_active, J_cutoff_exceeded,
+     &                   J_cutoff_restart_file, J_count_exceeded,
+     &                   J_cutoff_num_frnt_positions
+c
       implicit none
 c
       integer :: now_step
       logical :: stpdrv_error, ldummy1, ldummy2 
 c
       integer :: i
+c
+c          check for triggers set by computations in previous
+c          step that require end of processing.
+c
+      if( J_cutoff_active ) then
+        if( J_cutoff_exceeded ) then
+          write(out,9200) J_count_exceeded,
+     &                   J_cutoff_num_frnt_positions
+          if( J_cutoff_restart_file ) then
+            write(out,9210)
+            call store( ' ','J_ratio_limit_exceeded.db', 
+     &                 ldummy1, ldummy2 )
+          end if
+          write(out,9220)
+          call warp3d_normal_stop
+        end if
+      end if
 c
       stpdrv_error = .false.
 c
@@ -363,7 +385,7 @@ c
       current_load_time_step = now_step
       call mnralg( mf, mf_nm1, mf_ratio_change, now_step, ldnum )
 c
-c          if global load step size was reduced via  reduction
+c          if global load step size was reduced via reduction
 c          checks, then change it back to the original size.
 c
       call original_step_size( mf, mf_nm1, now_step )
@@ -378,6 +400,12 @@ c
 9121  format(/1x,'>>>>> FATAL ERROR: the load step to be solved: ',i7,
      &       /1x,'                   is not defined for loading: ',a8,
      &       /1x,'                   job terminated....')
+9200  format(//,'>>>>> User-specified limit on J/J_elastic has been',
+     & /,       '      exceeded at: ',i3, ' of: ',i3,
+     & ' crack front positions')
+9210  format(/, '      Writing restart file: ',
+     &        ' J_ratio_limit_exceeded.db' )
+9220  format(//, '>>>> Job terminated normally...',//)
 
 c
       end subroutine stpdrv_one_step
