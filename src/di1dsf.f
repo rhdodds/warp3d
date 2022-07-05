@@ -1407,17 +1407,16 @@ c
       end subroutine di_extrap_to_nodes_lag
 c
       end subroutine di_extrap_to_nodes
-c
 c****************************************************************
 c                                                               *
 c      subroutine to write j and i-integral data to             *
 c      standard output                                          *
 c                    written by: mcw                            *
-c                 last modified: 7/9/2020 rhd                   *
+c                 last modified: 6/26/2022 rhd                  *
 c                                                               *
 c****************************************************************
 c
-      subroutine di_write_std_out( ltmstp, stname, lsldnm, out )
+      subroutine di_write_std_out( now_step, stname, lsldnm, out )
 c
       use j_data, only : ring_count, comput_j, comput_i,
      a    output_packet_j, domain_id, output_packet_i,
@@ -1425,13 +1424,21 @@ c
      c    domain_max_j, i_storage, domain_avg_i, domain_avg_j,
      d    domain_max_i, domain_min_i, static_j, static_avg, static_max,
      e    face_loading, symmetric_domain, out_pstrain, out_pstress,
-     f    rings_given, j_to_k, static_min, process_temperatures
+     f    rings_given, j_to_k, static_min, process_temperatures,
+     g    J_cutoff_active, J_cutoff_exceeded, 
+     h    J_cutoff_num_frnt_positions, J_cutoff_step_1_num_patterns,
+     i    J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
+     j    J_cutoff_Je_step_1, J_count_exceeded,
+     k    J_cutoff_step_1_constraint_factor,
+     l    J_load_ratio_this_step, J_cutoff_now_frnt_position,
+     m    J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio  
+      use constants
 c
-      implicit none
+      implicit none 
 c
 c             parameters
 c
-      integer :: ltmstp, out
+      integer :: now_step, out
       character(len=8) :: stname, lsldnm
 c
 c             local variables
@@ -1470,6 +1477,8 @@ c
          write(out,9030)
          if ( symmetric_domain ) write(out,9035)
          if ( rings_given ) write(out,9040)
+c
+         if( J_cutoff_active ) call di_process_J_cutoff
 c
 c             print stress intensity factors calculated from J assuming
 c             either pure mode-I, pure mode-II, or pure mode-III loading.
@@ -1806,7 +1815,72 @@ c     &       ' do not include crack-face loading effects.')
      &       /,1x,'* ( ): number of killed elements skipped' )
  9130 format(/,1x,'* note: I-values doubled for symmetry *')
 c
-      end
+      contains
+c     ========
+c
+      subroutine di_process_J_cutoff
+      implicit none
+c
+      double precision :: J_now, J_e_step_1, ymod, nu, KI_step_1,
+     &                    KI_now, J_e_now, J_ratio 
+      logical, parameter :: local_output = .true.
+      logical, parameter :: local_debug = .false.
+c
+      if( local_debug ) write(out,*) 
+     &    "... entered di_process_J_cutoff ..."
+
+      if( now_step == 1 ) J_cutoff_num_frnt_positions =
+     &                    J_cutoff_num_frnt_positions + 1
+      J_cutoff_now_frnt_position = J_cutoff_now_frnt_position + 1
+      if( J_cutoff_now_frnt_position == 1 ) then
+         J_count_exceeded = 0
+         J_cutoff_frnt_pos_max_ratio = 0
+         J_cutoff_max_value = minus_one
+      end if
+      if( ring_count == 1 ) then
+         J_now = j_storage(1,10)
+      else
+         J_now = domain_avg_j / rg_count
+         if( .not. static_j ) J_now = static_avg / rg_count
+      end if
+      if( now_step == 1 ) then
+        J_cutoff_Je_step_1(J_cutoff_now_frnt_position) = J_now
+        return
+      end if
+c
+      J_e_step_1 = J_cutoff_Je_step_1(J_cutoff_now_frnt_position)
+      ymod = J_cutoff_e
+      nu = J_cutoff_nu
+      KI_step_1 = sqrt( J_e_step_1 * ymod / (one - nu**2 ) )
+      KI_now = KI_step_1 * J_load_ratio_this_step
+      J_e_now = KI_now**2 * (one - nu**2 ) / ymod
+      J_ratio = J_now / J_e_now
+      if( J_ratio >= J_cutoff_max_value ) then
+           J_cutoff_max_value = J_ratio
+           J_cutoff_frnt_pos_max_ratio = J_cutoff_now_frnt_position
+      end if
+      if( J_ratio >= J_cutoff_ratio ) then
+         J_cutoff_exceeded = .true.
+         J_count_exceeded = J_count_exceeded + 1
+      end if
+      if( local_debug ) write(out,9000) J_load_ratio_this_step,
+     &      J_e_step_1, KI_step_1, KI_now, J_e_now, J_ratio
+      if( local_output ) write(out,9010) J_cutoff_now_frnt_position,
+     &  J_ratio
+c
+      return
+c
+ 9000 format(3x,'proportional load ratio this step: ', f10.5,
+     &  /,   3x,'step 1 elastic J: ',e14.6,
+     &  /,   3x,'KI for step 1: ',e14.6,
+     &  /,   3x,'KI_now: ',e14.6,
+     &  /,   3x,'now step elastic J: ',e14.6,
+     &  /,   3x,'current J_total / J_elastic: ',f6.2)
+ 9010 format(' ** info: @ front position: ',i3,' J ratio: ',
+     & f5.2 )
+c
+      end subroutine di_process_J_cutoff
+      end subroutine di_write_std_out
 c
 c
 c****************************************************************
