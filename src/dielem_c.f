@@ -109,7 +109,7 @@ c             to local crack coordinates
 c
       if ( ldebug ) write(out,140)
       call dielwf( feload, etype, nnode, faceno, out, debug,
-     &             flag, snodes, nfnode, fnodes, sfnodes )
+     &             flag, snodes, nfnode, fnodes, sfnodes, elemno )
       if ( flag .eq. 1 .or. faceno .eq. 0 ) return
       face_loading = .true.
       if ( ldebug ) write(out,150) faceno, (fnodes(j),j=1,nfnode)
@@ -156,13 +156,13 @@ c *                                                                 *
 c *******************************************************************
 c
       subroutine dielwf( eqload, etype, nnode, faceno, iout, debug,
-     &                   flag, snodes, nfnode, fnodes, sfnodes )
+     &                 flag, snodes, nfnode, fnodes, sfnodes, elemno )
       implicit none
 c
 c             parameters
 c
       integer :: etype, faceno, flag, snodes(*), nfnode, fnodes(*),
-     &           sfnodes(*), nnode, iout
+     &           sfnodes(*), nnode, iout, elemno
       double precision :: eqload(3,*)
       logical :: debug
 c
@@ -170,7 +170,7 @@ c             locals
 c
       integer :: fnode, enode, face, counter, i, j, numfac, ierr
       double precision, parameter :: toler=1.0d-10
-      logical :: ldface(6)
+      logical :: ldface(6), force_on_all_nodes, collapsed, skip
 c
 c             by examining the non-zero entries in the equivalent
 c             loads for the element, determine which face has an
@@ -184,29 +184,32 @@ c             check first for loads on all element nodes indicating
 c             a body force type loading.  skip face loads
 c             processing if we have this case.
 c
+      faceno = 0
       flag = 0
+      force_on_all_nodes = .true.
+c
       do enode = 1, nnode
-          if ( (abs(eqload(1,enode)) + abs(eqload(2,enode)) +
-     &          abs(eqload(3,enode))) .le. toler ) go to 80
-      end do
-      flag = 1
-      return
+          if( (abs(eqload(1,enode)) + abs(eqload(2,enode)) +
+     &          abs(eqload(3,enode))) > toler ) cycle
+          force_on_all_nodes = .false.
+          exit
+      end do ! enode
 c
-c             at least one node has no loading applied.
-c             for a face to be considered loaded with a surface
-c             traction, every node on the face must have a non-zero
-c             component of equivalent nodal load.
+      if( force_on_all_nodes ) then
+           flag = 1   ! no face loadings to check further
+           return
+      end if
 c
- 80   continue
-      numfac = 6
-      do 100 face = 1, numfac
+      numfac = 6 ! hex elements
+c
+      do face = 1, numfac
         ldface(face) = .false.
-        call eqelfn( fnodes, etype, face, nfnode )
+        call eqelfn( fnodes, etype, face, nfnode ) ! local nodes on face
 c
 c             obtain the structure node numbers for the face being
 c             considered.
 c
-        do i= 1, nfnode
+        do i = 1, nfnode
            fnode      = fnodes(i)
            sfnodes(i) = snodes(fnode)
         end do
@@ -214,26 +217,40 @@ c
         if( debug ) write(iout, 9500) (sfnodes(i),i=1,nfnode)
 c
 c             if any nodes on the face are repeated, consider it a
-c             collapsed face and cycle the "do 100" loop.
+c             collapsed face and exit out for this face -- not loaded face
 c
+        collapsed = .false.
         do i = 1, nfnode
            counter = i
-           do 90 j = 1, nfnode
-              if( j .eq. counter) go to 90
-              if( sfnodes(i) .eq. sfnodes(j)) go to 100
- 90        continue
+           do j = 1, nfnode
+              if( j .eq. counter) cycle
+              if( sfnodes(i) .eq. sfnodes(j) ) then
+                collapsed = .true.
+                exit
+              end if
+           end do
+           if( collapsed ) exit
         end do
+        if( collapsed ) cycle ! not a loaded face
 c
-c             if any node has a load smaller than toler, consider the
-c             face traction-free and cycle do loop.
+c             not a collapsed face. if any node has a load 
+c             smaller than toler, consider the
+c             face to be traction-free, process next face
 c
+        skip = .false.
         do i = 1, nfnode
           fnode = fnodes(i)
-          if ( (abs(eqload(1,fnode)) + abs(eqload(2,fnode)) +
-     &          abs(eqload(3,fnode))) .le. toler ) go to 100
+          if( (abs(eqload(1,fnode)) + abs(eqload(2,fnode)) +
+     &          abs(eqload(3,fnode))) .le. toler ) then
+           skip = .true.  ! traction free
+           exit
+          end if
         end do
+        if( skip ) cycle ! next face
         ldface(face) = .true.
- 100  continue
+c
+      end do ! ldface(i) = true if face to be treated as loaded
+
 c
       if ( debug ) write(iout,9010) (ldface(i),i=1,numfac)
 c
@@ -243,25 +260,22 @@ c             face.
 c
       faceno = 0
       do face = 1, numfac
-         if ( ldface(face) ) then
-            if ( faceno .gt. 0 ) then
-               call dieler( iout, ierr, 7 )
-               return
-            else
-               faceno = face
-               call eqelfn( fnodes, etype, faceno, nfnode )
-c
-c             obtain the structure node numbers for the loaded face.
-c
-               do i= 1, nfnode
-                  fnode      = fnodes(i)
-                  sfnodes(i) = snodes(fnode)
-               end do
-            end if
+         if( .not. ldface(face) ) cycle
+         if( faceno .gt. 0 ) then
+           write(iout,9100) elemno, faceno, face
+           faceno = 0
+           return
+         else
+           faceno = face
+           call eqelfn( fnodes, etype, faceno, nfnode )
+           do i = 1, nfnode
+              fnode      = fnodes(i)
+              sfnodes(i) = snodes(fnode)
+           end do
          end if
       end do
 c
-      if ( debug ) then
+      if( debug ) then
          write(iout,9030) faceno
          do i=1,nfnode
             write(iout,9040) fnodes(i), sfnodes(i)
@@ -272,10 +286,13 @@ c
 c
  9000 format( ' >>> entered find loaded face' )
  9010 format( //,'  >> loaded face flags: ',6l1 )
- 9020 format( ' >>>>> more than one element face has applied surface',
-     & /,     '       traction. lowest numbered face processed' )
  9030 format( '  >> loaded face number: ',i4,// )
  9040 format(' node, structure node: ',i4,2x,i8 )
+ 9100 format(/1x,
+     &'>>>>> warning: element: ',i8,' has 2 loaded faces: ',2i2,
+     &' WARP3D cannot determine which should be ',/,1x,
+     &'               included for J crack-face-traction ',
+     & 'computation - both loadings neglected for J')             
  9500 format(//,'snodes for face:',8(2x,i5))
       end
 c

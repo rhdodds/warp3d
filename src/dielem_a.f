@@ -1222,7 +1222,7 @@ c
       ierr = 0
 c
       case( 7 )
-      write(iout,1007)
+c      available
       ierr = 0
 c
       case( 8 )
@@ -1234,9 +1234,6 @@ c
  1001 format(' >>>>> integration order invalid for brick element' )
  1005 format(' >>>>> domain integration: the determinant of the',
      &/,     '       coordinate jacobian is not positive' )
- 1007 format(' >>>>> equivalent loads detected on more than one',
-     &/,     '       element face. only the lowest numbered face with',
-     &/,     '       loads will be processed in edi computations')
       end
 c *******************************************************************
 c *                                                                 *
