@@ -265,7 +265,7 @@ c
       use j_data, only : J_cutoff_active, J_cutoff_exceeded,
      &                   J_cutoff_restart_file, J_count_exceeded,
      &                   J_cutoff_num_frnt_positions,
-     &                   J_cutoff_max_value, 
+     &                   J_cutoff_max_value, J_cutoff_ratio, 
      &                   J_cutoff_frnt_pos_max_ratio 
 c
       implicit none
@@ -277,12 +277,15 @@ c
 c
 c          check for triggers set by computations in previous
 c          step that require end of processing.
+c          now_step is # of upcoming load step to compute
 c
       if( J_cutoff_active ) then
-        if( J_cutoff_exceeded ) then
-          write(out,9200) J_count_exceeded,
+         if( now_step > 2 )
+     &   write(out,9200) now_step-1, J_cutoff_ratio, J_count_exceeded,
      &                J_cutoff_num_frnt_positions,
      &                J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio
+        if( J_cutoff_exceeded ) then
+          write(out,9205) 
           if( J_cutoff_restart_file ) then
             write(out,9210)
             call store( ' ','J_ratio_limit_exceeded.db', 
@@ -396,17 +399,19 @@ c
 c          possibly update/output wall time info
 c
       call steptime( now_step, 3 )
-
 c
       return
 c
 9121  format(/1x,'>>>>> FATAL ERROR: the load step to be solved: ',i7,
      &       /1x,'                   is not defined for loading: ',a8,
      &       /1x,'                   job terminated....')
-9200  format(//,'>>>>> User-specified limit on J/J_elastic has been',
-     & /,       '      exceeded at: ',i3, ' of: ',i3,
-     & ' crack front positions',
-     & /,       '      max J-ratio: ',f6.2,' at front position: ',i4 )
+9200  format(//,'>>>>> Summary for J-cutoff after step: ',i6,
+     & /,'               user limit: ',f5.1,
+     &   ' exceeded at: ',i3, ' of: ',i3, ' crack front positions',
+     & /,'               max J-ratio: ',f6.2,
+     & ' at front position: ',i4 )
+9205  format(//,'>>>>> User-specified limit on J/J_elastic ',
+     &    ' exceeded ...' )
 9210  format(/, '      Writing restart file: ',
      &        ' J_ratio_limit_exceeded.db' )
 9220  format(//, '>>>> Job terminated normally...',//)
