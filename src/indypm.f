@@ -1,11 +1,10 @@
-
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/3/2019 rhd              *
+c     *                   last modified : 7/7/22 rhd                 *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -33,6 +32,10 @@ c
       use distributed_stiffness_data, only : parallel_assembly_allowed,
      &                                       initial_map_type,
      &                                       final_map_type
+      use j_data, only :  J_cutoff_active, J_cutoff_restart_file,
+     &                    J_cutoff_ratio, J_cutoff_e, J_cutoff_nu
+      use constants
+
 c
       implicit none
 c
@@ -42,7 +45,6 @@ c
      &           errnum, trctyp, ncerror
       real :: dumr
       double precision ::  dnum, dumd
-      double precision, parameter :: zero = 0.0d00
       logical :: lstflg, msg_flag, local_direct_flag,
      &           local_direct
       logical, external :: matchs, integr, endcrd, true, numd, numr,
@@ -100,6 +102,7 @@ c
       if( matchs('divergence',5)    ) go to 3400
       if( matchs_exact('line')      ) go to 3500 ! line search
       if( matchs_exact('initial')   ) go to 3600 ! state
+      if( matchs_exact('J')         ) go to 3700 ! J cutoff 
 c
 c                       no match with solutions parameters command.
 c                       return to driver subroutine to look for high
@@ -1270,9 +1273,9 @@ c
       line_search    =  .true.
       ls_details     =  .false.
       ls_min_step_length = 0.01d00
-      ls_max_step_length = 1.0d00
+      ls_max_step_length = one
       ls_rho         = 0.7d00
-      ls_slack_tol   = 0.5d00
+      ls_slack_tol   = half
 c
       if( matchs('search',5) ) call splunj
       if( matchs_exact('on') ) line_search = .true.
@@ -1372,6 +1375,92 @@ c
         go to 10
       end if
 c
+c **********************************************************************
+c *                                                                    *
+c *                     J cutoff option                                *
+c *                                                                    *
+c **********************************************************************
+c
+ 3700 continue
+      if( .not. matchs_exact('cutoff') ) then
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9600) error_string(1:ncerror)
+         call scan_flushline
+         go to 10
+      end if
+      J_cutoff_active = .false.
+      J_cutoff_restart_file = .false. 
+      J_cutoff_ratio = five
+      J_cutoff_e = 30000.d0
+      J_cutoff_nu = pt_three
+      if( matchs_exact('off') ) then
+        call scan_flushline
+        go to 10
+      end if
+      if( .not. matchs_exact('on') ) then
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9540) 
+         call scan_flushline
+         go to 10
+      end if
+      J_cutoff_active = .true.
+      if( .not. matchs_exact('ratio') ) then
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9610) error_string(1:ncerror)
+         call scan_flushline
+         go to 10
+      end if
+      if( .not. numd(J_cutoff_ratio) ) then
+         num_error = num_error + 1     
+         call entits( error_string, ncerror )
+         write(out,9620) error_string(1:ncerror)
+         call scan_flushline
+         go to 10
+      end if
+      if( endcrd( ) ) go to 10
+      if( .not. matchs_exact('E') ) then
+         num_error = num_error + 1        
+         call entits( error_string, ncerror )
+         write(out,9630) error_string(1:ncerror)
+         call scan_flushline
+         go to 10
+      end if
+      if( .not. numd(J_cutoff_e) ) then
+         num_error = num_error + 1 
+         call entits( error_string, ncerror )
+         write(out,9640) error_string(1:ncerror)
+         call scan_flushline
+         go to 10
+      end if
+      if( endcrd( ) ) go to 10
+      if( .not. matchs_exact('nu') ) then
+        num_error = num_error + 1   
+        call entits( error_string, ncerror )
+        write(out,9650) error_string(1:ncerror)
+        call scan_flushline
+        go to 10
+      end if
+      if( .not. numd(J_cutoff_nu) ) then
+         num_error = num_error + 1 
+         call entits( error_string, ncerror )
+         write(out,9660) error_string(1:ncerror)
+         call scan_flushline
+         go to 10
+      end if
+      if( endcrd( ) ) go to 10
+      if( .not. matchs_exact('restart') ) then
+         num_error = num_error + 1  
+         call entits( error_string, ncerror )
+         write(out,9670) error_string(1:ncerror)
+         call scan_flushline
+         go to 10
+      end if
+      J_cutoff_restart_file = .true.
+      go to 10
+c
  9999 sbflg1 = .true.
       sbflg2 = .false.
 c
@@ -1412,6 +1501,24 @@ c
  9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
  9570 format(/1x,'>>>>> error: initial state option allowed only',
      &       /1x,'             before solution of step 1',/)
+ 9600 format(/1x,'>>>>> error: expecting keyword: cutoff',/,
+     &           '              scanning: ', a )
+ 9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
+     &           '              scanning: ', a, /,
+     &           '              no default ratio defined')
+ 9620 format(/1x,'>>>>> error: expecting values for ratio',/,
+     &           '              scanning: ', a )
+ 9630 format(/1x,'>>>>> error: expecting keyword: E',/,
+     &           '              scanning: ', a )
+ 9640 format(/1x,'>>>>> error: expecting value for E',/,
+     &           '              scanning: ', a )
+ 9650 format(/1x,'>>>>> error: expecting keyword: nu',/,
+     &           '              scanning: ', a )
+ 9660 format(/1x,'>>>>> error: expecting value for nu',/,
+     &           '              scanning: ', a )
+ 9670 format(/1x,'>>>>> error: expecting keyword: restart',/,
+     &           '              scanning: ', a )
+c
 c
       contains
 c     ========
