@@ -360,7 +360,7 @@ c
  9120 format(//,'>>> Crack plane normal not unit length')
  9140 format(//,'>>> Invalid domain definition. Skipped..')
  9060 format(/,1x,i5,2x,10(2x,e11.4),3x,'(',i3,')')
- 9160 format(/,'>>> Completed domain integral calculations')
+ 9160 format(/,'>>> Completed domain integral calculations',/)
  9200 format(/,' area under q along front:       ',e13.6,
      & /,      ' length of crack front segment:  ',e13.6)
  9210 format(//,'>>> Area under q-function along the crack front',
@@ -980,3 +980,242 @@ c
       return
       end subroutine di_cf_elem_add
       end subroutine di_cf_elem
+c
+c **********************************************************************
+c *                                                                    *
+c *                    di_chk_proportionality (for J_cutoff)           *
+c *                                                                    *
+c *      solutions for load step now_step completed. cumulative        *
+c *      factors for loading patterns and constraints were printed     *
+c *      by calling routine.                                           *
+c *                                                                    *
+c *      store loading pattern names and factors for step 1 in a       *
+c *      persistent table. for steps 2, 3, ... confirm                 *
+c *      continued proportional loading -- can be complex !            *
+c *                                                                    *
+c *              written by:    rhd                                    *
+c *              last modified: 6/26/22 rhd                            *
+c *                                                                    *
+c **********************************************************************
+c
+      subroutine di_chk_proportionality( now_step, pattern_count,
+     &            all_pattern_ids, all_pattern_factors,
+     &            sum_constraints )
+c
+      use global_data, only: out, nodof
+      use main_data, only: cnstrn_in
+      use j_data, only : J_cutoff_now_frnt_position, J_cutoff_exceeded,
+     &  J_cutoff_step_1_constraint_factor, 
+     &  J_cutoff_step_1_num_patterns, patterns_step_1,
+     &  J_load_ratio_this_step 
+      use constants
+c
+      implicit none
+c
+c             parameters
+c
+      integer, intent(in) :: now_step, pattern_count
+      character(len=*), intent(in) :: all_pattern_ids(*)
+      double precision, intent(in) :: all_pattern_factors(*),
+     &                                sum_constraints
+c
+c             locals
+c
+      integer :: i, j
+      double precision :: cons_sum_value, step_1_factor, now_factor,
+     &                    constraints_ratio, tol, comparison_ratio
+      logical :: cons_all_zero, first,
+     &           mpcs_found, bad_ratio, now_factor_not_zero,
+     &           step_1_factor_is_zero, constraints_only,
+     &           step_1_factor_not_zero, now_factor_is_zero 
+      logical, parameter :: local_debug = .false.
+c
+      if( local_debug ) then
+       write(out,*)
+     &   ".... entered di_chk_proportionality ...."
+       write(out,*) '      pattern_count: ', pattern_count
+      end if
+c
+c             initialize J cutoff should domains be computed now that 
+c             step solution is converged. (not adaptive sub-steps).
+c
+      J_cutoff_now_frnt_position = 0
+      J_load_ratio_this_step = zero 
+c
+c             for step 1, store the patterns and factors in the
+c             table for J cutoff use. all defined
+c             loading patterns are in the list for step 1, even
+c             if never mentioned in a step definition.
+c
+      if( now_step == 1 ) then
+        J_cutoff_step_1_constraint_factor = sum_constraints
+        J_cutoff_step_1_num_patterns = pattern_count
+        do i = 1, pattern_count ! could = 0, no loop
+           patterns_step_1(i)%id = all_pattern_ids(i) 
+           patterns_step_1(i)%factor = all_pattern_factors(i) 
+        end do
+        if( local_debug ) then
+         write(out,9000) J_cutoff_step_1_constraint_factor,
+     &       J_cutoff_step_1_num_patterns
+         do i = 1, pattern_count ! could = 0, no loop
+            write(out,9005) patterns_step_1(i)%id,
+     &          patterns_step_1(i)%factor
+         end do
+        end if
+        return
+      end if
+c
+c             for step 2, 3, .. is loading for just completed step
+c             proportional to loading in step 1 ? can get complex !
+c   
+      if( pattern_count .ne. J_cutoff_step_1_num_patterns ) then
+        write(out,9010) 
+        write(out,9015) pattern_count, J_cutoff_step_1_num_patterns
+        write(out,9020)
+        call die_gracefully
+      end if
+c
+c             current step has 1 or more patterns. all defined
+c             loading patterns on the model before step1 
+c             are in the list for step 1, even
+c             if never mentioned in a step definition.
+c
+      J_load_ratio_this_step = zero
+      tol = thousandth * thousandth 
+      first = .true.
+      bad_ratio = .false.
+      comparison_ratio = zero
+c 
+      do i = 1, pattern_count ! could = 0
+        step_1_factor = patterns_step_1(i)%factor
+        step_1_factor_is_zero = abs(step_1_factor) < tol
+        step_1_factor_not_zero = abs(step_1_factor) > tol
+        now_factor = all_pattern_factors(i)
+        now_factor_not_zero =  abs(now_factor) > tol
+        now_factor_is_zero =  abs(now_factor) < tol
+        if( local_debug ) write(out,9130) i, step_1_factor,
+     &                    now_factor
+        if( step_1_factor_is_zero .and. now_factor_not_zero ) then
+            bad_ratio = .true.
+            write(out,9010)
+            write(out,9100) patterns_step_1(i)%id
+            cycle
+        end if
+        if( step_1_factor_not_zero .and. now_factor_is_zero ) then
+            bad_ratio = .true.
+            write(out,9010)
+            write(out,9140) patterns_step_1(i)%id
+            cycle
+        end if
+        if( step_1_factor_is_zero .or. now_factor_is_zero ) cycle
+        if( first ) then
+             comparison_ratio = now_factor / step_1_factor
+             if( local_debug ) write(out,*) '.. i, comp ratio: ',i,
+     &              comparison_ratio
+             first = .false.
+             cycle
+        end if
+        if( abs( now_factor/step_1_factor - comparison_ratio )
+     &          > tol ) then
+             bad_ratio = .true.
+             write(out,9010)
+             write(out,9110) patterns_step_1(i)%id, 
+     &                       now_factor
+             cycle
+        end if
+      end do ! on i
+c
+      if( bad_ratio ) then
+            write(out,9020)
+            call die_gracefully
+      end if
+      J_load_ratio_this_step = comparison_ratio
+c
+c
+c             pattern loads thru this step are proportional to
+c             those in step 1. if any constraints are non-zero,
+c             the constraint factor for this step relative to
+c             step 1 must have the same ratio as
+c             to step 1.
+c
+      if( local_debug ) then
+        write(out,9045) J_load_ratio_this_step
+      end if
+c 
+      constraints_only = abs( J_load_ratio_this_step ) < tol
+      if( constraints_only ) then ! only constraints loading
+         constraints_ratio = sum_constraints / 
+     &                      J_cutoff_step_1_constraint_factor
+         J_load_ratio_this_step = constraints_ratio
+         if( local_debug ) then
+           write(out,9050) J_load_ratio_this_step
+         end if
+         write(out,9200)  J_load_ratio_this_step
+         return
+      end if
+c             
+c             patterns & constraints must be proportional to
+c             step 1. if all constraints = 0, they don't matter
+c             & we already have proportional patterns
+c
+      tol = thousandth * thousandth 
+      call cons_sum( cons_sum_value, mpcs_found )
+      cons_all_zero = cons_sum_value < tol
+      if( local_debug ) write(out,9055) cons_sum_value, cons_all_zero 
+      if( mpcs_found ) write(out,9120)
+      if( cons_all_zero ) then
+        write(out,9200)  J_load_ratio_this_step
+        return
+      end if
+c
+      constraints_ratio = sum_constraints / 
+     &                      J_cutoff_step_1_constraint_factor
+      if( abs(constraints_ratio - J_load_ratio_this_step) > tol ) then
+        write(out,9010) 
+        write(out,9060) constraints_ratio, J_load_ratio_this_step
+        write(out,9020)
+        call die_gracefully
+      end if
+      write(out,9200)  J_load_ratio_this_step
+      return
+c
+c
+ 9000 format(" ... routine di_chk_proportionality ...",
+     &   /,  "       step = 1, constraint factor: ",f8.5,
+     &   /,  "       num patterns: ",i3 )
+ 9005 format(15x,a8,2x,f10.5)
+ 9010 format(/1x,'>>>>> Fatal Error:  non-proportional loading ',
+     &          ' encountered ....',
+     &       /1x,'                    J cutoff feature requires ',
+     &      'that each step loading be proportional to step 1')
+ 9015 format(/,5x,'number of load patterns: ',i5,' for this step',
+     & /,5x,'does not match the number for step 1: ',i5, //)
+ 9020 format(5x,'Job terminated ...')
+ 9035 format(5x,'non-equal ratios these patterns to step 1 values',
+     &  /,   5x,'step pattern: ',a8,' bad ratio: ',f10.5)
+ 9045 format(5x,'after pattern checking. load ratio: ',f10.5)
+ 9050 format(5x,'constraints only. loading ratio: ',f10.5)
+ 9055 format(5x,'cons_sum, flag: ',d14.6,l3)
+ 9060 format(/,5x,'this step constraints ratio to step 1:  ',f10.5,
+     &     /,5x   'does not match pattern ratio to step 1: ',f10.5,//)  
+ 9100 format(/,5x,'pattern: ',a8,' has 0.0 factor in step 1 and',
+     &     ' cannot be changed to maintain proportional loading',// ) 
+ 9110 format(5x,'pattern: ',a8,' factor: ',f10.5,2x,
+     &     'creates non-proportional ',
+     &     ' loading relative to step 1',// ) 
+ 9120 format(/1x,'>>>>> Warning:  multi-point constraints are present',
+     &       /1x,'                WARP3D cannot check that loads ',
+     &  'remain proportional to step 1',
+     &       /1x,'                for J cutoff capability',//)
+ 9130 format('... i, s1 factor, now factor: ',i3,2f10.5)
+ 9140 format(/,5x,'pattern: ',a8,' has non-zero factor in step 1 and',
+     &     ' and is now zero.',// ) 
+ 9200 format('>>>>> INFO: step load ratio to step 1 is: ',f10.5,
+     &     ' for use in J cutoff processing'//)
+c
+      end  
+        
+         
+
+      
+
