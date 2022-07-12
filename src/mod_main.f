@@ -531,7 +531,7 @@ c     *                    f-90 module constants                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 1/10/22 rhd                     *
+c     *              last modified : 6/24/22 rhd                     *
 c     *                                                              *
 c     *     numerical values used throughout the code                *
 c     *                                                              *
@@ -570,6 +570,7 @@ c
      &   ptone   = 0.1d0,
      &   point_two = 0.2d0,
      &   pt_two  = 0.2d0, 
+     &   pt_three = 0.3d0,
      &   tenth   = 0.1d0,
      &   quarter = 0.25d0,
      &   pt_25   = 0.25d0,
