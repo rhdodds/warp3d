@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/25/2022 rhd              *
+c     *                   last modified : 7/12/2022 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -59,6 +59,15 @@ c
 c
       use crystal_data, only: c_array, cry_multiplier, defined_crystal,
      &                        nangles, srequired
+c
+      use j_data, only : J_cutoff_active, J_cutoff_restart_file, 
+     &      J_cutoff_exceeded, J_cutoff_num_frnt_positions, 
+     &      J_cutoff_now_frnt_position,
+     &      J_cutoff_step_1_num_patterns,
+     &      J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
+     &      J_cutoff_step_1_constraint_factor, J_load_ratio_this_step,
+     &      J_target_diff, J_limit_ratio_increase, 
+     &      J_limit_ratio_decrease, j_ratio_adaptive_steps
 c
       use erflgs
       use constants
@@ -612,7 +621,24 @@ c
       implemented_ele_types(11)    = .true.
       implemented_ele_types(12:15) = .true.
       implemented_ele_types(18:19) = .true.
-
+c
+c                       J value cutoff capability
+c
+      J_cutoff_active = .true.
+      J_cutoff_restart_file = .false. 
+      J_cutoff_exceeded = .false.
+      J_cutoff_num_frnt_positions =  0 
+      J_cutoff_now_frnt_position = 0 
+      J_cutoff_step_1_num_patterns = 0
+      J_cutoff_ratio = -one
+      J_cutoff_e = 30000.d0
+      J_cutoff_nu = pt_three
+      J_cutoff_step_1_constraint_factor = zero
+      J_load_ratio_this_step = zero
+      J_target_diff = half
+      J_limit_ratio_increase = 1.1d0
+      J_limit_ratio_decrease = half
+      J_ratio_adaptive_steps = .true.
 c
 c                       initialize for possible nonlocal_analysis using
 c                       cohesive elements.

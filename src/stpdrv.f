@@ -19,10 +19,12 @@ c
       use main_data, only : cnstrn, cnstrn_in, temp_nodmap, temp_nodlod,
      &                      output_packets, run_user_solution_routine,
      &                      output_command_file, max_step_limit,
-     &                      stpchk,
-     &                      user_cnstrn_stp_factors
+     &                      stpchk, extrap_off_next_step,
+     &                      user_cnstrn_stp_factors,
+     &                      actual_cnstrn_stp_factors
 c
       use damage_data, only : growth_by_kill, growth_by_release
+      use constants
 c
       implicit none
 c
@@ -36,7 +38,6 @@ c
       logical :: mf_ratio_change, stpdrv_error
       double precision :: mf, mf_nm1, dumd, load_reduce_fact
       logical, parameter :: local_debug = .true.,msg_flag = .false.
-      double precision, parameter :: d32460 = 32460.0d0
 c
 c          at least one convergence test for global Newton iterations
 c          must be defined to proceed
@@ -253,7 +254,7 @@ c     *                 subroutine stpdrv_one_step                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/5/2022 rhd               *
+c     *                   last modified : 7/12/2022 rhd              *
 c     *                                                              *
 c     *            oversee setting up solution for one step          *
 c     *                                                              *
@@ -262,16 +263,12 @@ c
 c
       subroutine stpdrv_one_step( now_step, stpdrv_error  )
 c
-      use j_data, only : J_cutoff_active, J_cutoff_exceeded,
-     &                   J_cutoff_restart_file, J_count_exceeded,
-     &                   J_cutoff_num_frnt_positions,
-     &                   J_cutoff_max_value, J_cutoff_ratio, 
-     &                   J_cutoff_frnt_pos_max_ratio 
+      use j_data, only : J_cutoff_active
 c
       implicit none
 c
       integer :: now_step
-      logical :: stpdrv_error, ldummy1, ldummy2 
+      logical :: stpdrv_error
 c
       integer :: i
 c
@@ -279,22 +276,10 @@ c          check for triggers set by computations in previous
 c          step that require end of processing.
 c          now_step is # of upcoming load step to compute
 c
-      if( J_cutoff_active ) then
-         if( now_step > 2 )
-     &   write(out,9200) now_step-1, J_cutoff_ratio, J_count_exceeded,
-     &                J_cutoff_num_frnt_positions,
-     &                J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio
-        if( J_cutoff_exceeded ) then
-          write(out,9205) 
-          if( J_cutoff_restart_file ) then
-            write(out,9210)
-            call store( ' ','J_ratio_limit_exceeded.db', 
-     &                 ldummy1, ldummy2 )
-          end if
-          write(out,9220)
-          call warp3d_normal_stop
-        end if
-      end if
+c          now_step is the step number we are about to compute
+c          displacements
+c
+      if( J_cutoff_active ) call stpdrv_J_cutoff( now_step )
 c
       stpdrv_error = .false.
 c
@@ -302,7 +287,7 @@ c
         call close_packets_file( msg_flag )
         call open_packets_file( msg_flag )
       end if
-cc
+c
 c          check to make sure the load-time step to be com-
 c          puted is defined in the loading given. if
 c          not, then cease processing of the loading
@@ -345,8 +330,8 @@ c          for end of step conditions. put into
 c          user specified nodal coordinate systems.
 c
       if( now_step .eq. 1 ) then
-        mf = 1.0
-        mf_nm1 = 1.0
+        mf = one
+        mf_nm1 = one
         mf_ratio_change = .false.
       end if
 c
@@ -405,19 +390,120 @@ c
 9121  format(/1x,'>>>>> FATAL ERROR: the load step to be solved: ',i7,
      &       /1x,'                   is not defined for loading: ',a8,
      &       /1x,'                   job terminated....')
+c
+      end subroutine stpdrv_one_step
+c
+      subroutine stpdrv_J_cutoff( now_step )
+c
+      use j_data, only :
+     &     J_cutoff_active, J_cutoff_exceeded,
+     &     J_cutoff_restart_file, J_count_exceeded,
+     &     J_cutoff_num_frnt_positions,
+     &     J_cutoff_max_value, J_cutoff_ratio, 
+     &     J_cutoff_frnt_pos_max_ratio, J_ratio_last_step,
+     &     J_target_diff, J_ratio_adaptive_steps,
+     &     J_limit_ratio_increase, J_limit_ratio_decrease
+      implicit none
+c
+      integer :: now_step
+c
+      integer :: previous_step
+      logical :: ldummy1, ldummy2 
+      double precision :: J_ratio_diff, J_load_factor, diff_tol
+
+c
+      previous_step = now_step - 1 ! now_step is about to be computed
+      if( previous_step <= 2 ) return
+c
+      J_ratio_diff = J_cutoff_max_value - J_ratio_last_step
+      write(out,9200) previous_step, J_cutoff_ratio, 
+     &               J_count_exceeded,
+     &              J_cutoff_num_frnt_positions,
+     &              J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio,
+     &              J_ratio_diff
+      J_ratio_last_step = J_cutoff_max_value
+c
+      if( J_cutoff_exceeded ) then
+         write(out,9205) 
+         if( J_cutoff_restart_file ) then
+            write(out,9210)
+            call store( ' ','J_ratio_limit_exceeded.db', 
+     &                 ldummy1, ldummy2 )
+         end if
+         write(out,9220)
+         call warp3d_normal_stop
+      end if 
+c
+      if( .not. J_ratio_adaptive_steps ) return 
+c
+c              1. if change in J ratio over last step is within a 
+c                 tolerance of specified J_target_diff (input,
+c                 default = 0.5), no step size changes need. 
+c
+c              2. measure of loading rate: J_load_factor = 
+c                     target change wanted (e.g. 0.5) / actual change
+c                   ex.  0.5/2.0 = 0.25 -> need to reduce step size
+c                        0.5/0.1 = 5.0  -> need to increase step sizes
+c
+c              3. Tricky part is how much to increase/decrease
+c                    the step sizes.
+c                 Experiments with values indicate the following works
+c                    if J_load_factor < 0.5, reduce next and
+c                       future steps by 50% (input parameter)
+c                    if J_load_factor > 2, increase next and
+c                       future steps by 10%
+c                  
+c                  These conditions seem to prevent reducing or 
+c                  increasing load steps sizes to rapidly   
+c
+      diff_tol = 0.05d0 * J_target_diff
+      if( abs(J_ratio_diff - J_target_diff) < diff_tol ) return
+      J_load_factor = J_target_diff / J_ratio_diff
+      if( J_load_factor < half ) ! decrease step sizes
+     &       J_load_factor = J_limit_ratio_decrease ! default = half
+      if( J_load_factor > two) ! increase step sizes
+     &       J_load_factor = J_limit_ratio_increase ! default = 1.1
+      write(out,9230) J_load_factor
+      call stpdrv_J_adapt_scale_loads( now_step, J_load_factor  )
+c
+      return
+
 9200  format(//,'>>>>> Summary for J-cutoff after step: ',i6,
      & /,'               user limit: ',f5.1,
      &   ' exceeded at: ',i3, ' of: ',i3, ' crack front positions',
      & /,'               max J-ratio: ',f6.2,
-     & ' at front position: ',i4 )
+     & ' at front position: ',i4 ,
+     & /,'               change in J-ratio over previous step: ',f6.2)
 9205  format(//,'>>>>> User-specified limit on J/J_elastic ',
      &    ' exceeded ...' )
 9210  format(/, '      Writing restart file: ',
      &        ' J_ratio_limit_exceeded.db' )
 9220  format(//, '>>>> Job terminated normally...',//)
-
+9230  format( /,'               multiplier applied to next & future ',
+     & '  steps: ',f6.2)
 c
-      end subroutine stpdrv_one_step
+      end subroutine stpdrv_J_cutoff
+c
+      subroutine stpdrv_J_adapt_scale_loads( now_step, factor )
+c
+      use main_data, only : step_load_data
+      implicit none
+c
+      integer :: now_step, i, j, num_defined_steps, npatt
+      double precision :: factor
+
+      num_defined_steps = size( step_load_data )
+      do i = now_step, num_defined_steps
+        npatt = step_load_data(i)%num_load_patterns
+        do j = 1, npatt
+          step_load_data(i)%load_patt_factor(j) = 
+     &        step_load_data(i)%load_patt_factor(j) * factor
+        end do
+        actual_cnstrn_stp_factors(i) = actual_cnstrn_stp_factors(i) *
+     &                                 factor 
+      end do
+
+      end subroutine stpdrv_J_adapt_scale_loads
 c
       end subroutine stpdrv
 

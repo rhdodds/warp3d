@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 1/31/2022 rhd              *
+c     *                   last modified : 7/12/2022 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -35,9 +35,16 @@ c
       use mm10_defs, only :
      & one_crystal_hist_size, common_hist_size
       use erflgs
+      use j_data, only : J_cutoff_active, J_cutoff_restart_file, 
+     &  J_cutoff_num_frnt_positions, J_cutoff_step_1_num_patterns,
+     &  J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
+     &  J_cutoff_Je_step_1, J_cutoff_step_1_constraint_factor,
+     &  patterns_step_1, max_front_nodes, J_target_diff,
+     &  J_limit_ratio_increase, J_limit_ratio_decrease,
+     &  J_ratio_adaptive_steps
+
 c
       implicit none
-
 c
 c               parameters
 c
@@ -155,7 +162,9 @@ c
      &              coarsening, agg_levels, interpolation, relaxation,
      &              sweeps, cf, cycle_type, max_levels,
      &              one_crystal_hist_size, common_hist_size,
-     &              initial_state_step, mxnmbl
+     &              initial_state_step, mxnmbl,
+     &              J_cutoff_num_frnt_positions,
+     &              J_cutoff_step_1_num_patterns
       write (fileno) check_data_key
 c
 c
@@ -185,7 +194,8 @@ c
      &              line_search, ls_details, initial_stresses_exist,
      &              initial_stresses_user_routine,
      &              initial_state_option, initial_stresses_input,
-     &              cp_elems_present
+     &              cp_elems_present, J_cutoff_active, 
+     &              J_cutoff_restart_file, J_ratio_adaptive_steps
       write(fileno) sparse_stiff_file_name, packet_file_name,
      &              initial_stresses_file
       write (fileno) check_data_key
@@ -202,7 +212,11 @@ c
      &              loadbal, start_assembly_step,
      &              assembly_total, truncation, relax_wt,
      &              relax_outer_wt, mg_threshold, ls_min_step_length,
-     &              ls_max_step_length, ls_rho, ls_slack_tol
+     &              ls_max_step_length, ls_rho, ls_slack_tol,
+     &              J_cutoff_ratio, J_cutoff_e, J_cutoff_nu, 
+     &              J_cutoff_step_1_constraint_factor,
+     &              J_target_diff, J_limit_ratio_increase,
+     &              J_limit_ratio_decrease
       write (fileno) check_data_key
 c
 c
@@ -253,8 +267,8 @@ c
 c
       write(fileno) lodnam, lodtyp, matnam, elelib ! short char vecs
       write(fileno) smatprp                        ! char array
+      write(fileno) patterns_step_1(1:10) ! derived type
       write(fileno) check_data_key
-      write(out,9020)
 c
 c                       write out real arrays.
 c
@@ -298,6 +312,7 @@ c
       call wrtbk( fileno, temper_nodes_ref, prec_fact*nonode )
       call wrtbk( fileno, temper_elems, prec_fact*noelem )
       call wrt2d( fileno, dmatprp, 2*mxmtpr, 2*mxmtpr, mxmat )
+      write(fileno) J_cutoff_Je_step_1(1:max_front_nodes)
       write (fileno) check_data_key
       write(out,9040)
 c
