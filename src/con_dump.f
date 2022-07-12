@@ -117,3 +117,66 @@ c
  9040 format (8x,a,f15.4,a2,a)                                                  
 c                                                                               
       end                                                                       
+c     ****************************************************************          
+c     *                                                              *          
+c     *                      subroutine cons_sum                     *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 6/26/2022 rhd              *          
+c     *                                                              *          
+c     *     This routine dumps the constraints table for a model     *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c                                                                               
+c                                                                               
+      subroutine cons_sum( sum_values, mpc_warning )
+      use global_data ! old common.main
+c                                                                               
+      use main_data, only : cnstrn, cnstrn_in, inverse_incidences               
+      use mod_mpc, only : num_tied_con_mpc, tied_con_mpc_table,                 
+     &                    num_user_mpc, user_mpc_table, mpcs_exist,             
+     &                    tied_con_mpcs_constructed   
+      use constants                          
+c                                                                               
+      implicit none
+c
+      double precision, intent( out ) :: sum_values      
+      logical, intent(out) :: mpc_warning   
+c                                                                               
+c                       locals
+c                                                                               
+      integer :: node, i, dof
+      logical no_con, con_set(3)                                                
+c      
+      sum_values = zero                                                                      
+      do node = 1, nonode                                                       
+c                                                                               
+c               find the constrains on a node, if any                           
+c                                                                               
+         no_con = .true.                                                        
+         do i = 1, 3 
+            con_set(i) = .false.                                                
+            dof = dstmap(node) + i - 1                                          
+            if( cstmap(dof) .ne. 0 ) then                                          
+               con_set(i) = .true.                                              
+               no_con = .false.                                                 
+            end if                                                               
+         end do                                                                  
+c                                                                               
+c               now add displacement values
+c                                                                               
+         if( .not. no_con ) then                                                 
+            do i = 1, 3                                                           
+               dof = dstmap(node) + i - 1                                       
+               if( con_set(i) ) sum_values = sum_values + 
+     &                          abs(cnstrn_in(dof))                     
+            end do                                                               
+         end if                                                                 
+      end do                                                                     
+c                                                                               
+      mpc_warning = mpcs_exist .or. tied_con_mpcs_constructed            
+c   
+      return
+      end
