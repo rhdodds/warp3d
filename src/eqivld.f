@@ -867,12 +867,15 @@ c     *                  subroutine eqiv_out_patters                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/14/20 rhd               *
+c     *                   last modified : 6/26/22  rhd               *
 c     *                                                              *
 c     *     at completion of a load step, output a summary of        *
 c     *     loading pattern multipliers acting on model. this aids   *
 c     *     analysis interpretation when gloabl load step reductions *
 c     *     occur during crack growth and other types of analyses    *
+c     *                                                              *
+c     *     with the J cutoff option, confirm this completed step    *
+c     *     loading remains proportional to step 1                   *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -881,29 +884,39 @@ c
 c
       use main_data,  only : load_pattern_factors, output_packets,
      &                       packet_file_no, actual_cnstrn_stp_factors
+      use j_data, only : J_cutoff_active
+      use constants
 c
       implicit none
 c
-      integer :: ii, i, line_count, pattern_count
-      double precision :: step_factor, total_factor, dzero, 
-     &                     sum_constraints
-      character(len=12) pattern_names(3)
-      real :: tfacts(3)
-      logical :: doing_restart
-      data dzero / 0.0d0 /
+      logical, intent(in) :: doing_restart
 c
-      ii = ltmstp + 1
+      integer :: now_step, i, k, line_count, pattern_count, 
+     &           all_pattern_counts
+      double precision :: step_factor, total_factor, dzero, 
+     &                    sum_constraints
+      double precision, allocatable :: all_pattern_factors(:)
+      character(len=12) pattern_names(3)
+      character(len=8), allocatable :: all_pattern_ids(:)
+      real :: tfacts(3)
+      logical, parameter :: local_debug = .false.
+c
+      now_step = ltmstp + 1
+      if( local_debug ) write(out,9020) now_step
       if( doing_restart ) then
-        ii = ltmstp
-        write(out,9000) '>>>', ii
+        now_step = ltmstp
+        write(out,9000) '>>>', now_step
       else
-        write(out,9000) '>>', ii
+        write(out,9000) '>>', now_step
       endif
 c
-c           sum up the constraint factors through the current load
-c           step
+      allocate( all_pattern_factors(numlod), 
+     &          all_pattern_ids(numlod) )
 c
-      sum_constraints = sum( actual_cnstrn_stp_factors(1:ii) )
+c           sum up the constraint (pattern) factors through the 
+c           current load step
+c
+      sum_constraints = sum( actual_cnstrn_stp_factors(1:now_step) )
 c
 c           write out the loading patterns and accumulated multipliers
 c           3 to the line. insert constraints multiplier at end.
@@ -911,8 +924,11 @@ c
       line_count = 0
       pattern_count = 0
       pattern_names(1:3) = " "
+      all_pattern_counts = 0
       tfacts = 0.0
-      do i = 1, numlod
+      if( local_debug ) write(out,*) "     ... numlod: ",numlod
+      do i = 1, numlod ! all defined load patterns + nonlinear loading
+        if( lodtyp(i) == 'TIMESTEP' ) cycle ! "nonlinear" type
         if( line_count .eq. 3 ) then
           write(out,9010) pattern_names(1), tfacts(1),
      &                    pattern_names(2), tfacts(2),
@@ -921,12 +937,16 @@ c
         end if
         step_factor  = load_pattern_factors(i,2)
         total_factor = load_pattern_factors(i,1)
-        if( total_factor .ne. dzero ) then
-          line_count                = line_count + 1
-          pattern_names(line_count) = lodnam(i)
-          tfacts(line_count)        = sngl( total_factor )
-          pattern_count = pattern_count + 1
-        end if
+        if( local_debug ) write(out,*) "     i, sfc, tfac: ",
+     &                      i, step_factor,  total_factor
+        line_count                = line_count + 1
+        pattern_names(line_count) = lodnam(i)
+        tfacts(line_count)        = sngl( total_factor )
+        pattern_count = pattern_count + 1
+        all_pattern_counts = all_pattern_counts + 1
+        k = all_pattern_counts
+        all_pattern_ids(k) = lodnam(i)
+        all_pattern_factors(k) = total_factor
       end do
 c
       line_count = line_count + 1
@@ -936,13 +956,19 @@ c
       write(out,9010) (pattern_names(i), tfacts(i), i=1,line_count)
       write(out,*) ' '
 c
+c           if J cutoff option active, check for proportional
+c           loading now that this step is completed
+c
+      if( J_cutoff_active ) call di_chk_proportionality( now_step,
+     &    all_pattern_counts, all_pattern_ids, all_pattern_factors,
+     &    sum_constraints )
 c
 c           write binary packets for the same information if packet
 c           output is in effect.
 c
       if( doing_restart ) return
       if( .not. output_packets ) return
-      write(packet_file_no) 24, pattern_count, ltmstp+1, 0
+      write(packet_file_no) 24, pattern_count, now_step, 0
       do i = 1, numlod
         total_factor = load_pattern_factors(i,1)
         if( total_factor .ne. dzero ) then
@@ -958,4 +984,5 @@ c
  9000 format(1x,a,' total applied load pattern factors through step: ',
      & i7 )
  9010 format(6x,'> ',3(a12,' ',f12.4,2x))
+ 9020 format(//,"....  entered eqiv_out_patterns. now_step: ",i8)
       end
