@@ -458,10 +458,15 @@ c                  increasing load steps sizes to rapidly
 c
       diff_tol = 0.05d0 * J_target_diff
       if( abs(J_ratio_diff - J_target_diff) < diff_tol ) return
-      J_load_factor = J_target_diff / J_ratio_diff
-      if( J_load_factor < half ) ! decrease step sizes
-     &       J_load_factor = J_limit_ratio_decrease ! default = half
-      if( J_load_factor > two) ! increase step sizes
+      J_load_factor = J_target_diff / J_ratio_diff 
+      if( J_load_factor < one ) then  ! decrease load step size
+         if( J_load_factor < ptone ) J_load_factor = ptone
+      end if
+
+!      if( J_load_factor < half ) ! decrease step sizes
+!     &        J_load_factor = J_limit_ratio_decrease ! default = half
+!     &       J_load_factor = J_limit_ratio_decrease ! default = half
+      if( J_load_factor > 1.2d0 ) ! increase step sizes
      &       J_load_factor = J_limit_ratio_increase ! default = 1.1
       write(out,9230) J_load_factor
       call stpdrv_J_adapt_scale_loads( now_step, J_load_factor  )

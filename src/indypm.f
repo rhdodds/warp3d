@@ -4,7 +4,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/7/22 rhd                 *
+c     *                   last modified : 7/12/22 rhd                *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -33,7 +33,8 @@ c
      &                                       initial_map_type,
      &                                       final_map_type
       use j_data, only :  J_cutoff_active, J_cutoff_restart_file,
-     &                    J_cutoff_ratio, J_cutoff_e, J_cutoff_nu
+     &                    J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
+     &                    J_target_diff, J_ratio_adaptive_steps
       use constants
 
 c
@@ -102,7 +103,7 @@ c
       if( matchs('divergence',5)    ) go to 3400
       if( matchs_exact('line')      ) go to 3500 ! line search
       if( matchs_exact('initial')   ) go to 3600 ! state
-      if( matchs_exact('J')         ) go to 3700 ! J cutoff 
+      if( matchs_exact('J')         ) go to 3700 ! J cutoff, adaptive 
 c
 c                       no match with solutions parameters command.
 c                       return to driver subroutine to look for high
@@ -1377,12 +1378,53 @@ c
 c
 c **********************************************************************
 c *                                                                    *
-c *                     J cutoff option                                *
+c *                J cutoff, ratio adaptive option                     *
 c *                                                                    *
 c **********************************************************************
 c
  3700 continue
-      if( .not. matchs_exact('cutoff') ) then
+      if( matchs_exact('ratio' ) ) then
+        J_ratio_adaptive_steps = .false.
+        J_target_diff = half
+        if( .not. matchs('adaptive',4) ) then
+           num_error = num_error + 1
+           call entits( error_string, ncerror )
+           write(out,9680) error_string(1:ncerror)
+           call scan_flushline
+           go to 10
+        end if
+        if( matchs_exact('off') ) then
+          call scan_flushline
+          go to 10
+        end if
+        if( .not. matchs_exact('on') ) then
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9540) 
+         call scan_flushline
+         go to 10
+        end if
+        J_ratio_adaptive_steps = .true.
+        if( endcrd( ) ) go to 10
+        if( .not. matchs_exact('target') ) then
+           J_ratio_adaptive_steps = .false.  
+           num_error = num_error + 1
+           call entits( error_string, ncerror )
+           write(out,9690) error_string(1:ncerror)
+           call scan_flushline
+           go to 10
+        end if
+        if( matchs('increase',4) ) call splunj
+        if( .not. numd(J_target_diff) ) then
+           J_ratio_adaptive_steps = .false.  
+           num_error = num_error + 1     
+           call entits( error_string, ncerror )
+           write(out,9695) error_string(1:ncerror)
+           call scan_flushline
+           go to 10
+        end if
+        go to 10
+      else if( .not. matchs_exact('cutoff') ) then
          num_error = num_error + 1
          call entits( error_string, ncerror )
          write(out,9600) error_string(1:ncerror)
@@ -1399,6 +1441,7 @@ c
         go to 10
       end if
       if( .not. matchs_exact('on') ) then
+         J_cutoff_active = .false.
          num_error = num_error + 1
          call entits( error_string, ncerror )
          write(out,9540) 
@@ -1407,6 +1450,7 @@ c
       end if
       J_cutoff_active = .true.
       if( .not. matchs_exact('ratio') ) then
+         J_cutoff_active = .false.
          num_error = num_error + 1
          call entits( error_string, ncerror )
          write(out,9610) error_string(1:ncerror)
@@ -1414,6 +1458,7 @@ c
          go to 10
       end if
       if( .not. numd(J_cutoff_ratio) ) then
+         J_cutoff_active = .false.
          num_error = num_error + 1     
          call entits( error_string, ncerror )
          write(out,9620) error_string(1:ncerror)
@@ -1422,6 +1467,7 @@ c
       end if
       if( endcrd( ) ) go to 10
       if( .not. matchs_exact('E') ) then
+         J_cutoff_active = .false.
          num_error = num_error + 1        
          call entits( error_string, ncerror )
          write(out,9630) error_string(1:ncerror)
@@ -1429,6 +1475,7 @@ c
          go to 10
       end if
       if( .not. numd(J_cutoff_e) ) then
+         J_cutoff_active = .false.
          num_error = num_error + 1 
          call entits( error_string, ncerror )
          write(out,9640) error_string(1:ncerror)
@@ -1437,6 +1484,7 @@ c
       end if
       if( endcrd( ) ) go to 10
       if( .not. matchs_exact('nu') ) then
+        J_cutoff_active = .false.
         num_error = num_error + 1   
         call entits( error_string, ncerror )
         write(out,9650) error_string(1:ncerror)
@@ -1444,6 +1492,7 @@ c
         go to 10
       end if
       if( .not. numd(J_cutoff_nu) ) then
+         J_cutoff_active = .false.
          num_error = num_error + 1 
          call entits( error_string, ncerror )
          write(out,9660) error_string(1:ncerror)
@@ -1452,6 +1501,7 @@ c
       end if
       if( endcrd( ) ) go to 10
       if( .not. matchs_exact('restart') ) then
+         J_cutoff_active = .false.
          num_error = num_error + 1  
          call entits( error_string, ncerror )
          write(out,9670) error_string(1:ncerror)
@@ -1501,7 +1551,7 @@ c
  9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
  9570 format(/1x,'>>>>> error: initial state option allowed only',
      &       /1x,'             before solution of step 1',/)
- 9600 format(/1x,'>>>>> error: expecting keyword: cutoff',/,
+ 9600 format(/1x,'>>>>> error: expecting keyword: cutoff or ratio',/,
      &           '              scanning: ', a )
  9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
      &           '              scanning: ', a, /,
@@ -1517,6 +1567,12 @@ c
  9660 format(/1x,'>>>>> error: expecting value for nu',/,
      &           '              scanning: ', a )
  9670 format(/1x,'>>>>> error: expecting keyword: restart',/,
+     &           '              scanning: ', a )
+ 9680 format(/1x,'>>>>> error: expecting keyword: adaptive',/,
+     &           '              scanning: ', a )
+ 9690 format(/1x,'>>>>> error: expecting keyword: target',/,
+     &           '              scanning: ', a )
+ 9695 format(/1x,'>>>>> error: expecting value for target increase',/,
      &           '              scanning: ', a )
 c
 c
