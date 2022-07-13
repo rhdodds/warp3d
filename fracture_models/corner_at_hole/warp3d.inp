@@ -43,13 +43,12 @@ c
 c 
  loading tension
   nonlinear
-   step 1-11 unit_remote 5.0
-   step 12-20 unit_remote 2.0  $ near limit load
+   step 1-50 unit_remote 2.0
 c
  nonlinear analysis parameters
   solution technique sparse iterative $ faster that direct solver
   time step  1.0e10	   $ use large time step for static analysis
-  maximum iterations 5
+  maximum iterations 10
   minimum iterations 2
   extrapolate on
   nonconvergent solutions stop
@@ -60,7 +59,8 @@ c
   divergence check on
   batch messages off
   bbar stabilization factor 0.0
-  J cutoff on ratio 5 e 30000 nu 0.3 restart  $   J cutoff feature
+  J cutoff on ratio 15 e 30000 nu 0.3 restart  $   J cutoff feature
+  J ratio adaptive on target increase 0.5
 c
   compute displacements for loading tension step 1
   *input from  './get_j_values'
@@ -121,4 +121,122 @@ c
   compute displacements for loading tension step 15
   *input from  './get_j_values'
 c
- stop
+c
+c 
+  compute displacements for loading tension step 16
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 17
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 18
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 19
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 20
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 21
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 22
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 23
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 24
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 25
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 26
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 27
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 28
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 29
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 30
+  *input from  './get_j_values'
+c 
+  compute displacements for loading tension step 31
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 32
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 33
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 34
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 35
+  *input from  './get_j_values'
+c
+  compute displacements for loading tension step 36
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 37
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 38
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 39
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 40
+  *input from  './get_j_values'
+c 
+  compute displacements for loading tension step 41
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 42
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 43
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 44
+  *input from  './get_j_values'
+c
+c 
+  compute displacements for loading tension step 45
+  *input from  './get_j_values'
+
+  stop
