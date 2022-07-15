@@ -310,7 +310,6 @@ c
 c          now_step is the step number we are about to compute
 c          displacements
 c
-      J_compute_step_2_automatic = .true.
       if( J_compute_step_2_automatic .and. now_step == 2 )
      &    call stpdrv_J_auto_size_step_2 ! just finished step 1
 c

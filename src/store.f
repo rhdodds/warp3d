@@ -41,7 +41,8 @@ c
      &  J_cutoff_Je_step_1, J_cutoff_step_1_constraint_factor,
      &  patterns_step_1, max_front_nodes, J_target_diff,
      &  J_limit_ratio_increase, J_limit_ratio_decrease,
-     &  J_ratio_adaptive_steps
+     &  J_ratio_adaptive_steps, J_compute_step_2_automatic,
+     &  J_auto_step_2_delta_K
 
 c
       implicit none
@@ -195,7 +196,8 @@ c
      &              initial_stresses_user_routine,
      &              initial_state_option, initial_stresses_input,
      &              cp_elems_present, J_cutoff_active, 
-     &              J_cutoff_restart_file, J_ratio_adaptive_steps
+     &              J_cutoff_restart_file, J_ratio_adaptive_steps,
+     &              J_compute_step_2_automatic
       write(fileno) sparse_stiff_file_name, packet_file_name,
      &              initial_stresses_file
       write (fileno) check_data_key
@@ -216,7 +218,7 @@ c
      &              J_cutoff_ratio, J_cutoff_e, J_cutoff_nu, 
      &              J_cutoff_step_1_constraint_factor,
      &              J_target_diff, J_limit_ratio_increase,
-     &              J_limit_ratio_decrease
+     &              J_limit_ratio_decrease, J_auto_step_2_delta_K
       write (fileno) check_data_key
 c
 c

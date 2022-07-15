@@ -104,7 +104,8 @@ c
       type(nodes_in_set), save, allocatable,
      &                            dimension(:) :: expanded_front_nodes
 c
-c                     J cutoff variables
+c                     J cutoff, adaptive step sizes, 
+c                     automatic step 2 sizing variables
 c
 c
       logical :: J_cutoff_active, J_cutoff_restart_file, 

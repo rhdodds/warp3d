@@ -1412,7 +1412,7 @@ c                                                               *
 c      subroutine to write j and i-integral data to             *
 c      standard output                                          *
 c                    written by: mcw                            *
-c                 last modified: 6/26/2022 rhd                  *
+c                 last modified: 7/15/2022 rhd                  *
 c                                                               *
 c****************************************************************
 c
@@ -1443,10 +1443,11 @@ c
 c
 c             local variables
 c
-      integer :: i, j, ring, skipped_killed
+      integer :: i, j, ring, skipped_killed, nc_id
       double precision :: rg_count
 c
       rg_count = dble(ring_count)
+      nc_id = len_trim(domain_id)
 c
       write(out,9000 )
 c
@@ -1465,13 +1466,13 @@ c             domain values for j-integral computations.
 c
          if( ring_count .gt. 1 ) then
             write(out,9020) domain_avg_j / rg_count, domain_min_j,
-     &           domain_max_j, domain_avg_j / rg_count, domain_min_j,
-     &           domain_max_j
+     &           domain_max_j,  domain_id(1:nc_id), 
+     &           domain_avg_j / rg_count, domain_min_j, domain_max_j
             if ( .not. static_j ) then
                write(out,9025)
                write(out,9020) static_avg / rg_count, static_min,
-     &              static_max, static_avg / rg_count, static_min,
-     &              static_max
+     &              static_max, domain_id(1:nc_id), 
+     &              static_avg / rg_count, static_min, static_max
             end if
          end if
          write(out,9030)
@@ -1518,7 +1519,8 @@ c
             end do
             if( ring_count .gt. 1 ) then
                write(out,9020) domain_avg_i(1) / rg_count,
-     &              domain_min_i(1), domain_max_i(1), 
+     &              domain_min_i(1), domain_max_i(1),
+     &              domain_id(1:nc_id),
      &              domain_avg_i(1) / rg_count,
      &              domain_min_i(1), domain_max_i(1)
             end if
@@ -1535,6 +1537,7 @@ c
             if( ring_count .gt. 1 ) then
                write(out,9020) domain_avg_i(2) / rg_count,
      &              domain_min_i(2), domain_max_i(2),
+     &              domain_id(1:nc_id),
      &              domain_avg_i(2) / rg_count,
      &              domain_min_i(2), domain_max_i(2)
             end if
@@ -1558,6 +1561,7 @@ c
             if( ring_count .gt. 1 ) then
                write(out,9020) domain_avg_i(3) / rg_count,
      &              domain_min_i(3), domain_max_i(3), 
+     &              domain_id(1:nc_id),
      &              domain_avg_i(3) / rg_count,
      &              domain_min_i(3), domain_max_i(3)
             end if
@@ -1574,6 +1578,7 @@ c
             if( ring_count .gt. 1 ) then
                write(out,9020) domain_avg_i(4) / rg_count,
      &              domain_min_i(4), domain_max_i(4), 
+     &              domain_id(1:nc_id),
      &              domain_avg_i(4) / rg_count,
      &              domain_min_i(4), domain_max_i(4)
             end if
@@ -1591,6 +1596,7 @@ c
          if( ring_count .gt. 1 ) then
             write(out,9020) domain_avg_i(5) / rg_count,
      &           domain_min_i(5), domain_max_i(5), 
+     &           domain_id(1:nc_id),
      &           domain_avg_i(5) / rg_count,
      &           domain_min_i(5), domain_max_i(5)
          end if
@@ -1641,7 +1647,8 @@ c
      &            skipped_killed
             end do
             if( ring_count .gt. 1 ) then
-               write(out,9115) domain_avg_i(6) / rg_count,
+               write(out,9115) domain_id(1:nc_id),
+     &              domain_avg_i(6) / rg_count,
      &              domain_min_i(6), domain_max_i(6),
      &              domain_avg_i(9) / rg_count, domain_min_i(9),
      &              domain_max_i(9)
@@ -1657,7 +1664,8 @@ c
      &            skipped_killed
             end do
             if( ring_count .gt. 1 ) then
-               write(out,9115) domain_avg_i(7) / rg_count,
+               write(out,9115)  domain_id(1:nc_id),
+     &              domain_avg_i(7) / rg_count,
      &              domain_min_i(7), domain_max_i(7),
      &              domain_avg_i(10) / rg_count, domain_min_i(10),
      &              domain_max_i(10)
@@ -1681,6 +1689,7 @@ c
          if( ring_count .gt. 1 ) then
             write(out,9020) domain_avg_i(8) / rg_count,
      &           domain_min_i(8), domain_max_i(8),
+     &           domain_id(1:nc_id),
      &           domain_avg_i(8) / rg_count,
      &           domain_min_i(8), domain_max_i(8)
          end if
@@ -1705,7 +1714,7 @@ c
 ! 9020 format(/,3x,' average:  ',3x,' minimum:  ',3x,' maximum:',
 !     &       /,1x, e11.4,2x,e11.4,2x,e11.4 )
  9020 format(/,3x,' average: ',e11.4,3x,'minimum: ',
-     &            e11.4,3x,'maximum:', e11.4,
+     &            e11.4,3x,'maximum:', e11.4,5x,"(",a,")",
      &       /,1x, e11.4,2x,e11.4,2x,e11.4 )
  9025 format(/,10x,'Static J-values' )
  9030 format(/,1x,'* dm1: stress work density term',
@@ -1799,7 +1808,8 @@ c     &       ' do not include crack-face loading effects.')
      &       //,1x,'domain',8x,'II1',10x,'II2',10x,'II3',10x,'II4',
      &       10x,'II5',10x,'II6',10x,'II7',10x,'II8',7x,'total I',8x,
      &       'T13',5x,'killed ele' )
- 9115 format(/,3x,' average:  ',3x,' minimum:  ',3x,' maximum:',
+ 9115 format(/,3x,' average:  ',3x,' minimum:  ',3x,' maximum:', 5x,
+     &       "(",a,")",
      &       /,1x, 3(e11.4,2x),
      &       /,1x, 3(e11.4,2x))
  9125 format(/,1x,'* II1: stress * deriv of aux. displ.',
