@@ -4,7 +4,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/12/22 rhd                *
+c     *                   last modified : 7/14/22 rhd                *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -34,7 +34,9 @@ c
      &                                       final_map_type
       use j_data, only :  J_cutoff_active, J_cutoff_restart_file,
      &                    J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
-     &                    J_target_diff, J_ratio_adaptive_steps
+     &                    J_target_diff, J_ratio_adaptive_steps,
+     &                    J_compute_step_2_automatic, 
+     &                    J_auto_step_2_delta_K
       use constants
 
 c
@@ -46,8 +48,8 @@ c
      &           errnum, trctyp, ncerror
       real :: dumr
       double precision ::  dnum, dumd
-      logical :: lstflg, msg_flag, local_direct_flag,
-     &           local_direct
+      logical :: lstflg, msg_flag, local_direct_flag, ok, 
+     &           local_direct, type1, type2, type3
       logical, external :: matchs, integr, endcrd, true, numd, numr,
      &                     string, numi, label, matchs_exact, match
       character(len=1) :: dums
@@ -103,7 +105,8 @@ c
       if( matchs('divergence',5)    ) go to 3400
       if( matchs_exact('line')      ) go to 3500 ! line search
       if( matchs_exact('initial')   ) go to 3600 ! state
-      if( matchs_exact('J')         ) go to 3700 ! J cutoff, adaptive 
+      if( matchs_exact('J')         ) go to 3700 ! J cutoff, adaptive,
+c                                                  auto step 2 size 
 c
 c                       no match with solutions parameters command.
 c                       return to driver subroutine to look for high
@@ -1383,132 +1386,49 @@ c *                                                                    *
 c **********************************************************************
 c
  3700 continue
-      if( matchs_exact('ratio' ) ) then
-        J_ratio_adaptive_steps = .false.
-        J_target_diff = half
-        if( .not. matchs('adaptive',4) ) then
-           num_error = num_error + 1
-           call entits( error_string, ncerror )
-           write(out,9680) error_string(1:ncerror)
-           call scan_flushline
-           go to 10
-        end if
-        if( matchs_exact('off') ) then
-          call scan_flushline
-          go to 10
-        end if
-        if( .not. matchs_exact('on') ) then
+c
+      type1 = .false.  ! J cutoff ratio ....
+      type2 = .false.  ! J ratio adaptive ....
+      type3 = .false.  ! J automatic step 2 ...
+c
+      if( matchs_exact('cutoff') ) then
+         type1 = .true.
+      elseif( matchs_exact('ratio') ) then 
+         type2 = .true.
+      elseif( matchs('automatic',4) ) then 
+         type3 = .true.
+      else
          num_error = num_error + 1
          call entits( error_string, ncerror )
-         write(out,9540) 
-         call scan_flushline
-         go to 10
-        end if
-        J_ratio_adaptive_steps = .true.
-        if( endcrd( ) ) go to 10
-        if( .not. matchs_exact('target') ) then
-           J_ratio_adaptive_steps = .false.  
-           num_error = num_error + 1
-           call entits( error_string, ncerror )
-           write(out,9690) error_string(1:ncerror)
-           call scan_flushline
-           go to 10
-        end if
-        if( matchs('increase',4) ) call splunj
-        if( .not. numd(J_target_diff) ) then
-           J_ratio_adaptive_steps = .false.  
-           num_error = num_error + 1     
-           call entits( error_string, ncerror )
-           write(out,9695) error_string(1:ncerror)
-           call scan_flushline
-           go to 10
-        end if
-        go to 10
-      else if( .not. matchs_exact('cutoff') ) then
-         num_error = num_error + 1
-         call entits( error_string, ncerror )
-         write(out,9600) error_string(1:ncerror)
+         write(out,9575) error_string(1:ncerror)
          call scan_flushline
          go to 10
       end if
-      J_cutoff_active = .false.
-      J_cutoff_restart_file = .false. 
-      J_cutoff_ratio = five
-      J_cutoff_e = 30000.d0
-      J_cutoff_nu = pt_three
-      if( matchs_exact('off') ) then
-        call scan_flushline
+c
+      ok = type1 .or. type2 .or. type3
+      if( .not. ok ) then
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9575) error_string(1:ncerror)
+         call scan_flushline
+         go to 10
+      end if
+c
+      if( type1 ) then
+        call indypm_J_type1
         go to 10
       end if
-      if( .not. matchs_exact('on') ) then
-         J_cutoff_active = .false.
-         num_error = num_error + 1
-         call entits( error_string, ncerror )
-         write(out,9540) 
-         call scan_flushline
-         go to 10
-      end if
-      J_cutoff_active = .true.
-      if( .not. matchs_exact('ratio') ) then
-         J_cutoff_active = .false.
-         num_error = num_error + 1
-         call entits( error_string, ncerror )
-         write(out,9610) error_string(1:ncerror)
-         call scan_flushline
-         go to 10
-      end if
-      if( .not. numd(J_cutoff_ratio) ) then
-         J_cutoff_active = .false.
-         num_error = num_error + 1     
-         call entits( error_string, ncerror )
-         write(out,9620) error_string(1:ncerror)
-         call scan_flushline
-         go to 10
-      end if
-      if( endcrd( ) ) go to 10
-      if( .not. matchs_exact('E') ) then
-         J_cutoff_active = .false.
-         num_error = num_error + 1        
-         call entits( error_string, ncerror )
-         write(out,9630) error_string(1:ncerror)
-         call scan_flushline
-         go to 10
-      end if
-      if( .not. numd(J_cutoff_e) ) then
-         J_cutoff_active = .false.
-         num_error = num_error + 1 
-         call entits( error_string, ncerror )
-         write(out,9640) error_string(1:ncerror)
-         call scan_flushline
-         go to 10
-      end if
-      if( endcrd( ) ) go to 10
-      if( .not. matchs_exact('nu') ) then
-        J_cutoff_active = .false.
-        num_error = num_error + 1   
-        call entits( error_string, ncerror )
-        write(out,9650) error_string(1:ncerror)
-        call scan_flushline
+c
+      if( type2 ) then
+        call indypm_J_type2
         go to 10
       end if
-      if( .not. numd(J_cutoff_nu) ) then
-         J_cutoff_active = .false.
-         num_error = num_error + 1 
-         call entits( error_string, ncerror )
-         write(out,9660) error_string(1:ncerror)
-         call scan_flushline
-         go to 10
+c
+      if( type3 ) then
+        call indypm_J_type3
+        go to 10
       end if
-      if( endcrd( ) ) go to 10
-      if( .not. matchs_exact('restart') ) then
-         J_cutoff_active = .false.
-         num_error = num_error + 1  
-         call entits( error_string, ncerror )
-         write(out,9670) error_string(1:ncerror)
-         call scan_flushline
-         go to 10
-      end if
-      J_cutoff_restart_file = .true.
+c
       go to 10
 c
  9999 sbflg1 = .true.
@@ -1551,7 +1471,13 @@ c
  9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
  9570 format(/1x,'>>>>> error: initial state option allowed only',
      &       /1x,'             before solution of step 1',/)
+ 9575 format(/1x,'>>>>> error: unrecognized J option. expecting ',
+     & 'keyword: cutoff, ratio or automatic',/,
+     &           '              scanning: ', a )
  9600 format(/1x,'>>>>> error: expecting keyword: cutoff or ratio',/,
+     &           '              scanning: ', a )
+ 9605 format(/1x,'>>>>> error: expecting keyword: cutoff or ',
+     &           'adaptive',/,
      &           '              scanning: ', a )
  9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
      &           '              scanning: ', a, /,
@@ -1579,6 +1505,368 @@ c
       contains
 c     ========
 c
+c
+      subroutine indypm_J_type1 !  J cutoff
+      implicit none
+c
+      logical, parameter :: here_debug = .false.
+c
+      J_cutoff_active = .false.
+      J_cutoff_restart_file = .false. 
+      J_cutoff_ratio = five
+      J_cutoff_e = 30000.d0
+      J_cutoff_nu = pt_three
+c
+      if( matchs_exact('off') ) then
+        call scan_flushline
+        return
+      end if
+c
+      if( .not. matchs_exact('on') ) then
+         J_cutoff_active = .false.
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9540) 
+         call scan_flushline
+        return
+      end if
+c
+      J_cutoff_active = .true.
+      if( .not. matchs_exact('ratio') ) then
+         J_cutoff_active = .false.
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9610) error_string(1:ncerror)
+         call scan_flushline
+        return
+      end if
+c
+      if( .not. numd(J_cutoff_ratio) ) then
+         J_cutoff_active = .false.
+         num_error = num_error + 1     
+         call entits( error_string, ncerror )
+         write(out,9620) error_string(1:ncerror)
+         call scan_flushline
+        return
+      end if
+c
+      if( here_debug ) write(out,*) '.. J_cutoff_ratio: ',
+     &       J_cutoff_ratio
+      if( endcrd( ) ) return
+c
+      if( .not. matchs_exact('E') ) then
+         J_cutoff_active = .false.
+         num_error = num_error + 1        
+         call entits( error_string, ncerror )
+         write(out,9630) error_string(1:ncerror)
+         call scan_flushline
+        return
+      end if
+c
+      if( .not. numd(J_cutoff_e) ) then
+         J_cutoff_active = .false.
+         num_error = num_error + 1 
+         call entits( error_string, ncerror )
+         write(out,9640) error_string(1:ncerror)
+         call scan_flushline
+        return
+      end if
+c
+      if( here_debug ) write(out,*) '.. J_cutoff_e: ',
+     &       J_cutoff_e
+      if( endcrd( ) ) return
+c
+      if( .not. matchs_exact('nu') ) then
+        J_cutoff_active = .false.
+        num_error = num_error + 1   
+        call entits( error_string, ncerror )
+        write(out,9650) error_string(1:ncerror)
+        call scan_flushline
+        return
+      end if
+c
+      if( .not. numd(J_cutoff_nu) ) then
+         J_cutoff_active = .false.
+         num_error = num_error + 1 
+         call entits( error_string, ncerror )
+         write(out,9660) error_string(1:ncerror)
+         call scan_flushline
+         return
+      end if
+c
+      if( here_debug ) write(out,*) '.. J_cutoff_nu: ',
+     &       J_cutoff_nu
+
+c
+      if( endcrd( ) ) return
+c
+      if( .not. matchs_exact('restart') ) then
+         J_cutoff_active = .false.
+         num_error = num_error + 1  
+         call entits( error_string, ncerror )
+         write(out,9670) error_string(1:ncerror)
+         call scan_flushline
+         return
+      end if
+c
+      J_cutoff_restart_file = .true.
+      if( here_debug ) write(out,*) '.. J_restart_file: ',
+     &       J_cutoff_restart_file
+c
+      return
+c
+ 9540 format(/1x,'>>>>> error: expecting keyword: on *or* off',/)
+ 9550 format(/1x,'>>>>> error: expecting step number',/)
+ 9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
+ 9570 format(/1x,'>>>>> error: initial state option allowed only',
+     &       /1x,'             before solution of step 1',/)
+ 9575 format(/1x,'>>>>> error: unrecognized J option. expecting ',
+     & 'keyword: cutoff, ratio or automatic',/,
+     &           '              scanning: ', a )
+ 9600 format(/1x,'>>>>> error: expecting keyword: cutoff or ratio',/,
+     &           '              scanning: ', a )
+ 9605 format(/1x,'>>>>> error: expecting keyword: cutoff or ',
+     &           'adaptive',/,
+     &           '              scanning: ', a )
+ 9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
+     &           '              scanning: ', a, /,
+     &           '              no default ratio defined')
+ 9620 format(/1x,'>>>>> error: expecting values for ratio',/,
+     &           '              scanning: ', a )
+ 9630 format(/1x,'>>>>> error: expecting keyword: E',/,
+     &           '              scanning: ', a )
+ 9640 format(/1x,'>>>>> error: expecting value for E',/,
+     &           '              scanning: ', a )
+ 9650 format(/1x,'>>>>> error: expecting keyword: nu',/,
+     &           '              scanning: ', a )
+ 9660 format(/1x,'>>>>> error: expecting value for nu',/,
+     &           '              scanning: ', a )
+ 9670 format(/1x,'>>>>> error: expecting keyword: restart',/,
+     &           '              scanning: ', a )
+ 9680 format(/1x,'>>>>> error: expecting keyword: adaptive',/,
+     &           '              scanning: ', a )
+ 9690 format(/1x,'>>>>> error: expecting keyword: target',/,
+     &           '              scanning: ', a )
+ 9695 format(/1x,'>>>>> error: expecting value for target increase',/,
+     &           '              scanning: ', a )
+c
+      end subroutine indypm_J_type1
+c
+c
+      subroutine indypm_J_type2
+c
+      implicit none
+c
+      logical, parameter :: here_debug = .false.
+c
+      J_ratio_adaptive_steps = .false.
+      J_target_diff = half
+c
+      if( .not. matchs('adaptive',4) ) then
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9680) error_string(1:ncerror)
+         call scan_flushline
+         return
+      end if
+c
+      if( matchs_exact('off') ) then
+         call scan_flushline
+         return
+      end if
+c
+      if( .not. matchs_exact('on') ) then
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9540) 
+         call scan_flushline
+         return
+      end if
+c
+      if( here_debug ) write(out,*) '.. J adaptive: true'
+
+c
+      J_ratio_adaptive_steps = .true.
+c
+      if( endcrd( ) ) return
+c
+      if( .not. matchs_exact('target') ) then
+           J_ratio_adaptive_steps = .false.  
+           num_error = num_error + 1
+           call entits( error_string, ncerror )
+           write(out,9690) error_string(1:ncerror)
+           call scan_flushline
+           return
+      end if
+c
+      if( matchs('increase',4) ) call splunj
+      if( .not. numd(J_target_diff) ) then
+         J_ratio_adaptive_steps = .false.  
+         num_error = num_error + 1     
+         call entits( error_string, ncerror )
+         write(out,9695) error_string(1:ncerror)
+         call scan_flushline
+         return
+      end if
+c
+      if( here_debug ) write(out,*) '.. J_target_diff: ',
+     &                J_target_diff
+c
+      return
+c
+ 9540 format(/1x,'>>>>> error: expecting keyword: on *or* off',/)
+ 9550 format(/1x,'>>>>> error: expecting step number',/)
+ 9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
+ 9570 format(/1x,'>>>>> error: initial state option allowed only',
+     &       /1x,'             before solution of step 1',/)
+ 9575 format(/1x,'>>>>> error: unrecognized J option. expecting ',
+     & 'keyword: cutoff, ratio or automatic',/,
+     &           '              scanning: ', a )
+ 9600 format(/1x,'>>>>> error: expecting keyword: cutoff or ratio',/,
+     &           '              scanning: ', a )
+ 9605 format(/1x,'>>>>> error: expecting keyword: cutoff or ',
+     &           'adaptive',/,
+     &           '              scanning: ', a )
+ 9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
+     &           '              scanning: ', a, /,
+     &           '              no default ratio defined')
+ 9620 format(/1x,'>>>>> error: expecting values for ratio',/,
+     &           '              scanning: ', a )
+ 9630 format(/1x,'>>>>> error: expecting keyword: E',/,
+     &           '              scanning: ', a )
+ 9640 format(/1x,'>>>>> error: expecting value for E',/,
+     &           '              scanning: ', a )
+ 9650 format(/1x,'>>>>> error: expecting keyword: nu',/,
+     &           '              scanning: ', a )
+ 9660 format(/1x,'>>>>> error: expecting value for nu',/,
+     &           '              scanning: ', a )
+ 9670 format(/1x,'>>>>> error: expecting keyword: restart',/,
+     &           '              scanning: ', a )
+ 9680 format(/1x,'>>>>> error: expecting keyword: adaptive',/,
+     &           '              scanning: ', a )
+ 9690 format(/1x,'>>>>> error: expecting keyword: target',/,
+     &           '              scanning: ', a )
+ 9695 format(/1x,'>>>>> error: expecting value for target increase',/,
+     &           '              scanning: ', a )
+c
+      end subroutine indypm_J_type2
+c
+c
+      subroutine indypm_J_type3
+c
+      implicit none
+c
+      logical, parameter :: here_debug = .false.
+c
+      J_compute_step_2_automatic = .false.
+      J_auto_step_2_delta_K = ten
+c
+      if( .not. matchs_exact('step') ) then
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9700) error_string(1:ncerror)
+         call scan_flushline
+         return
+      end if
+c
+      if( matchs_exact('2') ) call splunj
+c
+      if( matchs_exact('off') ) then
+         call scan_flushline
+         return
+      end if
+c
+      if( .not. matchs_exact('on') ) then
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9540) 
+         call scan_flushline
+         return
+      end if
+c
+      if( here_debug ) write(out,*) '.. J auto step 2 on'
+c
+      J_compute_step_2_automatic = .true.
+c
+      if( endcrd( ) ) return
+c
+      if( .not. matchs_exact('delta') ) then
+         J_compute_step_2_automatic = .false.
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9705) error_string(1:ncerror)
+         call scan_flushline
+         return
+      end if
+c
+      if( .not. matchs_exact('K') ) then
+         J_compute_step_2_automatic = .false.
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9710) error_string(1:ncerror)
+         call scan_flushline
+         return
+       end if
+c
+       if( .not. numd(J_auto_step_2_delta_K) ) then
+         J_compute_step_2_automatic = .false.
+         num_error = num_error + 1     
+         call entits( error_string, ncerror )
+         write(out,9715) error_string(1:ncerror)
+         call scan_flushline
+         return
+      end if
+c
+      if( here_debug ) write(out,*) '.. Delta K: ',
+     &  J_auto_step_2_delta_K
+c
+      return
+c
+ 9540 format(/1x,'>>>>> error: expecting keyword: on *or* off',/)
+ 9550 format(/1x,'>>>>> error: expecting step number',/)
+ 9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
+ 9570 format(/1x,'>>>>> error: initial state option allowed only',
+     &       /1x,'             before solution of step 1',/)
+ 9575 format(/1x,'>>>>> error: unrecognized J option. expecting ',
+     & 'keyword: cutoff, ratio or automatic',/,
+     &           '              scanning: ', a )
+ 9600 format(/1x,'>>>>> error: expecting keyword: cutoff or ratio',/,
+     &           '              scanning: ', a )
+ 9605 format(/1x,'>>>>> error: expecting keyword: cutoff or ',
+     &           'adaptive',/,
+     &           '              scanning: ', a )
+ 9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
+     &           '              scanning: ', a, /,
+     &           '              no default ratio defined')
+ 9620 format(/1x,'>>>>> error: expecting values for ratio',/,
+     &           '              scanning: ', a )
+ 9630 format(/1x,'>>>>> error: expecting keyword: E',/,
+     &           '              scanning: ', a )
+ 9640 format(/1x,'>>>>> error: expecting value for E',/,
+     &           '              scanning: ', a )
+ 9650 format(/1x,'>>>>> error: expecting keyword: nu',/,
+     &           '              scanning: ', a )
+ 9660 format(/1x,'>>>>> error: expecting value for nu',/,
+     &           '              scanning: ', a )
+ 9670 format(/1x,'>>>>> error: expecting keyword: restart',/,
+     &           '              scanning: ', a )
+ 9680 format(/1x,'>>>>> error: expecting keyword: adaptive',/,
+     &           '              scanning: ', a )
+ 9690 format(/1x,'>>>>> error: expecting keyword: target',/,
+     &           '              scanning: ', a )
+ 9695 format(/1x,'>>>>> error: expecting value for target increase',/,
+     &           '              scanning: ', a )
+ 9700 format(/1x,'>>>>> error: expecting keyword: step',/,
+     &           '              scanning: ', a )
+ 9705 format(/1x,'>>>>> error: expecting keyword: delta',/,
+     &           '              scanning: ', a )
+ 9710 format(/1x,'>>>>> error: expecting keyword: K',/,
+     &           '              scanning: ', a )
+ 9715 format(/1x,'>>>>> error: expecting value for delta K',/,
+     &           '              scanning: ', a )
+c
+      end subroutine indypm_J_type3
+
       subroutine indypm_chk_compat
       implicit none
       integer :: elem, matno, mat_type

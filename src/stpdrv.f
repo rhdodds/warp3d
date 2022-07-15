@@ -254,7 +254,7 @@ c     *                 subroutine stpdrv_one_step                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/12/2022 rhd              *
+c     *                   last modified : 7/14/2022 rhd              *
 c     *                                                              *
 c     *            oversee setting up solution for one step          *
 c     *                                                              *
@@ -263,7 +263,8 @@ c
 c
       subroutine stpdrv_one_step( now_step, stpdrv_error  )
 c
-      use j_data, only : J_cutoff_active
+      use j_data, only : J_cutoff_active, J_compute_step_2_automatic,
+     &                   J_max_step_1, J_cutoff_e, J_cutoff_nu
 c
       implicit none
 c
@@ -272,12 +273,46 @@ c
 c
       integer :: i
 c
-c          check for triggers set by computations in previous
-c          step that require end of processing.
-c          now_step is # of upcoming load step to compute
+c          optional processing for J adaptive/limiting definitions of 
+c          this and future load steps.
 c
+c          features:
+c
+c             - J_cutoff_active: monitor the maximum front value of 
+c                   J/J_elastic in each step. if value exceeds
+c                   user limit, end job before starting this step.
+c                   optionally write a restart file.
+c
+c             - J_ratio_adaptive_steps: compute the change in
+c                   J/J_elastic ratio over the just completed step.
+c                   if the change exceeds a user specified value,
+c                   e.g. 0.5, reduce this and subsequent step sizes.
+c                   if the change is too small, increase this
+c                   and subsequent load step sizes.
+c                   the result is a dynamically varying size of each
+c                   step aiming to maintain the user specified change
+c                   (e.g. 0.5)
+c 
+c             - J_compute_step_2_automatic: the user specifies a loading
+c                   for step 1 sufficiently small to insure a linear-
+c                   elastic response. With large parametric studies,
+c                   the definition of sizes for load steps 2, 3, 4, ..
+c                   can become challenging for manual processing.
+c                   strategy here: compute max K_I found along front
+c                   in step 1. Set pattern factors for steps 2, 3, ...
+c                   to increase K_I by a specified amount assuming the
+c                   solution remains linear. E.g \Delta K_I in step 2
+c                   set to be 25 based on step 1 solution.
+c                   This feature combined with J_ratio_adaptive_steps
+c                   eliminates the need for careful definition of
+c                   load steps sizes
+c  
 c          now_step is the step number we are about to compute
 c          displacements
+c
+      J_compute_step_2_automatic = .true.
+      if( J_compute_step_2_automatic .and. now_step == 2 )
+     &    call stpdrv_J_auto_size_step_2 ! just finished step 1
 c
       if( J_cutoff_active ) call stpdrv_J_cutoff( now_step )
 c
@@ -393,6 +428,81 @@ c
 c
       end subroutine stpdrv_one_step
 c
+c     ****************************************************************
+c     *                                                              *
+c     *            subroutine stpdrv_J_auto_size_step_2              *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 7/14/2022 rhd              *
+c     *                                                              *
+c     *            set size of step 2 based on K_I max along front   *
+c     *            found in step 1.                                  *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine stpdrv_J_auto_size_step_2
+c
+      use j_data, only : J_max_step_1, J_cutoff_e, J_cutoff_nu
+      use main_data, only : step_load_data
+c
+      implicit none
+c
+      integer :: i, j, num_defined_steps, npatt
+      double precision :: step_1_patt_factor, K_max_step_1,
+     &    delta_K_step_2_wanted, step_2_factor 
+      logical, parameter :: here_debug = .false.
+c
+
+      K_max_step_1 = sqrt( J_cutoff_e * J_max_step_1 /
+     &                     (one - J_cutoff_nu**2) )
+      delta_K_step_2_wanted = 20.0d0 ! make a user input value
+      step_2_factor = delta_K_step_2_wanted / K_max_step_1
+c
+c              modify pattern factors for steps 2->last defined
+c              to make delta K_I = wanted value assuming linear
+c              solution in step 2. most likely to
+c              be combined with J_ratio_adaptive_steps feature
+c              to subsequently adjust sizes for step3 3, 4, 5 ,..
+c              for increased nonlinear behavior.
+c
+      num_defined_steps = size( step_load_data )
+      do i = 2, num_defined_steps
+        npatt = step_load_data(i)%num_load_patterns
+        do j = 1, npatt
+          step_load_data(i)%load_patt_factor(j) = 
+     &        step_load_data(1)%load_patt_factor(j) * step_2_factor
+        end do
+        actual_cnstrn_stp_factors(i) = actual_cnstrn_stp_factors(1) *
+     &                                 step_2_factor 
+      end do
+c
+      if( here_debug ) then
+        write(out,8900) J_max_step_1
+        write(out,9000)  K_max_step_1, step_2_factor
+      end if 
+c
+      return   
+ 8900 format(10x,'... @1 J_max_step_1: ',f10.7)
+ 9000 format(10x,'... @1   K_max_step_1, step_2_factor: ',2f10.5)
+c
+      end subroutine stpdrv_J_auto_size_step_2
+c
+c     ****************************************************************
+c     *                                                              *
+c     *                 subroutine stpdrv_J_cutoff                   *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 7/14/2022 rhd              *
+c     *                                                              *
+c     *       has J_/J-elastic ratio reached user limit ?            *
+c     *       and/or adapt this and future steps sizes to maintain   *
+c     *       a user-specified target for the ratio change in        *
+c     *       each step                                              *
+c     *                                                              *
+c     ****************************************************************
+c
       subroutine stpdrv_J_cutoff( now_step )
 c
       use j_data, only :
@@ -407,21 +517,28 @@ c
 c
       integer :: now_step
 c
-      integer :: previous_step
+      integer :: step_just_completed
       logical :: ldummy1, ldummy2 
       double precision :: J_ratio_diff, J_load_factor, diff_tol
-
 c
-      previous_step = now_step - 1 ! now_step is about to be computed
-      if( previous_step <= 2 ) return
+c                now_step is the step number about to be computed
+c                we first examine the difference in J/J_elastic
+c                values once step 3 is completed, i.e., the first
+c                difference is ratio @ 3 - ratio @ 2.
 c
-      J_ratio_diff = J_cutoff_max_value - J_ratio_last_step
-      write(out,9200) previous_step, J_cutoff_ratio, 
+      step_just_completed = now_step - 1
+      if( step_just_completed >= 3 ) then ! write summary
+        J_ratio_diff = J_cutoff_max_value - J_ratio_last_step
+        write(out,9200) step_just_completed, J_cutoff_ratio, 
      &               J_count_exceeded,
      &              J_cutoff_num_frnt_positions,
      &              J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio,
      &              J_ratio_diff
-      J_ratio_last_step = J_cutoff_max_value
+      end if
+      if( step_just_completed >= 2 ) then ! update ratio for last step
+        J_ratio_last_step = J_cutoff_max_value
+        write(out,9235) step_just_completed, J_ratio_last_step
+      end if
 c
       if( J_cutoff_exceeded ) then
          write(out,9205) 
@@ -459,26 +576,24 @@ c
       diff_tol = 0.05d0 * J_target_diff
       if( abs(J_ratio_diff - J_target_diff) < diff_tol ) return
       J_load_factor = J_target_diff / J_ratio_diff 
+c
       if( J_load_factor < one ) then  ! decrease load step size
-         if( J_load_factor < ptone ) J_load_factor = ptone
+         if( J_load_factor < ptone ) J_load_factor = ptone ! limit decrease
       end if
-
-!      if( J_load_factor < half ) ! decrease step sizes
-!     &        J_load_factor = J_limit_ratio_decrease ! default = half
-!     &       J_load_factor = J_limit_ratio_decrease ! default = half
+c
       if( J_load_factor > 1.2d0 ) ! increase step sizes
      &       J_load_factor = J_limit_ratio_increase ! default = 1.1
       write(out,9230) J_load_factor
       call stpdrv_J_adapt_scale_loads( now_step, J_load_factor  )
 c
       return
-
+c
 9200  format(//,'>>>>> Summary for J-cutoff after step: ',i6,
      & /,'               user limit: ',f5.1,
      &   ' exceeded at: ',i3, ' of: ',i3, ' crack front positions',
      & /,'               max J-ratio: ',f6.2,
      & ' at front position: ',i4 ,
-     & /,'               change in J-ratio over previous step: ',f6.2)
+     & /,'               change in J-ratio over previous step: ',f7.3)
 9205  format(//,'>>>>> User-specified limit on J/J_elastic ',
      &    ' exceeded ...' )
 9210  format(/, '      Writing restart file: ',
@@ -486,8 +601,24 @@ c
 9220  format(//, '>>>> Job terminated normally...',//)
 9230  format( /,'               multiplier applied to next & future ',
      & '  steps: ',f6.2)
+9235  format(//,'>>>>> INFO: Max J-ratio for step: ',i6,2x,f7.2)
 c
       end subroutine stpdrv_J_cutoff
+c
+c     ****************************************************************
+c     *                                                              *
+c     *            subroutine stpdrv_J_adapt_scale_loads             *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 7/14/2022 rhd              *
+c     *                                                              *
+c     *       scale existing pattern factors for                     *
+c     *       about-to-be-computed and all subsequent steps by       * 
+c     *       the passed factor                                      *
+c     *                                                              *
+c     ****************************************************************
+c
 c
       subroutine stpdrv_J_adapt_scale_loads( now_step, factor )
 c
@@ -496,7 +627,7 @@ c
 c
       integer :: now_step, i, j, num_defined_steps, npatt
       double precision :: factor
-
+c
       num_defined_steps = size( step_load_data )
       do i = now_step, num_defined_steps
         npatt = step_load_data(i)%num_load_patterns
@@ -507,12 +638,11 @@ c
         actual_cnstrn_stp_factors(i) = actual_cnstrn_stp_factors(i) *
      &                                 factor 
       end do
-
+c
+      return
       end subroutine stpdrv_J_adapt_scale_loads
 c
       end subroutine stpdrv
-
-c
 c
 c     ****************************************************************
 c     *                                                              *

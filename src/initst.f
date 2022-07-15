@@ -67,7 +67,8 @@ c
      &      J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
      &      J_cutoff_step_1_constraint_factor, J_load_ratio_this_step,
      &      J_target_diff, J_limit_ratio_increase, 
-     &      J_limit_ratio_decrease, j_ratio_adaptive_steps
+     &      J_limit_ratio_decrease, j_ratio_adaptive_steps,
+     &      J_compute_step_2_automatic, J_auto_step_2_delta_K 
 c
       use erflgs
       use constants
@@ -624,7 +625,7 @@ c
 c
 c                       J value cutoff capability
 c
-      J_cutoff_active = .true.
+      J_cutoff_active = .false.
       J_cutoff_restart_file = .false. 
       J_cutoff_exceeded = .false.
       J_cutoff_num_frnt_positions =  0 
@@ -638,7 +639,9 @@ c
       J_target_diff = half
       J_limit_ratio_increase = 1.1d0
       J_limit_ratio_decrease = half
-      J_ratio_adaptive_steps = .true.
+      J_ratio_adaptive_steps = .false.
+      J_compute_step_2_automatic = .false.
+      J_auto_step_2_delta_K = ten
 c
 c                       initialize for possible nonlocal_analysis using
 c                       cohesive elements.
