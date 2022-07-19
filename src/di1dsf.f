@@ -1428,7 +1428,7 @@ c
      g    J_cutoff_active, J_cutoff_exceeded, 
      h    J_cutoff_num_frnt_positions, J_cutoff_step_1_num_patterns,
      i    J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
-     j    J_cutoff_Je_step_1, J_count_exceeded,
+     j    J_cutoff_Je_step_1, J_count_exceeded, J_max_now_step,
      k    J_cutoff_step_1_constraint_factor, J_max_step_1, 
      l    J_load_ratio_this_step, J_cutoff_now_frnt_position,
      m    J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio  
@@ -1840,8 +1840,12 @@ c
      &    "... entered di_process_J_cutoff ..."
 
       if( now_step == 1 ) then
-       if( J_cutoff_num_frnt_positions == 0 )
-     &           J_max_step_1 = -ten_billion
+       if( J_cutoff_num_frnt_positions == 0 ) then
+            J_max_step_1 = -ten_billion
+       end if
+       if( J_cutoff_num_frnt_positions == 0 ) 
+     &         J_max_now_step = -ten_billion
+c
        J_cutoff_num_frnt_positions =  J_cutoff_num_frnt_positions + 1
       end if
       J_cutoff_now_frnt_position = J_cutoff_now_frnt_position + 1
@@ -1860,6 +1864,8 @@ c
         J_max_step_1 = max( J_now, J_max_step_1 )
         J_cutoff_Je_step_1(J_cutoff_now_frnt_position) = J_now
         return
+      else
+        J_max_now_step =  max( J_now, J_max_now_step )
       end if
 c
       J_e_step_1 = J_cutoff_Je_step_1(J_cutoff_now_frnt_position)
