@@ -13,9 +13,10 @@ c  setup to run for 15 load steps.
 c
 c  get J at each point along crack front for each load step
 c 
-c  the J cutoff capability is employed to end (normally)
+c  the J cutoff, adaptive, automatic step 2,3
+c  capabilities are employed to end (normally)
 c  the solution when the ratio of J_{total}{ / J_{elastic}
-c  exceeds 5 at any crack-front position.
+c  exceeds 10 at any crack-front position.
 c
 c
 c  plate thickness:  1.5 in.
@@ -59,8 +60,9 @@ c
   divergence check on
   batch messages off
   bbar stabilization factor 0.0
-  J cutoff on ratio 15 e 30000 nu 0.3 restart  $   J cutoff feature
-  J ratio adaptive on target increase 0.5
+  J cutoff on ratio 10 e 30000 nu 0.3 restart  $   J cutoff feature
+  J ratio adaptive on target increase 0.25
+  J automatic step 2 on delta K 5
 c
   compute displacements for loading tension step 1
   *input from  './get_j_values'
