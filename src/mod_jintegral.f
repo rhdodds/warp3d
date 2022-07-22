@@ -4,7 +4,7 @@ c     *                    f-90 module j_data                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 7/15/2022 rhd                   *
+c     *              last modified : 7/21/2022 rhd                   *
 c     *     define the variables and data structures to support      *
 c     *     j-integral and i-integral computations                   *
 c     *                                                              *
@@ -29,7 +29,7 @@ c                     max sets and front nodes should be
 c                     same value
 c
       integer, parameter :: max_node_set=200,
-     &                      max_front_nodes=200, max_domain_rings=300,
+     &                      max_front_nodes=500, max_domain_rings=300,
      &                      size_j_values=8, size_i_values=8
 c
 c                     double precision/reals

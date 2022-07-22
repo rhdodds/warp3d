@@ -1834,10 +1834,10 @@ c
       double precision :: J_now, J_e_step_1, ymod, nu, KI_step_1,
      &                    KI_now, J_e_now, J_ratio 
       logical, parameter :: local_output = .true.
-      logical, parameter :: local_debug = .false.
+      logical, parameter :: local_debug = .true.
 c
-      if( local_debug ) write(out,*) 
-     &    "... entered di_process_J_cutoff ..."
+      if( local_debug ) write(out,*)
+     &    "... entered di_process_J_cutoff. now_step:  ...", now_step
 
       if( now_step == 1 ) then
        if( J_cutoff_num_frnt_positions == 0 ) then
@@ -1858,11 +1858,13 @@ c
          J_now = j_storage(1,10)
       else
          J_now = domain_avg_j / rg_count
-         if( .not. static_j ) J_now = static_avg / rg_count
+         if( .not. static_j ) J_now = static_avg / rg_count  
       end if
       if( now_step == 1 ) then
         J_max_step_1 = max( J_now, J_max_step_1 )
         J_cutoff_Je_step_1(J_cutoff_now_frnt_position) = J_now
+        if( local_debug ) write(out,*) 
+     &         ".. @: J_max_step_1, J_now:",  J_max_step_1, J_now
         return
       else
         J_max_now_step =  max( J_now, J_max_now_step )
@@ -1884,7 +1886,7 @@ c
          J_count_exceeded = J_count_exceeded + 1
       end if
       if( local_debug ) write(out,9000) J_load_ratio_this_step,
-     &      J_e_step_1, KI_step_1, KI_now, J_e_now, J_ratio
+     &      J_e_step_1, KI_step_1, J_now,  KI_now, J_e_now, J_ratio
       if( local_output ) write(out,9010) J_cutoff_now_frnt_position,
      &  J_ratio
 c
@@ -1893,9 +1895,10 @@ c
  9000 format(3x,'proportional load ratio this step: ', f10.5,
      &  /,   3x,'step 1 elastic J: ',e14.6,
      &  /,   3x,'KI for step 1: ',e14.6,
+     &  /,   3x,'J_now: ',e14.6,
      &  /,   3x,'KI_now: ',e14.6,
      &  /,   3x,'now step elastic J: ',e14.6,
-     &  /,   3x,'current J_total / J_elastic: ',f6.2)
+     &  /,   3x,'current J_total / J_elastic: ',f8.5)
  9010 format(' ** info: @ front position: ',i3,' J ratio: ',
      & f5.2 )
 c

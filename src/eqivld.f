@@ -916,7 +916,7 @@ c
 c           sum up the constraint (pattern) factors through the 
 c           current load step
 c
-      sum_constraints = sum( actual_cnstrn_stp_factors(1:now_step) )
+      sum_constraints = sum( actual_cnstrn_stp_factors(1:now_step) )    
 c
 c           write out the loading patterns and accumulated multipliers
 c           3 to the line. insert constraints multiplier at end.

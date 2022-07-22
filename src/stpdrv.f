@@ -21,7 +21,7 @@ c
      &                      output_command_file, max_step_limit,
      &                      stpchk, extrap_off_next_step,
      &                      user_cnstrn_stp_factors,
-     &                      actual_cnstrn_stp_factors
+     &                      user_cnstrn_stp_factors
 c
       use damage_data, only : growth_by_kill, growth_by_release
       use constants
@@ -474,7 +474,7 @@ c
           step_load_data(i)%load_patt_factor(j) = 
      &        step_load_data(1)%load_patt_factor(j) * step_2_factor
         end do
-        actual_cnstrn_stp_factors(i) = actual_cnstrn_stp_factors(1) *
+        user_cnstrn_stp_factors(i) = user_cnstrn_stp_factors(1) *
      &                                 step_2_factor 
       end do
 c
@@ -661,9 +661,10 @@ c
           step_load_data(i)%load_patt_factor(j) = 
      &        step_load_data(now_step-1)%load_patt_factor(j) * factor
         end do
-        actual_cnstrn_stp_factors(i) = 
-     &      actual_cnstrn_stp_factors(now_step-1) * factor 
+        user_cnstrn_stp_factors(i) = 
+     &      user_cnstrn_stp_factors(now_step-1) * factor 
       end do
+
 c
       if( now_step == 4 .and. here_debug ) then
          write(*,*) '  @ 3 now_step = 4'
