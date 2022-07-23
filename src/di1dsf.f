@@ -1833,8 +1833,8 @@ c
 c
       double precision :: J_now, J_e_step_1, ymod, nu, KI_step_1,
      &                    KI_now, J_e_now, J_ratio 
-      logical, parameter :: local_output = .true.
-      logical, parameter :: local_debug = .true.
+      logical, parameter :: local_output = .false.
+      logical, parameter :: local_debug = .false.
 c
       if( local_debug ) write(out,*)
      &    "... entered di_process_J_cutoff. now_step:  ...", now_step
