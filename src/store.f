@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/12/2022 rhd              *
+c     *                   last modified : 7/29/2022 rhd              *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -35,15 +35,7 @@ c
       use mm10_defs, only :
      & one_crystal_hist_size, common_hist_size
       use erflgs
-      use j_data, only : J_cutoff_active, J_cutoff_restart_file, 
-     &  J_cutoff_num_frnt_positions, J_cutoff_step_1_num_patterns,
-     &  J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
-     &  J_cutoff_Je_step_1, J_cutoff_step_1_constraint_factor,
-     &  patterns_step_1, max_front_nodes, J_target_diff,
-     &  J_limit_ratio_increase, J_limit_ratio_decrease,
-     &  J_ratio_adaptive_steps, J_compute_step_2_automatic,
-     &  J_auto_step_2_delta_K
-
+      use j_data
 c
       implicit none
 c
@@ -163,9 +155,10 @@ c
      &              coarsening, agg_levels, interpolation, relaxation,
      &              sweeps, cf, cycle_type, max_levels,
      &              one_crystal_hist_size, common_hist_size,
-     &              initial_state_step, mxnmbl,
+     &              initial_state_step, mxnmbl, J_count_exceeded,
      &              J_cutoff_num_frnt_positions,
-     &              J_cutoff_step_1_num_patterns
+     &              J_cutoff_step_1_num_patterns,
+     &              last_step_num_iters
       write (fileno) check_data_key
 c
 c
@@ -197,7 +190,8 @@ c
      &              initial_state_option, initial_stresses_input,
      &              cp_elems_present, J_cutoff_active, 
      &              J_cutoff_restart_file, J_ratio_adaptive_steps,
-     &              J_compute_step_2_automatic
+     &              J_compute_step_2_automatic, last_step_adapted,
+     &              J_diff_at_2_set     
       write(fileno) sparse_stiff_file_name, packet_file_name,
      &              initial_stresses_file
       write (fileno) check_data_key
@@ -218,7 +212,9 @@ c
      &              J_cutoff_ratio, J_cutoff_e, J_cutoff_nu, 
      &              J_cutoff_step_1_constraint_factor,
      &              J_target_diff, J_limit_ratio_increase,
-     &              J_limit_ratio_decrease, J_auto_step_2_delta_K
+     &              J_limit_ratio_decrease, J_auto_step_2_delta_K,
+     &              J_cutoff_max_value, J_max_now_step,
+     &              J_ratio_last_step, J_max_now_step, J_diff_at_2 
       write (fileno) check_data_key
 c
 c

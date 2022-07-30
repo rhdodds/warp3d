@@ -4,7 +4,7 @@ c     *                      subroutine stpdrv                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/8/2018 rhd               *
+c     *                   last modified : 7/24/22 rhd                *
 c     *                                                              *
 c     *     drive the solution process list of steps specified       *
 c     *     on the compute command. compute intermediate             *
@@ -16,12 +16,12 @@ c
       subroutine stpdrv( stplst, nsteps, ldnum )
       use global_data ! old common.main
 c
-      use main_data, only : cnstrn, cnstrn_in, temp_nodmap, temp_nodlod,
-     &                      output_packets, run_user_solution_routine,
-     &                      output_command_file, max_step_limit,
-     &                      stpchk, extrap_off_next_step,
-     &                      user_cnstrn_stp_factors,
-     &                      user_cnstrn_stp_factors
+      use main_data, only : cnstrn, cnstrn_in, temp_nodmap,
+     &  temp_nodlod, output_packets, run_user_solution_routine,
+     &  output_command_file, max_step_limit, stpchk, 
+     &  extrap_off_next_step, user_cnstrn_stp_factors,
+     &  user_cnstrn_stp_factors, last_step_adapted,
+     &  last_step_num_iters
 c
       use damage_data, only : growth_by_kill, growth_by_release
       use constants
@@ -254,7 +254,7 @@ c     *                 subroutine stpdrv_one_step                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/15/2022 rhd              *
+c     *                   last modified : 7/24/2022 rhd              *
 c     *                                                              *
 c     *            oversee setting up solution for one step          *
 c     *                                                              *
@@ -410,6 +410,8 @@ c          execute the iteration driver to compute
 c          displacements for this load-time step.
 c
       current_load_time_step = now_step
+      last_step_adapted = .false.
+      last_step_num_iters = 0
       call mnralg( mf, mf_nm1, mf_ratio_change, now_step, ldnum )
 c
 c          if global load step size was reduced via reduction
@@ -500,7 +502,7 @@ c     *                 subroutine stpdrv_J_cutoff                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/17/2022 rhd              *
+c     *                   last modified : 7/29/2022 rhd              *
 c     *                                                              *
 c     *       has J_/J-elastic ratio reached user limit ?            *
 c     *       and/or adapt this and future steps sizes to maintain   *
@@ -518,21 +520,30 @@ c
      &     J_cutoff_max_value, J_cutoff_ratio, 
      &     J_cutoff_frnt_pos_max_ratio, J_ratio_last_step,
      &     J_target_diff, J_ratio_adaptive_steps,
-     &     J_limit_ratio_increase, J_limit_ratio_decrease
+     &     J_limit_ratio_increase, J_limit_ratio_decrease,
+     &     J_diff_at_2_set, J_diff_at_2 
       implicit none
 c
       integer :: now_step
 c
       integer :: step_just_completed
-      logical :: ldummy1, ldummy2
+      logical :: ldummy1, ldummy2, ratio_set,
+     &           convergence_caused_reduction
       logical, parameter :: here_debug = .false. 
       double precision :: J_ratio_diff, J_load_factor, diff_tol,
-     &                    diff_ratio 
+     &                    diff_ratio, slope,  now_target_diff 
 c
-c                now_step is the step number about to be computed
+c                now_step is the step number about to be computed.
+c
 c                we first examine the difference in J/J_elastic
 c                values once step 3 is completed, i.e., the first
 c                difference is ratio @ 3 - ratio @ 2.
+c
+c                J_cutoff_max_value: max value on front
+c                  the front location at which this value occurs
+c                  often moves during early loading as plastic
+c                  deformation evolves
+c                J_cutoff_exceeded set by di_process_J_cutoff
 c
       step_just_completed = now_step - 1
       if( step_just_completed >= 3 ) then ! write summary
@@ -541,7 +552,8 @@ c
      &               J_count_exceeded,
      &              J_cutoff_num_frnt_positions,
      &              J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio,
-     &              J_max_now_step, J_ratio_diff
+     &              J_max_now_step, J_ratio_diff,
+     &              one/sqrt(J_cutoff_max_value) ! FAD vlaue
       end if
       if( step_just_completed >= 2 ) then ! update ratio for last step
         J_ratio_last_step = J_cutoff_max_value
@@ -562,48 +574,116 @@ c
 c
       if( .not. J_ratio_adaptive_steps ) return 
 c
+c              Basic scheme:
+c
 c              1. if change in J ratio over last step is within a 
-c                 tolerance of specified J_target_diff (input,
-c                 default = 0.5), no step size changes need. 
+c                 tolerance of a target value, say 0.3,
+c                 no step size changes need. 
 c
 c              2. measure of loading rate: J_load_factor = 
-c                     target change wanted (e.g. 0.5) / actual change
-c                   ex.  0.5/2.0 = 0.25 -> need to reduce step size
-c                        0.5/0.1 = 5.0  -> need to increase step sizes
+c                     target change wanted (e.g. 0.3) / actual change
+c                   ex.  0.3/2.0 = 0.15 -> need to reduce step size
+c                        0.3/0.1 = 3.0  -> need to increase step sizes
 c
 c              3. Tricky part is how much to increase/decrease
 c                    the step sizes.
 c                 Experiments with values indicate the following works
 c                    if J_load_factor < 0.5, reduce next and
-c                       future steps by 50% (input parameter)
-c                    if J_load_factor > 2, increase next and
+c                       future steps by 50% 
+c                    if J_load_factor > 1.2, increase next and
 c                       future steps by 10%
-c                  
-c                  These conditions seem to prevent reducing or 
-c                  increasing load steps sizes to rapidly   
 c
+c              4. Last check. if the last load step adapted for
+c                 global Newton convergence or # Newton iters > 4,
+c                 make load factor = 0.25 -- significantly
+c                 reduces next step size relative to last step
+c  
+c              Additional refinements July 28, 2022.
+c
+c               Some solutions are intended to generate data for FAD
+c               construction.
+c
+c               These need some reasonable number of solutions for
+c               KI/KJ > 0.8. Then fewer solutions are needed at larger
+c               Lr ratios.
+c
+c               Current scheme:
+c
+c                  - apply the user-specified delta KI for initial steps
+c                    until J/Je ~ 2.0. record the the delta (J/Je)
+c                    for the step when J/Je ~ 2.0 is reached: named
+c                    J_diff_at_2  (often < 0.3)
+c
+c                  - between J/Je = 2 and 8, linearly increase
+c                    the target delta (J/Je) from J_diff_at_2 to
+c                    the user-specified target value.
+c
+c                  - when J/Je >= 8, the user-specified target value
+c                    applies
+c
+c                
+c              These conditions seem to prevent reducing or 
+c              increasing load steps sizes to rapidly   
 c
 c               The diff_ratio = J_ratio_diff - J_target_diff can be
 c               slightly negative in early steps when the position of
 c               max J/J_e changes along the front.
 c
-      if( step_just_completed <= 2 ) return
-      diff_tol = 0.05d0 * J_target_diff
-      diff_ratio = J_ratio_diff - J_target_diff
-      if( diff_ratio < zero ) then ! max position on frnt  likely moved
-         J_load_factor = 1.1d0
+      if( J_cutoff_max_value <= two ) return  ! no step change
+      if( .not. J_diff_at_2_set ) then ! time to set J_diff_at_2
+          J_diff_at_2 = J_ratio_diff
+          J_diff_at_2_set = .true.
+      end if
+c
+      now_target_diff = J_target_diff ! user-specified input value
+      if( J_cutoff_max_value < eight ) then ! interpolate to get target
+        slope = ( J_target_diff - J_diff_at_2 ) / (eight - two )
+        now_target_diff = J_diff_at_2 + (J_cutoff_max_value-two)*slope
+        write(out,*) "..  J_target_diff ,J_diff_at_2: ",
+     &       J_target_diff ,J_diff_at_2
+        write(out,*) ".. slope, now_tar_diff: ",slope,now_target_diff 
+      end if
+c
+c               basic scheme now applied
+c
+      ratio_set = .false.  ! simplifies logic below
+      diff_tol = twentyth * now_target_diff
+      diff_ratio = J_ratio_diff - now_target_diff
+      if( diff_ratio < zero ) then ! max position on frnt likely moved
+         J_load_factor = J_limit_ratio_increase
+         ratio_set = .true.
       else
-         J_load_factor = J_target_diff / J_ratio_diff 
-         if( abs(diff_ratio) < diff_tol ) return ! keep same load step size
+         J_load_factor = now_target_diff / J_ratio_diff
+         if( abs(diff_ratio) < diff_tol ) ratio_set = .true.
       end if
 c
-      if( J_load_factor < one ) then  ! decrease load step size
-         if( J_load_factor < ptone ) J_load_factor = ptone ! limit decrease
+      if( .not. ratio_set ) then
+        if( J_load_factor < one ) then  ! decrease load step size
+          ratio_set = .true.
+          if( J_load_factor < ptone ) J_load_factor = ptone ! limit decrease
+          if( J_load_factor > half ) J_load_factor = half
+        end if
       end if
 c
-      if( J_load_factor > 1.2d0 ) ! increase step sizes
+      if( .not. ratio_set ) then
+        if( J_load_factor > J_limit_ratio_increase ) ! increase step sizes
      &       J_load_factor = J_limit_ratio_increase ! default = 1.1
-      write(out,9230) J_load_factor
+      end if  
+c
+c               if last load step caused issues with global Newton
+c               convergence, reduce next step size by 75%.
+c
+      convergence_caused_reduction = .false.
+      if( J_load_factor > quarter ) then
+        if( last_step_adapted .or. last_step_num_iters > 4 ) then 
+          J_load_factor = quarter
+          convergence_caused_reduction = .true.
+        end if
+      end if
+c
+      write(out,9230) now_target_diff, J_load_factor
+      if( convergence_caused_reduction ) write(out,9232)
+c
       if( here_debug ) then
         write(out,*) ' @1   step_just_completed: ',step_just_completed
         write(out,*) '      J_cutoff_max_value: ', J_cutoff_max_value
@@ -616,16 +696,21 @@ c
 9200  format(//,'>>>>> Summary for J-cutoff after step: ',i6,
      & /,'               user limit: ',f5.1,
      &   ' exceeded at: ',i3, ' of: ',i3, ' crack front positions',
-     & /,'               max J-ratio: ',f6.2,
+     & /,'               max J-ratio: ',f8.4,
      & ' at front position: ',i4 ,' max J value: ', e14.6,
-     & /,'               change in J-ratio over previous step: ',f7.3)
+     & /,'               change in J-ratio over previous step: ',f7.3,
+     & /,'               K_I / K_J (FAD): ',f6.3)
 9205  format(//,'>>>>> User-specified limit on J/J_elastic ',
      &    ' exceeded ...' )
 9210  format(/, '      Writing restart file: ',
      &        ' J_ratio_limit_exceeded.db' )
 9220  format(//, '>>>> Job terminated normally...',//)
-9230  format( /,'               multiplier applied to next & future ',
+9230  format( /,'               current target J-ratio change '
+     &   ' for next step: ',f7.3,
+     &        /,'               multiplier applied to next & future ',
      & '  steps: ',f6.2)
+9232  format(   '               convergence behavior of global Newton ',
+     & 'iterations for prior step governs multiplier')
 9235  format(//,'>>>>> INFO: Max J-ratio for step: ',i6,2x,f7.2)
 c
       end subroutine stpdrv_J_cutoff
@@ -655,6 +740,19 @@ c
       logical, parameter :: here_debug = .false.
 c
       num_defined_steps = size( step_load_data )
+      write(*,*) '.... entered stpdrv_J_adapt_scale_loads'
+      write(*,*) '        now_step, factor: ', now_step, factor
+      write(*,*) '        num_defined_steps: ',num_defined_steps 
+      write(*,*) '        before updates:'
+      do i = 1, 6
+        npatt = step_load_data(i)%num_load_patterns
+        write(*,*) "      > i, npatt: ",i, npatt 
+        do j = 1, npatt
+          write(*,*) '       j, stepdata: ', j,
+     &     step_load_data(i)%load_patt_factor(j) 
+        end do
+      end do
+
       do i = now_step, num_defined_steps
         npatt = step_load_data(i)%num_load_patterns
         do j = 1, npatt
@@ -663,6 +761,17 @@ c
         end do
         user_cnstrn_stp_factors(i) = 
      &      user_cnstrn_stp_factors(now_step-1) * factor 
+      end do
+c
+      write(*,*) '        after updates:'
+      do i = 1, 6
+        npatt = step_load_data(i)%num_load_patterns
+
+        write(*,*) "      > i, npatt: ",i, npatt 
+        do j = 1, npatt
+          write(*,*) '       j, stepdata: ', j,
+     &     step_load_data(i)%load_patt_factor(j) 
+        end do
       end do
 
 c

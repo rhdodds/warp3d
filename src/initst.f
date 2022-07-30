@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/12/2022 rhd              *
+c     *                   last modified : 7/28912/2022 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -62,7 +62,7 @@ c
 c
       use j_data, only : J_cutoff_active, J_cutoff_restart_file, 
      &      J_cutoff_exceeded, J_cutoff_num_frnt_positions, 
-     &      J_cutoff_now_frnt_position,
+     &      J_cutoff_now_frnt_position, J_diff_at_2_set,
      &      J_cutoff_step_1_num_patterns,
      &      J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
      &      J_cutoff_step_1_constraint_factor, J_load_ratio_this_step,
@@ -642,6 +642,7 @@ c
       J_ratio_adaptive_steps = .false.
       J_compute_step_2_automatic = .false.
       J_auto_step_2_delta_K = ten
+      J_diff_at_2_set = .false.
 c
 c                       initialize for possible nonlocal_analysis using
 c                       cohesive elements.

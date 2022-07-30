@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 1/31/2022 rhd               *
+c     *                   last modified: 7/24/22   rhd               *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -25,7 +25,7 @@ c
      &     non_zero_imposed_du, extrapolated_du, extrapolate,
      &     extrap_off_next_step, line_search, ls_details,
      &     ls_min_step_length, ls_max_step_length, ls_rho,
-     &     ls_slack_tol
+     &     ls_slack_tol, last_step_num_iters, last_step_adapted
       use adaptive_steps, only : adapt_result, adapt_disp_fact,
      &                           adapt_load_fact
       use hypre_parameters, only : hyp_trigger_step
@@ -614,7 +614,8 @@ c
 c          output convergence status.
 c
       call mnralg_ouconv( 1, iter, step, cnverg, out,
-     &                    total_model_time, adapt_load_fact  )
+     &                    total_model_time, adapt_load_fact,
+     &                    last_step_num_iters, last_step_adapted  )
       adapt_result = 1
       scaling_load = one
       if( adaptive ) then
@@ -1795,7 +1796,7 @@ c     *                      subroutine mnralg_ouconv                *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 5/13/2014 rhd              *
+c     *                   last modified : 7/24/22   rhd              *
 c     *                                                              *
 c     *     outputs convergence status of global Newton iterations   *
 c     *                                                              *
@@ -1804,17 +1805,16 @@ c
 c
 c
       subroutine mnralg_ouconv( itpr, lstitr, step, cnvflg, out,
-     &                   total_model_time, adapt_load_fact )
+     &                   total_model_time, adapt_load_fact,
+     &                   last_step_num_iters, last_step_adapted )
+c
+      use constants
       implicit none
 c
-      integer :: itpr, lstitr, step, out
-      logical :: cnvflg
-      double precision ::
-     & total_model_time, adapt_load_fact
-c
+      integer :: itpr, lstitr, step, out, last_step_num_iters
+      logical :: cnvflg, last_step_adapted
+      double precision :: total_model_time, adapt_load_fact
       character (len=10) :: fraction
-      double precision,
-     &  parameter :: one = 1.0d00
 c
 c                       newton nonlinear solution algorithm for
 c                       a load/time step
@@ -1824,11 +1824,13 @@ c
       write(fraction,9000) adapt_load_fact
 
       if( cnvflg ) then
+        last_step_num_iters = lstitr
         if( adapt_load_fact .eq. one ) then
           write(out,9100) step, lstitr, total_model_time
         else
           write(out,9102) step, fraction(6:10), lstitr,
      &                    total_model_time
+          last_step_adapted = .true.
         end if
 
       else

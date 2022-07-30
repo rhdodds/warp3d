@@ -4,7 +4,7 @@ c     *                    f-90 module j_data                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 7/21/2022 rhd                   *
+c     *              last modified : 7/29/2022 rhd                   *
 c     *     define the variables and data structures to support      *
 c     *     j-integral and i-integral computations                   *
 c     *                                                              *
@@ -110,7 +110,7 @@ c
 c
       logical :: J_cutoff_active, J_cutoff_restart_file, 
      &           J_cutoff_exceeded, J_ratio_adaptive_steps,
-     &           J_compute_step_2_automatic
+     &           J_compute_step_2_automatic, J_diff_at_2_set
       integer :: J_cutoff_num_frnt_positions, J_count_exceeded,
      &           J_cutoff_now_frnt_position,
      &           J_cutoff_step_1_num_patterns,
@@ -123,7 +123,7 @@ c
      &                    J_target_diff, J_limit_ratio_increase,
      &                    J_limit_ratio_decrease,
      &                    J_auto_step_2_delta_K,
-     &                    J_max_now_step
+     &                    J_max_now_step, J_diff_at_2
       type :: step_1_patterns
         character*8 :: id
         double precision :: factor

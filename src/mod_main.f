@@ -429,7 +429,8 @@ c
       end type
       type( step_convergence_data ), dimension(5) ::
      &   convergence_history
-      logical :: run_user_solution_routine
+      logical :: run_user_solution_routine, last_step_adapted
+      integer :: last_step_num_iters
 c
 c                 A CP flag, stick here b/c it's a solution parameter
 c
