@@ -532,7 +532,7 @@ c     *                    f-90 module constants                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 6/24/22 rhd                     *
+c     *              last modified : 8/8/2022 rhd                    *
 c     *                                                              *
 c     *     numerical values used throughout the code                *
 c     *                                                              *
@@ -567,6 +567,7 @@ c
      &   minus_one= -1.0d0
 c
       double precision, parameter ::
+     &   pt_zero_one = 0.01d0,
      &   pt_one  = 0.1d0,
      &   ptone   = 0.1d0,
      &   point_two = 0.2d0,
@@ -580,6 +581,7 @@ c
      &   third   = one/three,
      &   pt4     = 0.4d0, 
      &   half    = 0.5d0,
+     &   ptsix   = 0.6d0, 
      &   pt75    = 0.75d0,
      &   point_eight  = 0.8d0,
      &   ptnine  = 0.9d0,
@@ -592,7 +594,8 @@ c
      &   thirteenpt5 = 13.5d0,
      &   sixpt75 = 6.75d0,
      &   twentyth = 0.05d0,
-     &   thousandth = 0.001d0
+     &   thousandth = 0.001d0,
+     &   oneptone = 1.1d0 
 
 c
       double precision, parameter ::
