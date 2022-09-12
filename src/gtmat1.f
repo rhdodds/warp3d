@@ -280,7 +280,7 @@ c     *                      subroutine jacob1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/11/2017 rhd              *
+c     *                   last modified : 9/12/2022 rhd              *
 c     *                                                              *
 c     *     this subroutine computes the jacobian matrix of the      *
 c     *     mapping from uniform global space to parametric space,   *
@@ -314,7 +314,7 @@ c
 c
 c                   locals & work arrays (on stack)
 c
-      integer :: j, i, k, row, col
+      integer :: j, i, k, row, col, local_msg_count_1
       double precision :: j1(mxvl), j2(mxvl), j3(mxvl),
      &                    ce_rotated(mxvl,mxecor)
 c
@@ -444,10 +444,13 @@ c           check to insure a positive determinate.
 c
       do i = 1, span
        if( dj(i) .le. zero_check ) then
+!         write(out,9169) gpn,felem+i-1, dj(i)
 c$OMP ATOMIC UPDATE
          msg_count_1 = msg_count_1 + 1
-         if( msg_count_1 > 20 ) exit
-         if( msg_count_1 == 20 ) then
+c$OMP ATOMIC READ
+         local_msg_count_1 = msg_count_1
+         if( local_msg_count_1 > 20 ) exit
+         if( local_msg_count_1 == 20 ) then
            write(out,9170)
            exit
          end if
@@ -499,7 +502,7 @@ c
      &           ' matrix for gauss point ',i6,/7x,'of element ',
      &           i6,' is non-positive. current value: ',e12.5,/)
  9170 format(/1x,'>>>>> warning: *** no more messages about',
-     & ' the determinant ***')
+     & ' the determinant ***', //)
 c
       end
 c     ****************************************************************
@@ -586,7 +589,7 @@ c     *                      subroutine fcomp1                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 05/16/2018 rhd             *
+c     *                   last modified : 09/12/2022 rhd             *
 c     *                                                              *
 c     *     this subroutine computes the deformation gradient,       *
 c     *     and its determinate at a given gauss point for a         *
@@ -608,7 +611,7 @@ c
 c
 c                      locally allocated
 c
-      integer :: i
+      integer :: i, local_msg_count_2
       double precision :: f1(mxvl), f2(mxvl), f3(mxvl)
 c
       double precision, parameter :: zero_check=1.0d-20
@@ -649,8 +652,10 @@ c
             error = 1
 c$OMP ATOMIC UPDATE
             msg_count_2 = msg_count_2 + 1
-            if( msg_count_2 > 20 ) return
-            if( msg_count_2 < 20 ) then
+c$OMP ATOMIC READ
+            local_msg_count_2 = msg_count_2
+            if( local_msg_count_2 > 20 ) return
+            if( local_msg_count_2 < 20 ) then
               write(out,9170) gpn, felem+i-1, df(i)
             else
               write(out,9180)
@@ -663,7 +668,7 @@ c
      &           ' is non-positive. current value: ',e12.5,/,7x,
      &           'step size reduction requested...'/)
  9180 format(/1x,'>>>>> warning: *** no more messages about ',
-     & 'determinant of the deformation gradient ***' )
+     & 'determinant of the deformation gradient ***',// )
 c
       return
       end

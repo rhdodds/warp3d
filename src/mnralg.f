@@ -4,7 +4,7 @@ c     *                      subroutine mnralg                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified: 7/24/22   rhd               *
+c     *                   last modified: 9/12/22   rhd               *
 c     *                                                              *
 c     *     supervises advancing the solution from                   *
 c     *     step n to n+1 using a newton iteration process.          *
@@ -341,6 +341,8 @@ c          If contact has been enabled for this analysis, then search
 c          for contact against all the nodes.  If contact is found,
 c          compute the contact force.
 c
+      msg_count_1 = 0
+      msg_count_2 = 0
       call contact_find
 c
 c          perform the strain-stress recovery and compute the internal
@@ -351,6 +353,8 @@ c          imposed, incremental displacements for step.
 c
       if( show_details ) write(out,9155) step
       material_cut_step = .false.
+      msg_count_1 = 0
+      msg_count_2 = 0
       call drive_eps_sig_internal_forces( step, 0,
      &          material_cut_step )
 c
@@ -358,6 +362,8 @@ c          element stiffness matrices. (stifup gets only new element
 c          stiffnesss - not a structure stiff).
 c          We're processing stiffness at start of load step (iter=0)
 c
+      msg_count_1 = 0
+      msg_count_2 = 0
       call stifup( step, 1, out, newstf, show_details )
 c
 c          setup nodal forces that enforce for MPCs. we call them
@@ -427,7 +433,7 @@ c          we add nodal mass (with newmark beta and dt) to
 c          diagonal terms of element stiffnesses.
 c
  25   continue
-      msg_count_1 = 0 ! used to prevent excessive messages in low level routines
+      msg_count_1 = 0
       msg_count_2 = 0
       if( iter .gt. 1 ) ! start of step done above
      &         call stifup( step, iter, out, newstf, show_details )
@@ -458,7 +464,7 @@ c
 c
       if( dynamic ) call inclmass
 c
-c           Do some checks for things we haven't implemented yet
+c           Do some check s for things we haven't implemented yet
 c
       if( asymmetric_assembly .and. parallel_assembly_used ) then
             write(out,9720); write(out,9718)
@@ -518,6 +524,8 @@ c          an "instrumented" line search is available for research
 c          work on algortihms
 c
 c      call mnralg_ls_instrumented
+      msg_count_1 = 0
+      msg_count_2 = 0
       call mnralg_ls
 c
 c          did a faiure occur in strain computation for finite
@@ -1090,6 +1098,8 @@ c            ranks to compute strains, stresses, new internal forces.
 c
       call wmpi_send_itern
 c
+      msg_count_1 = 0
+      msg_count_2 = 0
       call drive_eps_sig_internal_forces( step, iter,
      &                                    material_cut_step )
       if( material_cut_step ) return ! reduced from all ranks
@@ -1115,6 +1125,8 @@ c            iterations.
 c
       call wmpi_send_itern
 c
+      msg_count_1 = 0
+      msg_count_2 = 0
       call drive_eps_sig_internal_forces( step, iter,
      &                                    material_cut_step )
       if( material_cut_step ) return ! reduced from all ranks
