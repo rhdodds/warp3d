@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 9/10/21 rhd                *          
+c     *                   last modified : 10/18/22 rhd               *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -2004,9 +2004,10 @@ c
          return
       end if
 c
-      if( matchs('name',4) ) call splunj
+      if( matchs_exact('name') ) call splunj
 c
-      if( label( idummy) ) then
+      temp_name = " " 
+      if( label(idummy) ) then
         call entits( temp_name, nchars )
       elseif( string( idummy ) ) then
         call entits( temp_name, nchars )
@@ -2017,6 +2018,7 @@ c
         return
       end if
 c
+      smcs_deleted_list_file_name(1:) = " "
       smcs_deleted_list_file_name(1:) = temp_name(1:nchars)
       inquire( file=smcs_deleted_list_file_name, exist=fexists )
       if( fexists ) then
