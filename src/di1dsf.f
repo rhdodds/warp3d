@@ -1847,26 +1847,29 @@ c
      &         J_max_now_step = -ten_billion
 c
        J_cutoff_num_frnt_positions =  J_cutoff_num_frnt_positions + 1
-      end if
+      end if ! step 1
+c
       J_cutoff_now_frnt_position = J_cutoff_now_frnt_position + 1
       if( J_cutoff_now_frnt_position == 1 ) then
          J_count_exceeded = 0
          J_cutoff_frnt_pos_max_ratio = 0
          J_cutoff_max_value = minus_one
       end if
+c
       if( ring_count == 1 ) then
          J_now = j_storage(1,10)
       else
          J_now = domain_avg_j / rg_count
          if( .not. static_j ) J_now = static_avg / rg_count  
       end if
+c
       if( now_step == 1 ) then
         J_max_step_1 = max( J_now, J_max_step_1 )
         J_cutoff_Je_step_1(J_cutoff_now_frnt_position) = J_now
         if( local_debug ) write(out,*) 
      &         ".. @: J_max_step_1, J_now:",  J_max_step_1, J_now
         return
-      else
+      else ! max value all for pos for entire analysis
         J_max_now_step =  max( J_now, J_max_now_step )
       end if
 c
@@ -1877,14 +1880,17 @@ c
       KI_now = KI_step_1 * J_load_ratio_this_step
       J_e_now = KI_now**2 * (one - nu**2 ) / ymod
       J_ratio = J_now / J_e_now
+c
       if( J_ratio >= J_cutoff_max_value ) then
            J_cutoff_max_value = J_ratio
            J_cutoff_frnt_pos_max_ratio = J_cutoff_now_frnt_position
       end if
+c
       if( J_ratio >= J_cutoff_ratio ) then
          J_cutoff_exceeded = .true.
          J_count_exceeded = J_count_exceeded + 1
       end if
+c
       if( local_debug ) write(out,9000) J_load_ratio_this_step,
      &      J_e_step_1, KI_step_1, J_now,  KI_now, J_e_now, J_ratio
       if( local_output ) write(out,9010) J_cutoff_now_frnt_position,

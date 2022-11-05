@@ -1002,6 +1002,7 @@ c
      &   ' exceeded at: ',i3, ' of: ',i3, ' crack front positions',
      & /,'               max J-ratio: ',f8.4,
      & ' at front position: ',i4 ,' max J value: ', e14.6,
+     & ' (for analysis, all front positions)',
      & /,'               change in J-ratio over previous step: ',f7.3,
      & /,'               K_I / K_J (FAD): ',f6.3)
 9205  format(//,'>>>>> User-specified limit on J/J_elastic ',
