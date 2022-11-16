@@ -4,7 +4,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/14/22 rhd                *
+c     *                   last modified : 11/15/22 rhd               *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -36,7 +36,8 @@ c
      &                    J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
      &                    J_target_diff, J_ratio_adaptive_steps,
      &                    J_compute_step_2_automatic, 
-     &                    J_auto_step_2_delta_K
+     &                    J_auto_step_2_delta_K, Kr_target_diff,
+     &                    Kr_min_limit
       use constants
 
 c
@@ -106,7 +107,7 @@ c
       if( matchs_exact('line')      ) go to 3500 ! line search
       if( matchs_exact('initial')   ) go to 3600 ! state
       if( matchs_exact('J')         ) go to 3700 ! J cutoff, adaptive,
-c                                                  auto step 2 size 
+      if( matchs_exact('Kr')        ) go to 3700 !     "      "                                             auto step 2 size 
 c
 c                       no match with solutions parameters command.
 c                       return to driver subroutine to look for high
@@ -1381,19 +1382,24 @@ c
 c
 c **********************************************************************
 c *                                                                    *
-c *                J cutoff, ratio adaptive option                     *
+c *                J cutoff, J, Kr ratio adaptive option               *
 c *                                                                    *
 c **********************************************************************
 c
  3700 continue
 c
       type1 = .false.  ! J cutoff ratio ....
-      type2 = .false.  ! J ratio adaptive ....
+      type2 = .false.  ! J/Kr adaptive ....
       type3 = .false.  ! J automatic step 2 ...
+c
+      if( matchs_exact('J') )  call splunj
+      if( matchs_exact('Kr') )  call splunj
+      if( matchs_exact('J') )  call splunj
+      if( matchs_exact('ratio') )  call splunj
 c
       if( matchs_exact('cutoff') ) then
          type1 = .true.
-      elseif( matchs_exact('ratio') ) then 
+      elseif( matchs('adaptive',4) ) then 
          type2 = .true.
       elseif( matchs('automatic',4) ) then 
          type3 = .true.
@@ -1472,35 +1478,8 @@ c
  9570 format(/1x,'>>>>> error: initial state option allowed only',
      &       /1x,'             before solution of step 1',/)
  9575 format(/1x,'>>>>> error: unrecognized J option. expecting ',
-     & 'keyword: cutoff, ratio or automatic',/,
+     & 'keyword: cutoff, adaptive or automatic',/,
      &           '              scanning: ', a )
- 9600 format(/1x,'>>>>> error: expecting keyword: cutoff or ratio',/,
-     &           '              scanning: ', a )
- 9605 format(/1x,'>>>>> error: expecting keyword: cutoff or ',
-     &           'adaptive',/,
-     &           '              scanning: ', a )
- 9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
-     &           '              scanning: ', a, /,
-     &           '              no default ratio defined')
- 9620 format(/1x,'>>>>> error: expecting values for ratio',/,
-     &           '              scanning: ', a )
- 9630 format(/1x,'>>>>> error: expecting keyword: E',/,
-     &           '              scanning: ', a )
- 9640 format(/1x,'>>>>> error: expecting value for E',/,
-     &           '              scanning: ', a )
- 9650 format(/1x,'>>>>> error: expecting keyword: nu',/,
-     &           '              scanning: ', a )
- 9660 format(/1x,'>>>>> error: expecting value for nu',/,
-     &           '              scanning: ', a )
- 9670 format(/1x,'>>>>> error: expecting keyword: restart',/,
-     &           '              scanning: ', a )
- 9680 format(/1x,'>>>>> error: expecting keyword: adaptive',/,
-     &           '              scanning: ', a )
- 9690 format(/1x,'>>>>> error: expecting keyword: target',/,
-     &           '              scanning: ', a )
- 9695 format(/1x,'>>>>> error: expecting value for target increase',/,
-     &           '              scanning: ', a )
-c
 c
       contains
 c     ========
@@ -1616,18 +1595,6 @@ c
       return
 c
  9540 format(/1x,'>>>>> error: expecting keyword: on *or* off',/)
- 9550 format(/1x,'>>>>> error: expecting step number',/)
- 9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
- 9570 format(/1x,'>>>>> error: initial state option allowed only',
-     &       /1x,'             before solution of step 1',/)
- 9575 format(/1x,'>>>>> error: unrecognized J option. expecting ',
-     & 'keyword: cutoff, ratio or automatic',/,
-     &           '              scanning: ', a )
- 9600 format(/1x,'>>>>> error: expecting keyword: cutoff or ratio',/,
-     &           '              scanning: ', a )
- 9605 format(/1x,'>>>>> error: expecting keyword: cutoff or ',
-     &           'adaptive',/,
-     &           '              scanning: ', a )
  9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
      &           '              scanning: ', a, /,
      &           '              no default ratio defined')
@@ -1643,12 +1610,6 @@ c
      &           '              scanning: ', a )
  9670 format(/1x,'>>>>> error: expecting keyword: restart',/,
      &           '              scanning: ', a )
- 9680 format(/1x,'>>>>> error: expecting keyword: adaptive',/,
-     &           '              scanning: ', a )
- 9690 format(/1x,'>>>>> error: expecting keyword: target',/,
-     &           '              scanning: ', a )
- 9695 format(/1x,'>>>>> error: expecting value for target increase',/,
-     &           '              scanning: ', a )
 c
       end subroutine indypm_J_type1
 c
@@ -1658,17 +1619,12 @@ c
       implicit none
 c
       logical, parameter :: here_debug = .false.
+      real :: rdummy
 c
       J_ratio_adaptive_steps = .false.
-      J_target_diff = half
-c
-      if( .not. matchs('adaptive',4) ) then
-         num_error = num_error + 1
-         call entits( error_string, ncerror )
-         write(out,9680) error_string(1:ncerror)
-         call scan_flushline
-         return
-      end if
+      J_target_diff  = half
+      Kr_min_limit   = ptsix
+      Kr_target_diff = pt_zero_one
 c
       if( matchs_exact('off') ) then
          call scan_flushline
@@ -1683,12 +1639,81 @@ c
          return
       end if
 c
-      if( here_debug ) write(out,*) '.. J adaptive: true'
+      if( here_debug ) write(out,*) '.. J/Kr adaptive: true'
 
 c
       J_ratio_adaptive_steps = .true.
 c
-      if( endcrd( ) ) return
+      if( endcrd( rdummy ) ) return
+c
+      if( matchs_exact('target') ) then ! supports old version
+        if( matchs('increase',4) ) call splunj
+        if( .not. numd(J_target_diff) ) then
+         J_ratio_adaptive_steps = .false.  
+         num_error = num_error + 1     
+         call entits( error_string, ncerror )
+         write(out,9705) error_string(1:ncerror)
+         call scan_flushline
+         return
+        end if
+      end if
+c
+      if( matchs_exact('Kr') ) then
+        if( .not. matchs_exact('target') ) then
+           J_ratio_adaptive_steps = .false.  
+           num_error = num_error + 1
+           call entits( error_string, ncerror )
+           write(out,9690) error_string(1:ncerror)
+           call scan_flushline
+           return
+        end if
+        if( matchs('decrease',4) ) call splunj
+        if( .not. numd(Kr_target_diff) ) then
+           J_ratio_adaptive_steps = .false.  
+           num_error = num_error + 1     
+           call entits( error_string, ncerror )
+           write(out,9695) error_string(1:ncerror)
+           call scan_flushline
+           return
+        end if
+      end if   ! match on Kr target
+c
+      if( endcrd( rdummy ) ) return
+c
+      if( matchs_exact('Kr') ) then
+        if( matchs_exact('min') ) call splunj
+        if( .not. matchs_exact('limit') ) then
+           J_ratio_adaptive_steps = .false.  
+           num_error = num_error + 1
+           call entits( error_string, ncerror )
+           write(out,9692) error_string(1:ncerror)
+           call scan_flushline
+           return
+        end if
+        if( .not. numd(Kr_min_limit) ) then
+           J_ratio_adaptive_steps = .false.  
+           num_error = num_error + 1     
+           call entits( error_string, ncerror )
+           write(out,9697) error_string(1:ncerror)
+           call scan_flushline
+           return
+        end if
+      end if   ! match on Kr min limit
+c
+      if( endcrd( rdummy ) ) return
+c
+      if( .not. matchs_exact('J') ) then
+         J_ratio_adaptive_steps = .false.  
+         num_error = num_error + 1
+         call entits( error_string, ncerror )
+         write(out,9700) error_string(1:ncerror)
+         call scan_flushline
+         return
+      end if 
+c
+      if( endcrd( rdummy ) ) return
+c
+      if( matchs('increase',4) ) call splunj
 c
       if( .not. matchs_exact('target') ) then
            J_ratio_adaptive_steps = .false.  
@@ -1699,54 +1724,41 @@ c
            return
       end if
 c
+      if( endcrd( rdummy ) ) return
+c
       if( matchs('increase',4) ) call splunj
+c
+      if( endcrd( rdummy ) ) return
+c
       if( .not. numd(J_target_diff) ) then
          J_ratio_adaptive_steps = .false.  
          num_error = num_error + 1     
          call entits( error_string, ncerror )
-         write(out,9695) error_string(1:ncerror)
+         write(out,9705) error_string(1:ncerror)
          call scan_flushline
          return
       end if
 c
-      if( here_debug ) write(out,*) '.. J_target_diff: ',
-     &                J_target_diff
+      if( here_debug ) then
+         write(out,*) '.. Kr_target_diff: ',  Kr_target_diff
+         write(out,*) '.. Kr_min_limit: ',  Kr_min_limit
+         write(out,*) '.. J_target_diff: ',  J_target_diff
+      end if 
 c
       return
 c
  9540 format(/1x,'>>>>> error: expecting keyword: on *or* off',/)
- 9550 format(/1x,'>>>>> error: expecting step number',/)
- 9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
- 9570 format(/1x,'>>>>> error: initial state option allowed only',
-     &       /1x,'             before solution of step 1',/)
- 9575 format(/1x,'>>>>> error: unrecognized J option. expecting ',
-     & 'keyword: cutoff, ratio or automatic',/,
-     &           '              scanning: ', a )
- 9600 format(/1x,'>>>>> error: expecting keyword: cutoff or ratio',/,
-     &           '              scanning: ', a )
- 9605 format(/1x,'>>>>> error: expecting keyword: cutoff or ',
-     &           'adaptive',/,
-     &           '              scanning: ', a )
- 9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
-     &           '              scanning: ', a, /,
-     &           '              no default ratio defined')
- 9620 format(/1x,'>>>>> error: expecting values for ratio',/,
-     &           '              scanning: ', a )
- 9630 format(/1x,'>>>>> error: expecting keyword: E',/,
-     &           '              scanning: ', a )
- 9640 format(/1x,'>>>>> error: expecting value for E',/,
-     &           '              scanning: ', a )
- 9650 format(/1x,'>>>>> error: expecting keyword: nu',/,
-     &           '              scanning: ', a )
- 9660 format(/1x,'>>>>> error: expecting value for nu',/,
-     &           '              scanning: ', a )
- 9670 format(/1x,'>>>>> error: expecting keyword: restart',/,
-     &           '              scanning: ', a )
- 9680 format(/1x,'>>>>> error: expecting keyword: adaptive',/,
-     &           '              scanning: ', a )
  9690 format(/1x,'>>>>> error: expecting keyword: target',/,
      &           '              scanning: ', a )
- 9695 format(/1x,'>>>>> error: expecting value for target increase',/,
+ 9692 format(/1x,'>>>>> error: expecting keyword: limit',/,
+     &           '              scanning: ', a )
+ 9695 format(/1x,'>>>>> error: expecting value for target',/,
+     &           '              scanning: ', a )
+ 9697 format(/1x,'>>>>> error: expecting value for Kr min limit',/,
+     &           '              scanning: ', a )
+ 9700 format(/1x,'>>>>> error: unknown keyword',/,
+     &           '              scanning: ', a )
+ 9705 format(/1x,'>>>>> error: expecting value for J target',/,
      &           '              scanning: ', a )
 c
       end subroutine indypm_J_type2
@@ -1823,39 +1835,6 @@ c
       return
 c
  9540 format(/1x,'>>>>> error: expecting keyword: on *or* off',/)
- 9550 format(/1x,'>>>>> error: expecting step number',/)
- 9560 format(/1x,'>>>>> error: unrecognized initial state command',/)
- 9570 format(/1x,'>>>>> error: initial state option allowed only',
-     &       /1x,'             before solution of step 1',/)
- 9575 format(/1x,'>>>>> error: unrecognized J option. expecting ',
-     & 'keyword: cutoff, ratio or automatic',/,
-     &           '              scanning: ', a )
- 9600 format(/1x,'>>>>> error: expecting keyword: cutoff or ratio',/,
-     &           '              scanning: ', a )
- 9605 format(/1x,'>>>>> error: expecting keyword: cutoff or ',
-     &           'adaptive',/,
-     &           '              scanning: ', a )
- 9610 format(/1x,'>>>>> error: expecting keyword: ratio',/,
-     &           '              scanning: ', a, /,
-     &           '              no default ratio defined')
- 9620 format(/1x,'>>>>> error: expecting values for ratio',/,
-     &           '              scanning: ', a )
- 9630 format(/1x,'>>>>> error: expecting keyword: E',/,
-     &           '              scanning: ', a )
- 9640 format(/1x,'>>>>> error: expecting value for E',/,
-     &           '              scanning: ', a )
- 9650 format(/1x,'>>>>> error: expecting keyword: nu',/,
-     &           '              scanning: ', a )
- 9660 format(/1x,'>>>>> error: expecting value for nu',/,
-     &           '              scanning: ', a )
- 9670 format(/1x,'>>>>> error: expecting keyword: restart',/,
-     &           '              scanning: ', a )
- 9680 format(/1x,'>>>>> error: expecting keyword: adaptive',/,
-     &           '              scanning: ', a )
- 9690 format(/1x,'>>>>> error: expecting keyword: target',/,
-     &           '              scanning: ', a )
- 9695 format(/1x,'>>>>> error: expecting value for target increase',/,
-     &           '              scanning: ', a )
  9700 format(/1x,'>>>>> error: expecting keyword: step',/,
      &           '              scanning: ', a )
  9705 format(/1x,'>>>>> error: expecting keyword: delta',/,

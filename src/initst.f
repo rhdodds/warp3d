@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/28912/2022 rhd              *
+c     *                   last modified : 11/15/22 rhd               *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -68,7 +68,8 @@ c
      &      J_cutoff_step_1_constraint_factor, J_load_ratio_this_step,
      &      J_target_diff, J_limit_ratio_increase, 
      &      J_limit_ratio_decrease, j_ratio_adaptive_steps,
-     &      J_compute_step_2_automatic, J_auto_step_2_delta_K 
+     &      J_compute_step_2_automatic, J_auto_step_2_delta_K,
+     &      Kr_min_limit, Kr_target_diff 
 c
       use erflgs
       use constants
@@ -643,6 +644,8 @@ c
       J_compute_step_2_automatic = .false.
       J_auto_step_2_delta_K = ten
       J_diff_at_2_set = .false.
+      Kr_min_limit = ptsix
+      Kr_target_diff = pt_zero_one
 c
 c                       initialize for possible nonlocal_analysis using
 c                       cohesive elements.

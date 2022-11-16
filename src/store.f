@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/29/2022 rhd              *
+c     *                   last modified : 11/16/22 rhd               *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -214,7 +214,8 @@ c
      &              J_target_diff, J_limit_ratio_increase,
      &              J_limit_ratio_decrease, J_auto_step_2_delta_K,
      &              J_cutoff_max_value, J_max_now_step,
-     &              J_ratio_last_step, J_max_now_step, J_diff_at_2 
+     &              J_ratio_last_step, J_max_now_step, J_diff_at_2,
+     &              Kr_target_diff, Kr_min_limit 
       write (fileno) check_data_key
 c
 c

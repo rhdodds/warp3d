@@ -4,7 +4,7 @@ c     *                    f-90 module j_data                        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 7/29/2022 rhd                   *
+c     *              last modified : 11/16/22 rhd                    *
 c     *     define the variables and data structures to support      *
 c     *     j-integral and i-integral computations                   *
 c     *                                                              *
@@ -122,8 +122,8 @@ c
      &                    J_cutoff_max_value, J_ratio_last_step,
      &                    J_target_diff, J_limit_ratio_increase,
      &                    J_limit_ratio_decrease,
-     &                    J_auto_step_2_delta_K,
-     &                    J_max_now_step, J_diff_at_2
+     &                    J_auto_step_2_delta_K, Kr_target_diff,
+     &                    J_max_now_step, J_diff_at_2, Kr_min_limit
       type :: step_1_patterns
         character*8 :: id
         double precision :: factor
