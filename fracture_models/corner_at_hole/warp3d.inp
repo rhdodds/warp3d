@@ -44,7 +44,8 @@ c
 c 
  loading tension
   nonlinear
-   step 1-50 unit_remote 2.0
+   step 1 unit_remote 2.0
+   steps 2-1000 unit_remote 0.0
 c
  nonlinear analysis parameters
   solution technique sparse iterative $ faster that direct solver
@@ -60,185 +61,1508 @@ c
   divergence check on
   batch messages off
   bbar stabilization factor 0.0
-  J cutoff on ratio 10 e 30000 nu 0.3 restart  $   J cutoff feature
-  J ratio adaptive on target increase 0.25
-  J automatic step 2 on delta K 5
+  J cutoff on ratio 15 e 30000 nu 0.3 restart  $   J cutoff feature
+  J adaptive on Kr target 0.05 J target increase 0.2
+  J automatic step 2 on delta K 2
 c
-  compute displacements for loading tension step 1
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 2
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 3
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 4
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 5
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 6
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 7
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 8
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 9
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 10
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 11
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 12
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 13
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 14
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 15
-  *input from  './get_j_values'
-c
-c
-c 
-  compute displacements for loading tension step 16
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 17
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 18
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 19
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 20
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 21
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 22
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 23
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 24
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 25
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 26
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 27
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 28
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 29
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 30
-  *input from  './get_j_values'
-c 
-  compute displacements for loading tension step 31
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 32
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 33
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 34
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 35
-  *input from  './get_j_values'
-c
-  compute displacements for loading tension step 36
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 37
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 38
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 39
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 40
-  *input from  './get_j_values'
-c 
-  compute displacements for loading tension step 41
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 42
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 43
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 44
-  *input from  './get_j_values'
-c
-c 
-  compute displacements for loading tension step 45
-  *input from  './get_j_values'
 
-  stop
+!
+compute displacements for loading tension step 1
+*input './get_j_values'
+!
+compute displacements for loading tension step 2
+*input './get_j_values'
+!
+compute displacements for loading tension step 3
+*input './get_j_values'
+!
+compute displacements for loading tension step 4
+*input './get_j_values'
+!
+compute displacements for loading tension step 5
+*input './get_j_values'
+!
+compute displacements for loading tension step 6
+*input './get_j_values'
+!
+compute displacements for loading tension step 7
+*input './get_j_values'
+!
+compute displacements for loading tension step 8
+*input './get_j_values'
+!
+compute displacements for loading tension step 9
+*input './get_j_values'
+!
+compute displacements for loading tension step 10
+*input './get_j_values'
+!
+compute displacements for loading tension step 11
+*input './get_j_values'
+!
+compute displacements for loading tension step 12
+*input './get_j_values'
+!
+compute displacements for loading tension step 13
+*input './get_j_values'
+!
+compute displacements for loading tension step 14
+*input './get_j_values'
+!
+compute displacements for loading tension step 15
+*input './get_j_values'
+!
+compute displacements for loading tension step 16
+*input './get_j_values'
+!
+compute displacements for loading tension step 17
+*input './get_j_values'
+!
+compute displacements for loading tension step 18
+*input './get_j_values'
+!
+compute displacements for loading tension step 19
+*input './get_j_values'
+!
+compute displacements for loading tension step 20
+*input './get_j_values'
+!
+compute displacements for loading tension step 21
+*input './get_j_values'
+!
+compute displacements for loading tension step 22
+*input './get_j_values'
+!
+compute displacements for loading tension step 23
+*input './get_j_values'
+!
+compute displacements for loading tension step 24
+*input './get_j_values'
+!
+compute displacements for loading tension step 25
+*input './get_j_values'
+!
+compute displacements for loading tension step 26
+*input './get_j_values'
+!
+compute displacements for loading tension step 27
+*input './get_j_values'
+!
+compute displacements for loading tension step 28
+*input './get_j_values'
+!
+compute displacements for loading tension step 29
+*input './get_j_values'
+!
+compute displacements for loading tension step 30
+*input './get_j_values'
+!
+compute displacements for loading tension step 31
+*input './get_j_values'
+!
+compute displacements for loading tension step 32
+*input './get_j_values'
+!
+compute displacements for loading tension step 33
+*input './get_j_values'
+!
+compute displacements for loading tension step 34
+*input './get_j_values'
+!
+compute displacements for loading tension step 35
+*input './get_j_values'
+!
+compute displacements for loading tension step 36
+*input './get_j_values'
+!
+compute displacements for loading tension step 37
+*input './get_j_values'
+!
+compute displacements for loading tension step 38
+*input './get_j_values'
+!
+compute displacements for loading tension step 39
+*input './get_j_values'
+!
+compute displacements for loading tension step 40
+*input './get_j_values'
+!
+compute displacements for loading tension step 41
+*input './get_j_values'
+!
+compute displacements for loading tension step 42
+*input './get_j_values'
+!
+compute displacements for loading tension step 43
+*input './get_j_values'
+!
+compute displacements for loading tension step 44
+*input './get_j_values'
+!
+compute displacements for loading tension step 45
+*input './get_j_values'
+!
+compute displacements for loading tension step 46
+*input './get_j_values'
+!
+compute displacements for loading tension step 47
+*input './get_j_values'
+!
+compute displacements for loading tension step 48
+*input './get_j_values'
+!
+compute displacements for loading tension step 49
+*input './get_j_values'
+!
+compute displacements for loading tension step 50
+*input './get_j_values'
+!
+compute displacements for loading tension step 51
+*input './get_j_values'
+!
+compute displacements for loading tension step 52
+*input './get_j_values'
+!
+compute displacements for loading tension step 53
+*input './get_j_values'
+!
+compute displacements for loading tension step 54
+*input './get_j_values'
+!
+compute displacements for loading tension step 55
+*input './get_j_values'
+!
+compute displacements for loading tension step 56
+*input './get_j_values'
+!
+compute displacements for loading tension step 57
+*input './get_j_values'
+!
+compute displacements for loading tension step 58
+*input './get_j_values'
+!
+compute displacements for loading tension step 59
+*input './get_j_values'
+!
+compute displacements for loading tension step 60
+*input './get_j_values'
+!
+compute displacements for loading tension step 61
+*input './get_j_values'
+!
+compute displacements for loading tension step 62
+*input './get_j_values'
+!
+compute displacements for loading tension step 63
+*input './get_j_values'
+!
+compute displacements for loading tension step 64
+*input './get_j_values'
+!
+compute displacements for loading tension step 65
+*input './get_j_values'
+!
+compute displacements for loading tension step 66
+*input './get_j_values'
+!
+compute displacements for loading tension step 67
+*input './get_j_values'
+!
+compute displacements for loading tension step 68
+*input './get_j_values'
+!
+compute displacements for loading tension step 69
+*input './get_j_values'
+!
+compute displacements for loading tension step 70
+*input './get_j_values'
+!
+compute displacements for loading tension step 71
+*input './get_j_values'
+!
+compute displacements for loading tension step 72
+*input './get_j_values'
+!
+compute displacements for loading tension step 73
+*input './get_j_values'
+!
+compute displacements for loading tension step 74
+*input './get_j_values'
+!
+compute displacements for loading tension step 75
+*input './get_j_values'
+!
+compute displacements for loading tension step 76
+*input './get_j_values'
+!
+compute displacements for loading tension step 77
+*input './get_j_values'
+!
+compute displacements for loading tension step 78
+*input './get_j_values'
+!
+compute displacements for loading tension step 79
+*input './get_j_values'
+!
+compute displacements for loading tension step 80
+*input './get_j_values'
+!
+compute displacements for loading tension step 81
+*input './get_j_values'
+!
+compute displacements for loading tension step 82
+*input './get_j_values'
+!
+compute displacements for loading tension step 83
+*input './get_j_values'
+!
+compute displacements for loading tension step 84
+*input './get_j_values'
+!
+compute displacements for loading tension step 85
+*input './get_j_values'
+!
+compute displacements for loading tension step 86
+*input './get_j_values'
+!
+compute displacements for loading tension step 87
+*input './get_j_values'
+!
+compute displacements for loading tension step 88
+*input './get_j_values'
+!
+compute displacements for loading tension step 89
+*input './get_j_values'
+!
+compute displacements for loading tension step 90
+*input './get_j_values'
+!
+compute displacements for loading tension step 91
+*input './get_j_values'
+!
+compute displacements for loading tension step 92
+*input './get_j_values'
+!
+compute displacements for loading tension step 93
+*input './get_j_values'
+!
+compute displacements for loading tension step 94
+*input './get_j_values'
+!
+compute displacements for loading tension step 95
+*input './get_j_values'
+!
+compute displacements for loading tension step 96
+*input './get_j_values'
+!
+compute displacements for loading tension step 97
+*input './get_j_values'
+!
+compute displacements for loading tension step 98
+*input './get_j_values'
+!
+compute displacements for loading tension step 99
+*input './get_j_values'
+!
+compute displacements for loading tension step 100
+*input './get_j_values'
+!
+compute displacements for loading tension step 101
+*input './get_j_values'
+!
+compute displacements for loading tension step 102
+*input './get_j_values'
+!
+compute displacements for loading tension step 103
+*input './get_j_values'
+!
+compute displacements for loading tension step 104
+*input './get_j_values'
+!
+compute displacements for loading tension step 105
+*input './get_j_values'
+!
+compute displacements for loading tension step 106
+*input './get_j_values'
+!
+compute displacements for loading tension step 107
+*input './get_j_values'
+!
+compute displacements for loading tension step 108
+*input './get_j_values'
+!
+compute displacements for loading tension step 109
+*input './get_j_values'
+!
+compute displacements for loading tension step 110
+*input './get_j_values'
+!
+compute displacements for loading tension step 111
+*input './get_j_values'
+!
+compute displacements for loading tension step 112
+*input './get_j_values'
+!
+compute displacements for loading tension step 113
+*input './get_j_values'
+!
+compute displacements for loading tension step 114
+*input './get_j_values'
+!
+compute displacements for loading tension step 115
+*input './get_j_values'
+!
+compute displacements for loading tension step 116
+*input './get_j_values'
+!
+compute displacements for loading tension step 117
+*input './get_j_values'
+!
+compute displacements for loading tension step 118
+*input './get_j_values'
+!
+compute displacements for loading tension step 119
+*input './get_j_values'
+!
+compute displacements for loading tension step 120
+*input './get_j_values'
+!
+compute displacements for loading tension step 121
+*input './get_j_values'
+!
+compute displacements for loading tension step 122
+*input './get_j_values'
+!
+compute displacements for loading tension step 123
+*input './get_j_values'
+!
+compute displacements for loading tension step 124
+*input './get_j_values'
+!
+compute displacements for loading tension step 125
+*input './get_j_values'
+!
+compute displacements for loading tension step 126
+*input './get_j_values'
+!
+compute displacements for loading tension step 127
+*input './get_j_values'
+!
+compute displacements for loading tension step 128
+*input './get_j_values'
+!
+compute displacements for loading tension step 129
+*input './get_j_values'
+!
+compute displacements for loading tension step 130
+*input './get_j_values'
+!
+compute displacements for loading tension step 131
+*input './get_j_values'
+!
+compute displacements for loading tension step 132
+*input './get_j_values'
+!
+compute displacements for loading tension step 133
+*input './get_j_values'
+!
+compute displacements for loading tension step 134
+*input './get_j_values'
+!
+compute displacements for loading tension step 135
+*input './get_j_values'
+!
+compute displacements for loading tension step 136
+*input './get_j_values'
+!
+compute displacements for loading tension step 137
+*input './get_j_values'
+!
+compute displacements for loading tension step 138
+*input './get_j_values'
+!
+compute displacements for loading tension step 139
+*input './get_j_values'
+!
+compute displacements for loading tension step 140
+*input './get_j_values'
+!
+compute displacements for loading tension step 141
+*input './get_j_values'
+!
+compute displacements for loading tension step 142
+*input './get_j_values'
+!
+compute displacements for loading tension step 143
+*input './get_j_values'
+!
+compute displacements for loading tension step 144
+*input './get_j_values'
+!
+compute displacements for loading tension step 145
+*input './get_j_values'
+!
+compute displacements for loading tension step 146
+*input './get_j_values'
+!
+compute displacements for loading tension step 147
+*input './get_j_values'
+!
+compute displacements for loading tension step 148
+*input './get_j_values'
+!
+compute displacements for loading tension step 149
+*input './get_j_values'
+!
+compute displacements for loading tension step 150
+*input './get_j_values'
+!
+compute displacements for loading tension step 151
+*input './get_j_values'
+!
+compute displacements for loading tension step 152
+*input './get_j_values'
+!
+compute displacements for loading tension step 153
+*input './get_j_values'
+!
+compute displacements for loading tension step 154
+*input './get_j_values'
+!
+compute displacements for loading tension step 155
+*input './get_j_values'
+!
+compute displacements for loading tension step 156
+*input './get_j_values'
+!
+compute displacements for loading tension step 157
+*input './get_j_values'
+!
+compute displacements for loading tension step 158
+*input './get_j_values'
+!
+compute displacements for loading tension step 159
+*input './get_j_values'
+!
+compute displacements for loading tension step 160
+*input './get_j_values'
+!
+compute displacements for loading tension step 161
+*input './get_j_values'
+!
+compute displacements for loading tension step 162
+*input './get_j_values'
+!
+compute displacements for loading tension step 163
+*input './get_j_values'
+!
+compute displacements for loading tension step 164
+*input './get_j_values'
+!
+compute displacements for loading tension step 165
+*input './get_j_values'
+!
+compute displacements for loading tension step 166
+*input './get_j_values'
+!
+compute displacements for loading tension step 167
+*input './get_j_values'
+!
+compute displacements for loading tension step 168
+*input './get_j_values'
+!
+compute displacements for loading tension step 169
+*input './get_j_values'
+!
+compute displacements for loading tension step 170
+*input './get_j_values'
+!
+compute displacements for loading tension step 171
+*input './get_j_values'
+!
+compute displacements for loading tension step 172
+*input './get_j_values'
+!
+compute displacements for loading tension step 173
+*input './get_j_values'
+!
+compute displacements for loading tension step 174
+*input './get_j_values'
+!
+compute displacements for loading tension step 175
+*input './get_j_values'
+!
+compute displacements for loading tension step 176
+*input './get_j_values'
+!
+compute displacements for loading tension step 177
+*input './get_j_values'
+!
+compute displacements for loading tension step 178
+*input './get_j_values'
+!
+compute displacements for loading tension step 179
+*input './get_j_values'
+!
+compute displacements for loading tension step 180
+*input './get_j_values'
+!
+compute displacements for loading tension step 181
+*input './get_j_values'
+!
+compute displacements for loading tension step 182
+*input './get_j_values'
+!
+compute displacements for loading tension step 183
+*input './get_j_values'
+!
+compute displacements for loading tension step 184
+*input './get_j_values'
+!
+compute displacements for loading tension step 185
+*input './get_j_values'
+!
+compute displacements for loading tension step 186
+*input './get_j_values'
+!
+compute displacements for loading tension step 187
+*input './get_j_values'
+!
+compute displacements for loading tension step 188
+*input './get_j_values'
+!
+compute displacements for loading tension step 189
+*input './get_j_values'
+!
+compute displacements for loading tension step 190
+*input './get_j_values'
+!
+compute displacements for loading tension step 191
+*input './get_j_values'
+!
+compute displacements for loading tension step 192
+*input './get_j_values'
+!
+compute displacements for loading tension step 193
+*input './get_j_values'
+!
+compute displacements for loading tension step 194
+*input './get_j_values'
+!
+compute displacements for loading tension step 195
+*input './get_j_values'
+!
+compute displacements for loading tension step 196
+*input './get_j_values'
+!
+compute displacements for loading tension step 197
+*input './get_j_values'
+!
+compute displacements for loading tension step 198
+*input './get_j_values'
+!
+compute displacements for loading tension step 199
+*input './get_j_values'
+!
+compute displacements for loading tension step 200
+*input './get_j_values'
+!
+compute displacements for loading tension step 201
+*input './get_j_values'
+!
+compute displacements for loading tension step 202
+*input './get_j_values'
+!
+compute displacements for loading tension step 203
+*input './get_j_values'
+!
+compute displacements for loading tension step 204
+*input './get_j_values'
+!
+compute displacements for loading tension step 205
+*input './get_j_values'
+!
+compute displacements for loading tension step 206
+*input './get_j_values'
+!
+compute displacements for loading tension step 207
+*input './get_j_values'
+!
+compute displacements for loading tension step 208
+*input './get_j_values'
+!
+compute displacements for loading tension step 209
+*input './get_j_values'
+!
+compute displacements for loading tension step 210
+*input './get_j_values'
+!
+compute displacements for loading tension step 211
+*input './get_j_values'
+!
+compute displacements for loading tension step 212
+*input './get_j_values'
+!
+compute displacements for loading tension step 213
+*input './get_j_values'
+!
+compute displacements for loading tension step 214
+*input './get_j_values'
+!
+compute displacements for loading tension step 215
+*input './get_j_values'
+!
+compute displacements for loading tension step 216
+*input './get_j_values'
+!
+compute displacements for loading tension step 217
+*input './get_j_values'
+!
+compute displacements for loading tension step 218
+*input './get_j_values'
+!
+compute displacements for loading tension step 219
+*input './get_j_values'
+!
+compute displacements for loading tension step 220
+*input './get_j_values'
+!
+compute displacements for loading tension step 221
+*input './get_j_values'
+!
+compute displacements for loading tension step 222
+*input './get_j_values'
+!
+compute displacements for loading tension step 223
+*input './get_j_values'
+!
+compute displacements for loading tension step 224
+*input './get_j_values'
+!
+compute displacements for loading tension step 225
+*input './get_j_values'
+!
+compute displacements for loading tension step 226
+*input './get_j_values'
+!
+compute displacements for loading tension step 227
+*input './get_j_values'
+!
+compute displacements for loading tension step 228
+*input './get_j_values'
+!
+compute displacements for loading tension step 229
+*input './get_j_values'
+!
+compute displacements for loading tension step 230
+*input './get_j_values'
+!
+compute displacements for loading tension step 231
+*input './get_j_values'
+!
+compute displacements for loading tension step 232
+*input './get_j_values'
+!
+compute displacements for loading tension step 233
+*input './get_j_values'
+!
+compute displacements for loading tension step 234
+*input './get_j_values'
+!
+compute displacements for loading tension step 235
+*input './get_j_values'
+!
+compute displacements for loading tension step 236
+*input './get_j_values'
+!
+compute displacements for loading tension step 237
+*input './get_j_values'
+!
+compute displacements for loading tension step 238
+*input './get_j_values'
+!
+compute displacements for loading tension step 239
+*input './get_j_values'
+!
+compute displacements for loading tension step 240
+*input './get_j_values'
+!
+compute displacements for loading tension step 241
+*input './get_j_values'
+!
+compute displacements for loading tension step 242
+*input './get_j_values'
+!
+compute displacements for loading tension step 243
+*input './get_j_values'
+!
+compute displacements for loading tension step 244
+*input './get_j_values'
+!
+compute displacements for loading tension step 245
+*input './get_j_values'
+!
+compute displacements for loading tension step 246
+*input './get_j_values'
+!
+compute displacements for loading tension step 247
+*input './get_j_values'
+!
+compute displacements for loading tension step 248
+*input './get_j_values'
+!
+compute displacements for loading tension step 249
+*input './get_j_values'
+!
+compute displacements for loading tension step 250
+*input './get_j_values'
+!
+compute displacements for loading tension step 251
+*input './get_j_values'
+!
+compute displacements for loading tension step 252
+*input './get_j_values'
+!
+compute displacements for loading tension step 253
+*input './get_j_values'
+!
+compute displacements for loading tension step 254
+*input './get_j_values'
+!
+compute displacements for loading tension step 255
+*input './get_j_values'
+!
+compute displacements for loading tension step 256
+*input './get_j_values'
+!
+compute displacements for loading tension step 257
+*input './get_j_values'
+!
+compute displacements for loading tension step 258
+*input './get_j_values'
+!
+compute displacements for loading tension step 259
+*input './get_j_values'
+!
+compute displacements for loading tension step 260
+*input './get_j_values'
+!
+compute displacements for loading tension step 261
+*input './get_j_values'
+!
+compute displacements for loading tension step 262
+*input './get_j_values'
+!
+compute displacements for loading tension step 263
+*input './get_j_values'
+!
+compute displacements for loading tension step 264
+*input './get_j_values'
+!
+compute displacements for loading tension step 265
+*input './get_j_values'
+!
+compute displacements for loading tension step 266
+*input './get_j_values'
+!
+compute displacements for loading tension step 267
+*input './get_j_values'
+!
+compute displacements for loading tension step 268
+*input './get_j_values'
+!
+compute displacements for loading tension step 269
+*input './get_j_values'
+!
+compute displacements for loading tension step 270
+*input './get_j_values'
+!
+compute displacements for loading tension step 271
+*input './get_j_values'
+!
+compute displacements for loading tension step 272
+*input './get_j_values'
+!
+compute displacements for loading tension step 273
+*input './get_j_values'
+!
+compute displacements for loading tension step 274
+*input './get_j_values'
+!
+compute displacements for loading tension step 275
+*input './get_j_values'
+!
+compute displacements for loading tension step 276
+*input './get_j_values'
+!
+compute displacements for loading tension step 277
+*input './get_j_values'
+!
+compute displacements for loading tension step 278
+*input './get_j_values'
+!
+compute displacements for loading tension step 279
+*input './get_j_values'
+!
+compute displacements for loading tension step 280
+*input './get_j_values'
+!
+compute displacements for loading tension step 281
+*input './get_j_values'
+!
+compute displacements for loading tension step 282
+*input './get_j_values'
+!
+compute displacements for loading tension step 283
+*input './get_j_values'
+!
+compute displacements for loading tension step 284
+*input './get_j_values'
+!
+compute displacements for loading tension step 285
+*input './get_j_values'
+!
+compute displacements for loading tension step 286
+*input './get_j_values'
+!
+compute displacements for loading tension step 287
+*input './get_j_values'
+!
+compute displacements for loading tension step 288
+*input './get_j_values'
+!
+compute displacements for loading tension step 289
+*input './get_j_values'
+!
+compute displacements for loading tension step 290
+*input './get_j_values'
+!
+compute displacements for loading tension step 291
+*input './get_j_values'
+!
+compute displacements for loading tension step 292
+*input './get_j_values'
+!
+compute displacements for loading tension step 293
+*input './get_j_values'
+!
+compute displacements for loading tension step 294
+*input './get_j_values'
+!
+compute displacements for loading tension step 295
+*input './get_j_values'
+!
+compute displacements for loading tension step 296
+*input './get_j_values'
+!
+compute displacements for loading tension step 297
+*input './get_j_values'
+!
+compute displacements for loading tension step 298
+*input './get_j_values'
+!
+compute displacements for loading tension step 299
+*input './get_j_values'
+!
+compute displacements for loading tension step 300
+*input './get_j_values'
+!
+compute displacements for loading tension step 301
+*input './get_j_values'
+!
+compute displacements for loading tension step 302
+*input './get_j_values'
+!
+compute displacements for loading tension step 303
+*input './get_j_values'
+!
+compute displacements for loading tension step 304
+*input './get_j_values'
+!
+compute displacements for loading tension step 305
+*input './get_j_values'
+!
+compute displacements for loading tension step 306
+*input './get_j_values'
+!
+compute displacements for loading tension step 307
+*input './get_j_values'
+!
+compute displacements for loading tension step 308
+*input './get_j_values'
+!
+compute displacements for loading tension step 309
+*input './get_j_values'
+!
+compute displacements for loading tension step 310
+*input './get_j_values'
+!
+compute displacements for loading tension step 311
+*input './get_j_values'
+!
+compute displacements for loading tension step 312
+*input './get_j_values'
+!
+compute displacements for loading tension step 313
+*input './get_j_values'
+!
+compute displacements for loading tension step 314
+*input './get_j_values'
+!
+compute displacements for loading tension step 315
+*input './get_j_values'
+!
+compute displacements for loading tension step 316
+*input './get_j_values'
+!
+compute displacements for loading tension step 317
+*input './get_j_values'
+!
+compute displacements for loading tension step 318
+*input './get_j_values'
+!
+compute displacements for loading tension step 319
+*input './get_j_values'
+!
+compute displacements for loading tension step 320
+*input './get_j_values'
+!
+compute displacements for loading tension step 321
+*input './get_j_values'
+!
+compute displacements for loading tension step 322
+*input './get_j_values'
+!
+compute displacements for loading tension step 323
+*input './get_j_values'
+!
+compute displacements for loading tension step 324
+*input './get_j_values'
+!
+compute displacements for loading tension step 325
+*input './get_j_values'
+!
+compute displacements for loading tension step 326
+*input './get_j_values'
+!
+compute displacements for loading tension step 327
+*input './get_j_values'
+!
+compute displacements for loading tension step 328
+*input './get_j_values'
+!
+compute displacements for loading tension step 329
+*input './get_j_values'
+!
+compute displacements for loading tension step 330
+*input './get_j_values'
+!
+compute displacements for loading tension step 331
+*input './get_j_values'
+!
+compute displacements for loading tension step 332
+*input './get_j_values'
+!
+compute displacements for loading tension step 333
+*input './get_j_values'
+!
+compute displacements for loading tension step 334
+*input './get_j_values'
+!
+compute displacements for loading tension step 335
+*input './get_j_values'
+!
+compute displacements for loading tension step 336
+*input './get_j_values'
+!
+compute displacements for loading tension step 337
+*input './get_j_values'
+!
+compute displacements for loading tension step 338
+*input './get_j_values'
+!
+compute displacements for loading tension step 339
+*input './get_j_values'
+!
+compute displacements for loading tension step 340
+*input './get_j_values'
+!
+compute displacements for loading tension step 341
+*input './get_j_values'
+!
+compute displacements for loading tension step 342
+*input './get_j_values'
+!
+compute displacements for loading tension step 343
+*input './get_j_values'
+!
+compute displacements for loading tension step 344
+*input './get_j_values'
+!
+compute displacements for loading tension step 345
+*input './get_j_values'
+!
+compute displacements for loading tension step 346
+*input './get_j_values'
+!
+compute displacements for loading tension step 347
+*input './get_j_values'
+!
+compute displacements for loading tension step 348
+*input './get_j_values'
+!
+compute displacements for loading tension step 349
+*input './get_j_values'
+!
+compute displacements for loading tension step 350
+*input './get_j_values'
+!
+compute displacements for loading tension step 351
+*input './get_j_values'
+!
+compute displacements for loading tension step 352
+*input './get_j_values'
+!
+compute displacements for loading tension step 353
+*input './get_j_values'
+!
+compute displacements for loading tension step 354
+*input './get_j_values'
+!
+compute displacements for loading tension step 355
+*input './get_j_values'
+!
+compute displacements for loading tension step 356
+*input './get_j_values'
+!
+compute displacements for loading tension step 357
+*input './get_j_values'
+!
+compute displacements for loading tension step 358
+*input './get_j_values'
+!
+compute displacements for loading tension step 359
+*input './get_j_values'
+!
+compute displacements for loading tension step 360
+*input './get_j_values'
+!
+compute displacements for loading tension step 361
+*input './get_j_values'
+!
+compute displacements for loading tension step 362
+*input './get_j_values'
+!
+compute displacements for loading tension step 363
+*input './get_j_values'
+!
+compute displacements for loading tension step 364
+*input './get_j_values'
+!
+compute displacements for loading tension step 365
+*input './get_j_values'
+!
+compute displacements for loading tension step 366
+*input './get_j_values'
+!
+compute displacements for loading tension step 367
+*input './get_j_values'
+!
+compute displacements for loading tension step 368
+*input './get_j_values'
+!
+compute displacements for loading tension step 369
+*input './get_j_values'
+!
+compute displacements for loading tension step 370
+*input './get_j_values'
+!
+compute displacements for loading tension step 371
+*input './get_j_values'
+!
+compute displacements for loading tension step 372
+*input './get_j_values'
+!
+compute displacements for loading tension step 373
+*input './get_j_values'
+!
+compute displacements for loading tension step 374
+*input './get_j_values'
+!
+compute displacements for loading tension step 375
+*input './get_j_values'
+!
+compute displacements for loading tension step 376
+*input './get_j_values'
+!
+compute displacements for loading tension step 377
+*input './get_j_values'
+!
+compute displacements for loading tension step 378
+*input './get_j_values'
+!
+compute displacements for loading tension step 379
+*input './get_j_values'
+!
+compute displacements for loading tension step 380
+*input './get_j_values'
+!
+compute displacements for loading tension step 381
+*input './get_j_values'
+!
+compute displacements for loading tension step 382
+*input './get_j_values'
+!
+compute displacements for loading tension step 383
+*input './get_j_values'
+!
+compute displacements for loading tension step 384
+*input './get_j_values'
+!
+compute displacements for loading tension step 385
+*input './get_j_values'
+!
+compute displacements for loading tension step 386
+*input './get_j_values'
+!
+compute displacements for loading tension step 387
+*input './get_j_values'
+!
+compute displacements for loading tension step 388
+*input './get_j_values'
+!
+compute displacements for loading tension step 389
+*input './get_j_values'
+!
+compute displacements for loading tension step 390
+*input './get_j_values'
+!
+compute displacements for loading tension step 391
+*input './get_j_values'
+!
+compute displacements for loading tension step 392
+*input './get_j_values'
+!
+compute displacements for loading tension step 393
+*input './get_j_values'
+!
+compute displacements for loading tension step 394
+*input './get_j_values'
+!
+compute displacements for loading tension step 395
+*input './get_j_values'
+!
+compute displacements for loading tension step 396
+*input './get_j_values'
+!
+compute displacements for loading tension step 397
+*input './get_j_values'
+!
+compute displacements for loading tension step 398
+*input './get_j_values'
+!
+compute displacements for loading tension step 399
+*input './get_j_values'
+!
+compute displacements for loading tension step 400
+*input './get_j_values'
+!
+compute displacements for loading tension step 401
+*input './get_j_values'
+!
+compute displacements for loading tension step 402
+*input './get_j_values'
+!
+compute displacements for loading tension step 403
+*input './get_j_values'
+!
+compute displacements for loading tension step 404
+*input './get_j_values'
+!
+compute displacements for loading tension step 405
+*input './get_j_values'
+!
+compute displacements for loading tension step 406
+*input './get_j_values'
+!
+compute displacements for loading tension step 407
+*input './get_j_values'
+!
+compute displacements for loading tension step 408
+*input './get_j_values'
+!
+compute displacements for loading tension step 409
+*input './get_j_values'
+!
+compute displacements for loading tension step 410
+*input './get_j_values'
+!
+compute displacements for loading tension step 411
+*input './get_j_values'
+!
+compute displacements for loading tension step 412
+*input './get_j_values'
+!
+compute displacements for loading tension step 413
+*input './get_j_values'
+!
+compute displacements for loading tension step 414
+*input './get_j_values'
+!
+compute displacements for loading tension step 415
+*input './get_j_values'
+!
+compute displacements for loading tension step 416
+*input './get_j_values'
+!
+compute displacements for loading tension step 417
+*input './get_j_values'
+!
+compute displacements for loading tension step 418
+*input './get_j_values'
+!
+compute displacements for loading tension step 419
+*input './get_j_values'
+!
+compute displacements for loading tension step 420
+*input './get_j_values'
+!
+compute displacements for loading tension step 421
+*input './get_j_values'
+!
+compute displacements for loading tension step 422
+*input './get_j_values'
+!
+compute displacements for loading tension step 423
+*input './get_j_values'
+!
+compute displacements for loading tension step 424
+*input './get_j_values'
+!
+compute displacements for loading tension step 425
+*input './get_j_values'
+!
+compute displacements for loading tension step 426
+*input './get_j_values'
+!
+compute displacements for loading tension step 427
+*input './get_j_values'
+!
+compute displacements for loading tension step 428
+*input './get_j_values'
+!
+compute displacements for loading tension step 429
+*input './get_j_values'
+!
+compute displacements for loading tension step 430
+*input './get_j_values'
+!
+compute displacements for loading tension step 431
+*input './get_j_values'
+!
+compute displacements for loading tension step 432
+*input './get_j_values'
+!
+compute displacements for loading tension step 433
+*input './get_j_values'
+!
+compute displacements for loading tension step 434
+*input './get_j_values'
+!
+compute displacements for loading tension step 435
+*input './get_j_values'
+!
+compute displacements for loading tension step 436
+*input './get_j_values'
+!
+compute displacements for loading tension step 437
+*input './get_j_values'
+!
+compute displacements for loading tension step 438
+*input './get_j_values'
+!
+compute displacements for loading tension step 439
+*input './get_j_values'
+!
+compute displacements for loading tension step 440
+*input './get_j_values'
+!
+compute displacements for loading tension step 441
+*input './get_j_values'
+!
+compute displacements for loading tension step 442
+*input './get_j_values'
+!
+compute displacements for loading tension step 443
+*input './get_j_values'
+!
+compute displacements for loading tension step 444
+*input './get_j_values'
+!
+compute displacements for loading tension step 445
+*input './get_j_values'
+!
+compute displacements for loading tension step 446
+*input './get_j_values'
+!
+compute displacements for loading tension step 447
+*input './get_j_values'
+!
+compute displacements for loading tension step 448
+*input './get_j_values'
+!
+compute displacements for loading tension step 449
+*input './get_j_values'
+!
+compute displacements for loading tension step 450
+*input './get_j_values'
+!
+compute displacements for loading tension step 451
+*input './get_j_values'
+!
+compute displacements for loading tension step 452
+*input './get_j_values'
+!
+compute displacements for loading tension step 453
+*input './get_j_values'
+!
+compute displacements for loading tension step 454
+*input './get_j_values'
+!
+compute displacements for loading tension step 455
+*input './get_j_values'
+!
+compute displacements for loading tension step 456
+*input './get_j_values'
+!
+compute displacements for loading tension step 457
+*input './get_j_values'
+!
+compute displacements for loading tension step 458
+*input './get_j_values'
+!
+compute displacements for loading tension step 459
+*input './get_j_values'
+!
+compute displacements for loading tension step 460
+*input './get_j_values'
+!
+compute displacements for loading tension step 461
+*input './get_j_values'
+!
+compute displacements for loading tension step 462
+*input './get_j_values'
+!
+compute displacements for loading tension step 463
+*input './get_j_values'
+!
+compute displacements for loading tension step 464
+*input './get_j_values'
+!
+compute displacements for loading tension step 465
+*input './get_j_values'
+!
+compute displacements for loading tension step 466
+*input './get_j_values'
+!
+compute displacements for loading tension step 467
+*input './get_j_values'
+!
+compute displacements for loading tension step 468
+*input './get_j_values'
+!
+compute displacements for loading tension step 469
+*input './get_j_values'
+!
+compute displacements for loading tension step 470
+*input './get_j_values'
+!
+compute displacements for loading tension step 471
+*input './get_j_values'
+!
+compute displacements for loading tension step 472
+*input './get_j_values'
+!
+compute displacements for loading tension step 473
+*input './get_j_values'
+!
+compute displacements for loading tension step 474
+*input './get_j_values'
+!
+compute displacements for loading tension step 475
+*input './get_j_values'
+!
+compute displacements for loading tension step 476
+*input './get_j_values'
+!
+compute displacements for loading tension step 477
+*input './get_j_values'
+!
+compute displacements for loading tension step 478
+*input './get_j_values'
+!
+compute displacements for loading tension step 479
+*input './get_j_values'
+!
+compute displacements for loading tension step 480
+*input './get_j_values'
+!
+compute displacements for loading tension step 481
+*input './get_j_values'
+!
+compute displacements for loading tension step 482
+*input './get_j_values'
+!
+compute displacements for loading tension step 483
+*input './get_j_values'
+!
+compute displacements for loading tension step 484
+*input './get_j_values'
+!
+compute displacements for loading tension step 485
+*input './get_j_values'
+!
+compute displacements for loading tension step 486
+*input './get_j_values'
+!
+compute displacements for loading tension step 487
+*input './get_j_values'
+!
+compute displacements for loading tension step 488
+*input './get_j_values'
+!
+compute displacements for loading tension step 489
+*input './get_j_values'
+!
+compute displacements for loading tension step 490
+*input './get_j_values'
+!
+compute displacements for loading tension step 491
+*input './get_j_values'
+!
+compute displacements for loading tension step 492
+*input './get_j_values'
+!
+compute displacements for loading tension step 493
+*input './get_j_values'
+!
+compute displacements for loading tension step 494
+*input './get_j_values'
+!
+compute displacements for loading tension step 495
+*input './get_j_values'
+!
+compute displacements for loading tension step 496
+*input './get_j_values'
+!
+compute displacements for loading tension step 497
+*input './get_j_values'
+!
+compute displacements for loading tension step 498
+*input './get_j_values'
+!
+compute displacements for loading tension step 499
+*input './get_j_values'
+!
+compute displacements for loading tension step 500
+*input './get_j_values' 
