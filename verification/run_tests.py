@@ -592,6 +592,7 @@ def initialize():
    continuation = '&'
    warp_name = '%WARP3D_HOME%"/run_windows/warp3d.exe" '
    print(">>> Platform: Windows\n" )
+   export_lib = ""
 #
  if linux :
    continuation = ';'
@@ -601,6 +602,7 @@ def initialize():
     warp_name = '$WARP3D_HOME"/run_linux/warp3d_Intel.omp" '
    if choice == "1" :
     warp_name = '$WARP3D_HOME"/run_linux/warp3d_gfortran.omp" '
+   export_lib = 'export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH;'
 #
  if osx :
    continuation = ';'
@@ -610,16 +612,18 @@ def initialize():
       warp_name ='$WARP3D_HOME"/run_mac_os_x/warp3d.omp" '
    if choice == "1" :
       warp_name ='$WARP3D_HOME"/run_mac_os_x/warp3d_gfortran.omp" '
+   export_lib = ""
       
  if cygwin :
    continuation = ';'
    print(">>> Platform: Cygwin (Windows). Only Intel Fortran version supported\n" )
    warp_name = '$WARP3D_HOME"/run_windows/warp3d.exe" '
+   export_lib = ""
 #
  str_threads = str(input(">>> Number of threads to use: " )  )
  threads = 'export OMP_NUM_THREADS='+str_threads + continuation + \
            'export MKL_NUM_THREADS='+str_threads
- run_warp = threads + continuation + warp_name
+ run_warp = export_lib + threads + continuation + warp_name
 # print(run_warp)
 # exit(0)
 # 
