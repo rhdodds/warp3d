@@ -98,8 +98,9 @@ c
 #ifdef __INTEL_COMPILER
       open( fileno, file=dbname, status='old', access='sequential',
      &     form='unformatted', recordtype='segmented' )
-#else
-     open( fileno, file=dbname, status='old', access='sequential',
+#endif
+#ifdef __GFORTRAN
+      open( fileno, file=dbname, status='old', access='sequential',
      &     form='unformatted' )
 #endif
 c
