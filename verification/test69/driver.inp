@@ -110,7 +110,7 @@ test_69_PPR_particle
 *        check results problem 2   test_69ab_out
 *
 2                                 
-'> unit_axi           5.0000  constraints       10.0000
+'> unit_axi        5.0000000  constraints    10.0000000'
 '    63  '
 0
 0.473451E+01
@@ -128,7 +128,7 @@ test_69_PPR_particle
 *        check results problem 4   test_69ac_out
 *
 2  
-'> unit_axi           5.0000  constraints       10.0000
+'> unit_axi        5.0000000  constraints    10.0000000'
 '    62   '
 -1
 0.471995E+01
@@ -146,7 +146,7 @@ test_69_PPR_particle
 *        check results problem 6     test_69sa_out
 *
 2 
-'> unit_axi           5.0000  constraints       10.0000
+'> unit_axi        5.0000000  constraints    10.0000000'
 '    149  '
 -1
 0.412147E+01
@@ -154,8 +154,8 @@ test_69_PPR_particle
 *
 *        check results problem 7    test_69sb_out
 *
-2                                 
-'> constraints        0.6500'
+2  
+'>> solution for step:      19 converged:'
 '    151  '
 -1
 0.267325E+00
@@ -164,7 +164,7 @@ test_69_PPR_particle
 *        check results problem 8    test_69ta_out
 *
 2    
-'> unit_axi           5.0000  constraints       10.0000
+'> unit_axi        5.0000000  constraints    10.0000000'
 '    107  '
 -1
 0.444265E+01
@@ -173,7 +173,7 @@ test_69_PPR_particle
 *        check results problem 9    test_69tb_out
 *
 2                                 
-'> unit_axi           5.0000  constraints       10.0000
+'> unit_axi        5.0000000  constraints    10.0000000'
 '    107  '
 -1
 0.442322E+01
@@ -191,8 +191,8 @@ test_69_PPR_particle
 *        check results problem 11    test_69c_restart_out
 *
 2
-'> constraints        0.6500'
-'    62  '
+'>> solution for step:      19 converged:'
+ '    62  '
 0
 0.398614E+00
  1
@@ -233,11 +233,11 @@ test_69_PPR_particle
 *        check results problem 16    test_69_PPR_patch_shear
 *
 2  
-'> constraints       -0.0018'
+'> unit_ten        0.0000000  constraints    -0.0018209'
 
 'element    T-normal '
 2
-0.288601E+00
+0.281979E+00
 2
 *
 *        check results problem 17    test_69_PPR_particle
