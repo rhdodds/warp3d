@@ -102,15 +102,17 @@ c
          close( fileno, status= 'delete' )
        end if
 c
-c                       open the file.
+c                       open the file. old code commented out.
+c                       trying to avoid using Intel's proprietary
+c                       segmented record type
 c
-#ifdef __INTEL_COMPILER
-      open( fileno, file=dbname, status='new', access='sequential',
-     &     form='unformatted', recordtype='segmented' )
-#else
+c#ifdef __INTEL_COMPILER
+c      open( fileno, file=dbname, status='new', access='sequential',
+c     &     form='unformatted', recordtype='segmented' )
+c#else
       open( fileno, file=dbname, status='new', access='sequential',
      &     form='unformatted' )
-#endif
+c#endif
 
 c
 c                       MPI:

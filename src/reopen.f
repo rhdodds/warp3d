@@ -95,14 +95,17 @@ c
          go to 9999
       end if
 c
-#ifdef __INTEL_COMPILER
-      open( fileno, file=dbname, status='old', access='sequential',
-     &     form='unformatted', recordtype='segmented' )
-#endif
-#ifdef __GFORTRAN
+c                       old code commented out.
+c                       trying to avoid using Intel's proprietary
+c                       segmented record type
+c#ifdef __INTEL_COMPILER
+c      open( fileno, file=dbname, status='old', access='sequential',
+c     &     form='unformatted', recordtype='segmented' )
+c#endif
+c#ifdef __GFORTRAN
       open( fileno, file=dbname, status='old', access='sequential',
      &     form='unformatted' )
-#endif
+c#endif
 c
 c                       rewind the data base to insure positioning
 c                       before the first record.
