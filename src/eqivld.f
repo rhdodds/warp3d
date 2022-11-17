@@ -867,7 +867,7 @@ c     *                  subroutine eqiv_out_patters                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 6/26/22  rhd               *
+c     *                   last modified : 11/16/22  rhd              *
 c     *                                                              *
 c     *     at completion of a load step, output a summary of        *
 c     *     loading pattern multipliers acting on model. this aids   *
@@ -930,9 +930,10 @@ c
       do i = 1, numlod ! all defined load patterns + nonlinear loading
         if( lodtyp(i) == 'TIMESTEP' ) cycle ! "nonlinear" type
         if( line_count .eq. 3 ) then
-          write(out,9010) pattern_names(1), tfacts(1),
-     &                    pattern_names(2), tfacts(2),
-     &                    pattern_names(3), tfacts(3)
+          write(out,9010) pattern_names(1)(1:8), tfacts(1),
+     &                    pattern_names(2)(1:8), tfacts(2),
+     &                    pattern_names(3)(1:8), tfacts(3)
+          pattern_names(1:3) = " "
           line_count = 0
         end if
         step_factor  = load_pattern_factors(i,2)
@@ -940,7 +941,7 @@ c
         if( local_debug ) write(out,*) "     i, sfc, tfac: ",
      &                      i, step_factor,  total_factor
         line_count                = line_count + 1
-        pattern_names(line_count) = lodnam(i)
+        pattern_names(line_count)(1:8) = lodnam(i)(1:8)
         tfacts(line_count)        = sngl( total_factor )
         pattern_count = pattern_count + 1
         all_pattern_counts = all_pattern_counts + 1
@@ -948,6 +949,14 @@ c
         all_pattern_ids(k) = lodnam(i)
         all_pattern_factors(k) = total_factor
       end do
+c
+      if( line_count .eq. 3 ) then
+          write(out,9010) pattern_names(1)(1:8), tfacts(1),
+     &                    pattern_names(2)(1:8), tfacts(2),
+     &                    pattern_names(3)(1:8), tfacts(3)
+          pattern_names(1:3) = " "
+          line_count = 0
+      end if
 c
       line_count = line_count + 1
       pattern_count = pattern_count + 1
