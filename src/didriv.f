@@ -891,12 +891,13 @@ c *                                                                    *
 c * di_cf_elem - create a list of elements incident on the crack front *
 c *                                                                    *
 c *              written by:    mcw                                    *
-c *              last modified: 1/7/22 rhd                             *
+c *              last modified: 11/23/22 rhd                           *
 c *                                                                    *
 c **********************************************************************
 c
       subroutine di_cf_elem( num_front_nodes, front_list_length )
 c
+      use global_data, only : out, noelem
       use main_data, only: inverse_incidences
       use j_data, only : front_element_list, expanded_front_nodes 
 c
@@ -905,82 +906,102 @@ c
 c             parameters
 c
       integer :: num_front_nodes, front_list_length       
+      logical, parameter :: local_debug = .false.
 c
 c             local arguments
 c
-      integer :: i, j, k, numexpanded_nodes, fnode, numelems_connected,
-     &           elem, now_size, size
-      integer, parameter :: start_list_size = 50
-      integer, allocatable, dimension(:) :: new_list
+      integer :: i, j, elem, fnode_index
+      integer, allocatable, dimension(:) :: elem_flags(:)
 c
+      if( local_debug ) write(out,9005)
       if( allocated( front_element_list ) ) 
      &    deallocate( front_element_list )
-      allocate( front_element_list(1:start_list_size) )
-      size = start_list_size
-      now_size = 0
+      allocate( elem_flags(noelem) )
+      elem_flags = 0
+      if( local_debug ) then
+         write(out,9010) 1
+         write(out,*) "     ... num_front_nodes: ", num_front_nodes
+      end if
 c
-c             find and add non-duplicate front elements to list
-c             that resizes as needed
+c             build list of all elements attached a front node in the
+c             list. run over front node is parallel. for domains
+c             with thousands of front nodes this saves time.
 c
-      do i = 1, num_front_nodes
-         numexpanded_nodes = expanded_front_nodes(i)%node_count
-         do j = 1, numexpanded_nodes
-            fnode = expanded_front_nodes(i)%node_list(j)
-            numelems_connected = inverse_incidences(fnode)%element_count
-            do k = 1, numelems_connected
-               elem = inverse_incidences(fnode)%element_list(k)
-               call di_cf_elem_add
-            end do
-         end do
+c$OMP PARALLEL DO PRIVATE( fnode_index )
+      do fnode_index = 1, num_front_nodes
+         call di_add_elem_to_list( fnode_index, elem_flags )
       end do
+cOMP END DO
+      if( local_debug ) write(out,9010) 2
 c
 c             save final list of front elements in list of
 c             exact size required.
 c
-      front_list_length = now_size
-      if( now_size .ne. size ) then
-        size = now_size
-        allocate( new_list(size) )
-        new_list(1:now_size) = front_element_list(1:now_size)
-        call move_alloc( new_list, front_element_list )
+      front_list_length = count( elem_flags > 0, dim=1 )
+      allocate( front_element_list(1:front_list_length) )
+      if( local_debug ) write(out,9015) 3, front_list_length
+c
+      j = 0 
+      do elem = 1, noelem
+       if( elem_flags(elem) > 0 ) then
+          j = j + 1
+          front_element_list(j) = elem
+          cycle
+        end if
+      end do 
+      deallocate( elem_flags ) 
+      if( local_debug ) write(out,9010) 4
+c
+      if( j .ne. front_list_length ) then  ! confirming
+        write(out,9000) front_list_length, j
+        call die_gracefully
       end if
 c
       return
+ 9000 format(/,">>>>>> FATAL INTERNAL ERROR in di_cf_elem",
+     &   10x, 'front_list_length, j: ',2i10)
+ 9005 format(/,".... entered di_cf_elem .....")
+ 9010 format(5x,"@ ",i3)
+ 9015 format(5x,"@, list length ",i3,i8)
+  
 c
-      contains
-c     ========
+      end
 c
-      subroutine di_cf_elem_add
+c **********************************************************************
+c *                                                                    *
+c *         di_add_elem_to_list - support for di_cf_elem               *
+c *                                                                    *
+c *              written by:    rhd                                    *
+c *              last modified: 11/23/22 rhd                           *
+c *                                                                    *
+c **********************************************************************
+c
+c
+      subroutine di_add_elem_to_list( fnode_index, elem_flags )
+c
+      use main_data, only: inverse_incidences
+      use j_data, only :  expanded_front_nodes 
+c
       implicit none
 c
-      integer :: i
+      integer :: elem_flags(*), fnode_index
+      integer :: j, k, fnode, numelems_connected, elem, 
+     &           numexpanded_nodes
 c
-      if( now_size .eq. 0 ) then
-         now_size = 1
-         front_element_list(1) = elem
-         return
-      end if
-
-      do i = 1, now_size
-        if( front_element_list(i) == elem ) return
+      numexpanded_nodes = expanded_front_nodes(fnode_index)%node_count
+      do j = 1, numexpanded_nodes
+        fnode = expanded_front_nodes(fnode_index)%node_list(j)
+        numelems_connected = inverse_incidences(fnode)%element_count
+        do k = 1, numelems_connected
+           elem = inverse_incidences(fnode)%element_list(k)
+c$OMP ATOMIC UPDATE
+           elem_flags(elem) = elem_flags(elem) + 1
+        end do
       end do
+      return 
 c
-c              add to list. resize if needed. move_alloc frees old
-c              front_element_list
-c
-      if( now_size == size ) then
-        size = size * 2
-        allocate( new_list(size) )
-        new_list(1:now_size) = front_element_list(1:now_size)
-        call move_alloc( new_list, front_element_list )
-      end if
-      now_size = now_size + 1
-      front_element_list(now_size) = elem
-c
-      return
-      end subroutine di_cf_elem_add
-      end subroutine di_cf_elem
-c
+      end
+
 c **********************************************************************
 c *                                                                    *
 c *                    di_chk_proportionality (for J_cutoff)           *
