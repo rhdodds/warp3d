@@ -809,7 +809,7 @@ c                loop over all structure elements. handle
 c                only elements whose data is owned by this processor.
 c
       time_start = omp_get_wtime()
-c$OMP PARALLEL DO PRIVATE( elemno, blk )
+c$OMP PARALLEL DO PRIVATE( elemno, blk ) SCHEDULE(dynamic)
       do elemno = 1, noelem
          blk = elems_to_blocks(elemno,1)
          if( elblks(2,blk) .ne. myid ) cycle

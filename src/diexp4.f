@@ -40,16 +40,14 @@ c
 c                     local declarations
 c
       integer :: front_pos, i, ii, snode, elem, incptr, nnode, elnd,
-     &           count, index, num_front
-      integer :: local_list(10), num_enodes, enode, chunk_size,
-     &           num_elem_on_node
+     &           count, index
+      integer :: local_list(10), num_enodes, enode
       logical :: same_q_values, local_debug_1, lflag
       logical, external :: dibmck
       real :: q1
       double precision :: xenode, yenode, zenode, domain_x_min,
      &                    domain_x_max, domain_y_min, domain_y_max,
      &                    domain_z_min, domain_z_max
-
 c
 c             build list of all nodes for elements appearing in
 c             the previous domain. if ring = 1 we use the list of
@@ -59,24 +57,17 @@ c
       node_map(1:q_map_len) = 0
 c
       if( ring .eq. 1 ) then
-c$OMP PARALLEL DO PRIVATE( front_pos, ii, snode, num_front )
          do front_pos = 1, num_front_nodes
-           num_front =  expanded_front_nodes(front_pos)%node_count
-           do ii = 1, num_front
+           do ii = 1, expanded_front_nodes(front_pos)%node_count
              snode = expanded_front_nodes(front_pos)%node_list(ii)
              call diadit( node_map, snode, bits )
            end do
          end do
-cOMP END DO
       end if
 c
-      chunk_size = 1000
       if( ring > 1 ) then
-c$OMP PARALLEL DO PRIVATE( elem, lflag, incptr, nnode, elnd, snode )
-c$OMP& SCHEDULE(dynamic,chunk_size)
         do elem = 1, noelem
-          lflag = dibmck( elem, q_element_maps, bits )
-          if( .not. lflag )  cycle
+          if( .not. dibmck( elem, q_element_maps, bits ) ) cycle
           incptr = incmap(elem)-1
           nnode  = eprops(2,elem)
           do elnd = 1, nnode
@@ -85,7 +76,6 @@ c$OMP& SCHEDULE(dynamic,chunk_size)
           end do
         end do ! elem
       end if
-cOMP END DO
 c
 c              debug for list of nodes just created
 c
@@ -112,18 +102,13 @@ c             build list of all elements incident on nodes in
 c             current list. use nodal incidences to greatly
 c             speed up this process.
 c
-c$OMP PARALLEL DO PRIVATE( snode, lflag, i, num_elem_on_node, elem )
-c$OMP& SCHEDULE(dynamic,chunk_size)
       do snode = 1, nonode
-         lflag = dibmck( snode, node_map, bits ) 
-         if( .not. lflag ) cycle
-         num_elem_on_node = inverse_incidences(snode)%element_count
-         do i = 1, num_elem_on_node
+         if( .not. dibmck( snode, node_map, bits ) ) cycle
+         do i = 1, inverse_incidences(snode)%element_count
             elem = inverse_incidences(snode)%element_list(i)
             call diadit( q_element_maps, elem, bits )
          end do
       end do
-cOMP END DO
 c
 c              if requested, compute the min, max extent of the
 c              domain in each global coordinate direction. use
@@ -185,13 +170,9 @@ c
 c             for all nodes in the node map, set the q-value = 1
 c
       q_values(1:nonode) = rzero
-c$OMP PARALLEL DO PRIVATE( snode, lflag)
-c$OMP& SCHEDULE(dynamic,chunk_size)
       do snode = 1, nonode
-         lflag = dibmck( snode, node_map, bits )
-         if( lflag ) q_values(snode) = rone
+         if( dibmck( snode, node_map, bits ) ) q_values(snode) = rone
       end do
-cOMP END DO
 c
       local_debug_1 = .false.
       if( .not. local_debug_1 ) return
@@ -228,6 +209,7 @@ c
  9040 format(10x,10i7)
 c
       end
+
 c ***************************************************************
 c *                                                             *
 c * domain expand 13 - expand type 1-3 automatic domain         *
@@ -546,7 +528,6 @@ c             turn on bit in bit map for integer.
 c
       word = ( item - 1 ) / 30  + 1
       bit  = item - ( word-1 ) * 30
-cOMP ATOMIC UPDATE
       mapvec(word) = ior( mapvec(word),bits(bit) )
 c
       return

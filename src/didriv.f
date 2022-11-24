@@ -927,11 +927,11 @@ c             build list of all elements attached a front node in the
 c             list. run over front node is parallel. for domains
 c             with thousands of front nodes this saves time.
 c
-c$OMP PARALLEL DO PRIVATE( fnode_index )
+c$OMP PARALLEL DO PRIVATE( fnode_index ) SCHEDULE( dynamic )
       do fnode_index = 1, num_front_nodes
          call di_add_elem_to_list( fnode_index, elem_flags )
       end do
-cOMP END DO
+c$OMP END PARALLEL DO
       if( local_debug ) write(out,9010) 2
 c
 c             save final list of front elements in list of
@@ -963,7 +963,6 @@ c
  9005 format(/,".... entered di_cf_elem .....")
  9010 format(5x,"@ ",i3)
  9015 format(5x,"@, list length ",i3,i8)
-  
 c
       end
 c
@@ -1002,6 +1001,102 @@ c$OMP ATOMIC UPDATE
 c
       end
 
+c
+c **********************************************************************
+c *                                                                    *
+c * di_cf_elem - create a list of elements incident on the crack front *
+c *                                                                    *
+c *              written by:    mcw                                    *
+c *              last modified: 1/7/22 rhd                             *
+c *                                                                    *
+c **********************************************************************
+c
+      subroutine old_di_cf_elem( num_front_nodes, front_list_length )
+c
+      use main_data, only: inverse_incidences
+      use j_data, only : front_element_list, expanded_front_nodes 
+c
+      implicit none
+c
+c             parameters
+c
+      integer :: num_front_nodes, front_list_length       
+c
+c             local arguments
+c
+      integer :: i, j, k, numexpanded_nodes, fnode, numelems_connected,
+     &           elem, now_size, size
+      integer, parameter :: start_list_size = 50
+      integer, allocatable, dimension(:) :: new_list
+c
+      if( allocated( front_element_list ) ) 
+     &    deallocate( front_element_list )
+      allocate( front_element_list(1:start_list_size) )
+      size = start_list_size
+      now_size = 0
+c
+c             find and add non-duplicate front elements to list
+c             that resizes as needed
+c
+      do i = 1, num_front_nodes
+         numexpanded_nodes = expanded_front_nodes(i)%node_count
+         do j = 1, numexpanded_nodes
+            fnode = expanded_front_nodes(i)%node_list(j)
+            numelems_connected = inverse_incidences(fnode)%element_count
+            do k = 1, numelems_connected
+               elem = inverse_incidences(fnode)%element_list(k)
+               call old_di_cf_elem_add
+            end do
+         end do
+      end do
+c
+c             save final list of front elements in list of
+c             exact size required.
+c
+      front_list_length = now_size
+      if( now_size .ne. size ) then
+        size = now_size
+        allocate( new_list(size) )
+        new_list(1:now_size) = front_element_list(1:now_size)
+        call move_alloc( new_list, front_element_list )
+      end if
+c
+      return
+c
+      contains
+c     ========
+c
+      subroutine old_di_cf_elem_add
+      implicit none
+c
+      integer :: i
+c
+      if( now_size .eq. 0 ) then
+         now_size = 1
+         front_element_list(1) = elem
+         return
+      end if
+
+      do i = 1, now_size
+        if( front_element_list(i) == elem ) return
+      end do
+c
+c              add to list. resize if needed. move_alloc frees old
+c              front_element_list
+c
+      if( now_size == size ) then
+        size = size * 2
+        allocate( new_list(size) )
+        new_list(1:now_size) = front_element_list(1:now_size)
+        call move_alloc( new_list, front_element_list )
+      end if
+      now_size = now_size + 1
+      front_element_list(now_size) = elem
+c
+      return
+      end subroutine old_di_cf_elem_add
+      end subroutine old_di_cf_elem
+c
 c **********************************************************************
 c *                                                                    *
 c *                    di_chk_proportionality (for J_cutoff)           *

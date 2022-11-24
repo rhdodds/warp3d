@@ -820,7 +820,7 @@ c     *              internal routine indom_node_sets                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/12/22 rhd                *
+c     *                   last modified : 11/23/22 rhd               *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -828,7 +828,7 @@ c
       implicit none
 c
       integer :: nnl, node_set_id, kount_set, i, j, base_node, 
-     &           set_1st_node, fnode
+     &           set_1st_node, fnode, num_dups
       integer, external :: iszlst
       logical :: found_duplicate, ldebug 
 c
@@ -950,23 +950,15 @@ c
       end do ! do while iplist
 c
 c                       node set list parsed and stored.
-c                       check for duplicate entries
+c                       check for duplicate entries. if found, delete list.
+c                       sort node list using heapsort to avoid O(n^2)
+c                       for v. large list of  nodes.
 c
       found_duplicate = .false.
-      do i = 1, nnl
-        base_node = lst(i)
-        do j = 1, nnl
-          if( i .eq. j ) cycle
-          if( lst(j) .ne. base_node ) cycle
-          if( .not. found_duplicate ) then
-             write(out,9000) node_set_id
-             found_duplicate = .true.
-          end if
-          write(out,9010) base_node, j
-        end do
-       end do
-c
+      call indom_heapsort( nnl, lst, num_dups)   
+      found_duplicate = num_dups > 0
       if( found_duplicate ) then
+        write(out,9000) node_set_id
         input_ok = .false.
         call scan_flushline
         num_error = num_error + 1
@@ -1026,6 +1018,77 @@ c
      &  ' list of nodes: ',i10 /)
 c
       end subroutine indom_node_sets
+
+c                                                                               
+c     ****************************************************************          
+c     *                                                              *          
+c     *      uses a heapsort algorithm to sort an integer array.     *          
+c     *      all the duplicates are removed. num duplicates returned *          
+c     *                                                              *          
+c     *                       written by  : bjb                      *          
+c     *                                                              *          
+c     *                    last modified : 11/23/22 rhd              *          
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+      subroutine  indom_heapsort(n, ra, num_dups)                                           
+c                                                                               
+      implicit integer (a-z)                                                    
+      dimension  ra(*)                                                          
+c                                                                               
+      if (n .lt. 2) then                                                        
+         return                                                                 
+      end if                                                                    
+      l  = n/2 + 1                                                              
+      ir = n                                                                    
+ 10   continue                                                                  
+      if (l .gt. 1) then                                                        
+         l   = l - 1                                                            
+         rra = ra(l)                                                            
+      else                                                                      
+         rra = ra(ir)                                                           
+         ra(ir) = ra(1)                                                         
+         ir = ir - 1                                                            
+         if (ir .eq. 1) then                                                    
+            ra(1) = rra                                                         
+            goto 30                                                             
+         end if                                                                 
+      end if                                                                    
+      i = l                                                                     
+      j = l + l                                                                 
+ 20   if (j .le. ir) then                                                       
+         if (j .lt. ir) then                                                    
+            if (ra(j) .lt. ra(j+1))  j = j + 1                                  
+         end if                                                                 
+         if (rra .lt. ra(j)) then                                               
+            ra(i) = ra(j)                                                       
+            i = j                                                               
+            j = j + j                                                           
+         else                                                                   
+            j = ir + 1                                                          
+         end if                                                                 
+         goto 20                                                                
+      end if                                                                    
+      ra(i) = rra                                                               
+      goto 10                                                                   
+c                                                                               
+c     sort completed, now get rid of duplicates and <= 0                        
+c                                                                               
+ 30   continue                                                                  
+      count = 1                                                                 
+      do i = 2, n                                                               
+         if (ra(i) .ne. ra(i-1)) then                                           
+            count = count + 1                                                   
+            ra(count) = ra(i)                                                   
+         end if                                                                 
+      end do                                                                    
+      n = count   
+      num_dups = n - count                                                               
+c                                                                               
+      return                                                                    
+c                                                                               
+      end                                                                       
+c                                                                               
 c     ****************************************************************
 c     *                                                              *
 c     *              internal routine indom_node_sets_reorder        *

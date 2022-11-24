@@ -93,7 +93,7 @@ c
 c          loop over all element blocks. inside block checks
 c          if element is in current domain
 c
-c$OMP PARALLEL DO PRIVATE( now_thread, blk ) ! all else shared
+c$OMP PARALLEL DO PRIVATE( now_thread, blk ) SCHEDULE(dynamic)
       do blk = 1, nelblk
          if( elblks(2,blk) .ne. myid ) cycle
          now_thread = omp_get_thread_num() + 1
