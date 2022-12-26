@@ -698,7 +698,7 @@ c
      & /,'               user limit: ',f5.1,
      &   ' exceeded at: ',i3, ' of: ',i3, ' crack front positions',
      & /,'               max J-ratio: ',f8.4,
-     & ' at front position: ',i4 ,' max J value: ', e14.6,
+     & ' at front position: ',i4 ,' with J value: ', e14.6,
      & /,'               change in J-ratio over previous step: ',f7.3,
      & /,'               Kr = K_I / K_J (FAD): ',f6.3)
 9205  format(//,'>>>>> User-specified limit on J/J_elastic ',
