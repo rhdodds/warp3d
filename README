@@ -3,9 +3,16 @@
            Highest Level README File for WARP3D
            ====================================
 
-             Last Update: April 25, 2022
+             Last Update: January 20, 2023
 
-            Version 18.3.3 Build 4240 on all platforms
+            Version 18.3.5 Build 4260 on all platforms
+
+            4260 includes
+
+             In the last release, the capability was implemented to automatically
+             define and adjust load(time) step sizes for nonlinear analyses
+             that compute the J-integral. This release includes a much improved, 
+             more robust adaptive algorithm. 
 
             4240 includes
               - all new *parameter capability to greatly
