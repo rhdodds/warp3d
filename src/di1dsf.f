@@ -1412,7 +1412,7 @@ c                                                               *
 c      subroutine to write j and i-integral data to             *
 c      standard output                                          *
 c                    written by: mcw                            *
-c                 last modified: 7/15/2022 rhd                  *
+c                 last modified: 1/2/23 rhd                     *
 c                                                               *
 c****************************************************************
 c
@@ -1425,13 +1425,14 @@ c
      d    domain_max_i, domain_min_i, static_j, static_avg, static_max,
      e    face_loading, symmetric_domain, out_pstrain, out_pstress,
      f    rings_given, j_to_k, static_min, process_temperatures,
-     g    J_cutoff_active, J_cutoff_exceeded, 
+     g    J_cutoff_active, J_cutoff_exceeded,
      h    J_cutoff_num_frnt_positions, J_cutoff_step_1_num_patterns,
      i    J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
      j    J_cutoff_Je_step_1, J_count_exceeded, J_max_now_step,
      k    J_cutoff_step_1_constraint_factor, J_max_step_1, 
      l    J_load_ratio_this_step, J_cutoff_now_frnt_position,
-     m    J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio  
+     m    J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio, 
+     n    front_J_ratios, front_J_values
       use constants
 c
       implicit none 
@@ -1831,10 +1832,11 @@ c
       subroutine di_process_J_cutoff
       implicit none
 c
+      integer :: ifp, isize, i, local_max_J_pos, local_count_exceeded
       double precision :: J_now, J_e_step_1, ymod, nu, KI_step_1,
-     &                    KI_now, J_e_now, J_ratio 
+     &                    KI_now, J_e_now, J_ratio
       logical, parameter :: local_output = .false.
-      logical, parameter :: local_debug = .true.
+      logical, parameter :: local_debug = .false.
 c
       if( local_debug ) write(out,*)
      &    "... entered di_process_J_cutoff. now_step:  ...", now_step
@@ -1843,25 +1845,16 @@ c              during step 1, count the number of front positions
 c              at which J is computed. initialize other data.
 c
       if( now_step == 1 ) then
-        if( J_cutoff_num_frnt_positions == 0 ) then ! safety
-            J_max_step_1   = -ten_billion
-            J_max_now_step = -ten_billion
-        end if
-        J_cutoff_num_frnt_positions =  J_cutoff_num_frnt_positions + 1
+        if( J_cutoff_num_frnt_positions == 0 ) J_max_step_1 = -one
+        J_cutoff_num_frnt_positions = J_cutoff_num_frnt_positions + 1
       end if ! step 1
 c
-c              process J values at this front position. set up if 1st
-c              position to remember where max value occurs.
+c              process J values at this front position. 
 c              J_now is average of domains at this front position for
 c              current step. J_cutoff_now_frnt_position set = 0
 c              for step in didriv.f
 c     
       J_cutoff_now_frnt_position = J_cutoff_now_frnt_position + 1
-      if( J_cutoff_now_frnt_position == 1 ) then
-         J_count_exceeded = 0
-         J_cutoff_frnt_pos_max_ratio = 0 ! also where J is max on front.
-         J_cutoff_max_value = minus_one
-      end if
 c
       if( ring_count == 1 ) then
          J_now = j_storage(1,10)
@@ -1878,51 +1871,102 @@ c
         J_max_step_1 = max( J_now, J_max_step_1 ) ! for debug printing
         J_cutoff_Je_step_1(J_cutoff_now_frnt_position) = J_now
         if( local_debug ) write(out,*) 
-     &         ".. @: J_max_step_1, J_now:",  J_max_step_1, J_now
+     &         ".. @ frt pos: J_max_step_1, J_now:",
+     &           J_cutoff_now_frnt_position, J_max_step_1, J_now
         return
       end if
 c
-c              Step > 1. update J max on front if this is largest value.
-c              save front position for later output.
+c              Step > 1. store J value at each front location.
 c              pull (saved) J elastic value for step 1 and compute
-c              J/Je ratio for this position. update number of front 
-c              positions where J/Je exceeds the user specified
-c              limit. Je at now step computed by scaling KI
-c              at position from load step 1.
+c              J/Je ratio for this position. store.
 c
-      if( J_now >= J_max_now_step ) then
-        J_max_now_step =  J_now
-        J_cutoff_frnt_pos_max_ratio = J_cutoff_now_frnt_position
-        J_e_step_1 = J_cutoff_Je_step_1(J_cutoff_now_frnt_position)
-        ymod = J_cutoff_e
-        nu = J_cutoff_nu
-        KI_step_1 = sqrt( J_e_step_1 * ymod / (one - nu**2 ) )
-        KI_now = KI_step_1 * J_load_ratio_this_step
-        J_e_now = KI_now**2 * (one - nu**2 ) / ymod
-        J_ratio = J_now / J_e_now !  J / J_elastic @ front position
-        J_cutoff_max_value = J_ratio
-        if( J_ratio >= J_cutoff_ratio ) then ! > user specified limit
-          J_cutoff_exceeded = .true.
-          J_count_exceeded = J_count_exceeded + 1
-        end if
+      ifp = J_cutoff_now_frnt_position
+      if( ifp == 1 ) then ! setup vecs to store frt pos values
+        J_cutoff_exceeded = .false.
+        isize = J_cutoff_num_frnt_positions
+        allocate( front_J_ratios(isize), front_J_values(isize) )
+        front_J_values = zero
+        front_J_ratios = zero
+      end if
+c    
+      J_e_step_1 = J_cutoff_Je_step_1(ifp)
+      ymod = J_cutoff_e
+      nu = J_cutoff_nu
+      KI_step_1 = sqrt( J_e_step_1 * ymod / (one - nu**2 ) )
+      KI_now = KI_step_1 * J_load_ratio_this_step
+      J_e_now = KI_now**2 * (one - nu**2 ) / ymod
+      J_ratio = J_now / J_e_now !  J / J_elastic @ front position
+      front_J_ratios(ifp) = J_ratio
+      front_J_values(ifp) = J_now
+      if( local_debug ) then
+          write(out,9100) now_step, ifp
+          write(out,9105) J_e_step_1, J_now, KI_now, J_e_now, J_ratio
       end if 
 c
-      if( local_debug ) write(out,9000) J_load_ratio_this_step,
-     &      J_e_step_1, KI_step_1, J_now,  KI_now, J_e_now, J_ratio
-      if( local_output ) write(out,9010) J_cutoff_now_frnt_position,
-     &  J_ratio
+c               we're done unless this is last domain position on
+c               the front. If last domain, finish up.
+c
+      if( ifp < J_cutoff_num_frnt_positions ) return
+c
+c               Find max J on front and the front position. count
+c               number of front positions where J/Je > user-specified
+c               limit
+c
+      J_max_now_step = -one
+      local_count_exceeded = 0
+c
+      do i = 1, ifp   
+        J_now = front_J_values(i)
+        if( J_now > J_max_now_step ) then
+             J_max_now_step = J_now
+             local_max_j_pos = i
+        end if
+        if( front_J_ratios(i) >= J_cutoff_ratio ) 
+     &           local_count_exceeded = local_count_exceeded + 1
+      end do
+c
+c               set globals used in stpdrv to decide about
+c               stopping solution or adaptive loading based on
+c               J increments at max location on front.
+c
+c               J/Je > user-specified value .true. if that happens
+c               at location of max J on front. We then include count
+c               for other front positions where exceeded.
+c
+      J_cutoff_max_value = front_J_ratios(local_max_j_pos)
+      J_cutoff_frnt_pos_max_ratio = local_max_j_pos
+      J_count_exceeded = 0
+      if( front_J_ratios(local_max_j_pos) >= J_cutoff_ratio ) then
+        J_count_exceeded = local_count_exceeded
+        J_cutoff_exceeded = .true. 
+      end if
+c
+      if( local_debug ) then
+         write(out,9300) now_step
+         write(out,9315) 
+         do i = 1, ifp
+          write(out,9310) i, front_J_values(i), front_J_ratios(i),
+     &                      sqrt(one/front_J_ratios(i))
+         end do
+         write(out,9320) J_max_now_step, local_max_j_pos
+      end if
+c
+      deallocate( front_J_values, front_J_ratios ) 
 c
       return
 c
- 9000 format(3x,'proportional load ratio this step: ', f10.5,
-     &  /,   3x,'step 1 elastic J: ',e14.6,
-     &  /,   3x,'KI for step 1: ',e14.6,
-     &  /,   3x,'J_now: ',e14.6,
-     &  /,   3x,'KI_now: ',e14.6,
-     &  /,   3x,'now step elastic J: ',e14.6,
-     &  /,   3x,'current J_total / J_elastic: ',f8.5)
  9010 format(' ** info: @ front position: ',i3,' J ratio: ',
      & f5.2 )
+ 9100 format(3x,"... debug output. now step, front position: ",i6,i6)
+ 9105 format(10x,'J_e_step_1:', e14.6,
+     &     /,10x,'J_now:     ', e14.6,
+     &     /,10x,'KI_now:    ', e14.6,
+     &     /,10x,'J_e_now:   ', e14.6,
+     &     /,10x,'J/Je:        ', f9.5)
+ 9300 format(".... Summary crack front domain values for step: ",i6) 
+ 9310 format(5x,i4,e14.6,f12.5,f10.4)
+ 9315 format(8x,"pos       J          J/Je       Kr")
+ 9320 format(8x,'max J on front: ',e14.6,' position: ',i5) 
 c
       end subroutine di_process_J_cutoff
 c

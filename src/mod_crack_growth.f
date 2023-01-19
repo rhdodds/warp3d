@@ -638,16 +638,24 @@ c
      &           z => smcs_weighted_bar_theta,
      &           xx => smcs_weighted_tear_parm )
 c
-      tp_kernel = twothird * sig_1/(sig_1-sig_mean)
-      if( tp_kernel < zero ) tp_kernel = zero
-      tp_kernel = tp_kernel ** smcs_type_5_power
-      xx(elem_ptr) = xx(elem_ptr) + deps_plas * tp_kernel
-      if( local_debug ) write(out,9000) sig_1, sig_mean,
-     &      tp_kernel, smcs_type_5_power, xx(elem_ptr)
+!      tp_kernel = twothird * sig_1/(sig_1-sig_mean)
+!      if( tp_kernel < zero ) tp_kernel = zero
+!      tp_kernel = tp_kernel ** smcs_type_5_power
+!      xx(elem_ptr) = xx(elem_ptr) + deps_plas * tp_kernel
+!      if( local_debug ) write(out,9000) sig_1, sig_mean,
+!     &      tp_kernel, smcs_type_5_power, xx(elem_ptr)
 c
       if( sig_mises <= small_mises ) return
       now_triaxiality = sig_mean / sig_mises 
       if( now_triaxiality < smcs_cutoff_triaxiality ) return
+      xx(elem_ptr) = xx(elem_ptr) + deps_plas / 
+     &   (2.5d0*exp(-1.5d0*now_triaxiality) )  !!!!!!  <<<<<<,
+      if( elem == 30 ) then
+         write(out,9200) xx(elem_ptr), now_triaxiality, deps_plas
+         write(out,9100) 2.0d0*exp(-1.5d0*now_triaxiality), xx(elem_ptr)
+      end if
+ 9200 format(/,".. @1. ",f10.5,f8.4,f12.8)
+ 9100 format(6x,f12.6,f12.6)      
       x(elem_ptr) = x(elem_ptr) + deps_plas * now_triaxiality
       y(elem_ptr) = y(elem_ptr) + deps_plas * zeta
       z(elem_ptr) = z(elem_ptr) + deps_plas * bar_theta

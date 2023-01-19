@@ -514,7 +514,7 @@ c     *                 subroutine stpdrv_J_cutoff                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/16/22 rhd               *
+c     *                   last modified : 1/2/23 rhd                 *
 c     *                                                              *
 c     *       has J_/J-elastic ratio reached user limit ?            *
 c     *       and/or adapt this and future steps sizes to maintain   *
@@ -549,15 +549,18 @@ c
 c
 c                now_step is the step number about to be computed.
 c
-c                we first examine the difference in J/J_elastic
+c                we first examine the step change in J/J_elastic
 c                values once step 3 is completed, i.e., the first
 c                difference is ratio @ 3 - ratio @ 2.
 c
-c                J_cutoff_max_value: max value on front
+c                J_cutoff_max_value: max J/Je value on front
 c                  the front location at which this value occurs
 c                  often moves during early loading as plastic
 c                  deformation evolves
-c                J_cutoff_exceeded set by di_process_J_cutoff
+c                J_cutoff_exceeded (logical) set by di_process_J_cutoff
+c                  if J_cutoff_max_value exceed user-specified limit
+c                J_count_exceeded set by di_process_J_cutoff. count of
+c                number frnt positions at which J/Je exceeds user limit
 c
       step_just_completed = now_step - 1
       if( step_just_completed >= 3 ) then ! write summary
@@ -565,11 +568,10 @@ c
         Kr_now = one / sqrt( J_cutoff_max_value ) ! save
         Kr_last_step = one / sqrt( J_ratio_last_step ) ! save
         write(out,9200) step_just_completed, J_cutoff_ratio, 
-     &               J_count_exceeded,
-     &              J_cutoff_num_frnt_positions,
-     &              J_cutoff_max_value, J_cutoff_frnt_pos_max_ratio,
-     &              J_max_now_step, J_ratio_diff,
-     &              one/sqrt(J_cutoff_max_value) ! FAD vlaue
+     &         J_count_exceeded, J_cutoff_num_frnt_positions,
+     &         J_max_now_step, J_cutoff_frnt_pos_max_ratio,
+     &         J_cutoff_max_value,
+     &         J_ratio_diff, one/sqrt(J_cutoff_max_value) ! FAD vlaue
       end if
       if( step_just_completed >= 2 ) then ! update ratio for last step
         J_ratio_last_step = J_cutoff_max_value
@@ -577,7 +579,7 @@ c
      &          step_just_completed, J_ratio_last_step
       end if
 c
-      if( J_cutoff_exceeded ) then
+      if( J_cutoff_exceeded ) then ! stop analysis
          write(out,9205) 
          if( J_cutoff_restart_file ) then
             write(out,9210)
@@ -587,6 +589,8 @@ c
          write(out,9220)
          call warp3d_normal_stop
       end if 
+c
+c              continue to next load step with analysis.
 c
       if( .not. J_ratio_adaptive_steps ) return 
 c
@@ -608,14 +612,17 @@ c              slightly negative in early steps when the position of
 c              max J/J_e changes along the front.
 c
 c              Kr = 1.0 / sqrt( J/Je ) continually decreases from 1
-c                                       with loading.
+c                                      with loading. some increases
+c                                      above 1.0 to say 1.1-1.2 are
+c                                      observed for cerftain crack
+c                                      geometries/loading
 c              J/Je = 1.0 / Kr**2
-
 c         
       if( step_just_completed < 3 ) return ! no adaptive loading yet
 c
 c               use change in Kr over each step for adaptive loading 
 c               until Kr decreases to the specified level, e.g. 0.6
+c               this scheme is very simple
 c
       if( Kr_now > Kr_min_limit ) then ! still under Kr size control
          call stpdrv_J_cutoff_Kr( now_step, Kr_now, Kr_last_step,
@@ -633,8 +640,14 @@ c
           write(out,9240)  ! switching to J/Je control
       end if
 c
-      now_target_diff = J_target_diff ! user-specified input value
-      if( J_cutoff_max_value < eight ) then ! interpolate to get target
+c               increases linearly the target delta(J/Je) for next
+c               step is we are in a simple transition region of 
+c               delta(JKr) control to delta(J.Je) control.
+c               tries to limit a big jump in the target change for
+c               delta(J/Je).
+c
+       now_target_diff = J_target_diff ! user-specified input value 
+       if( J_cutoff_max_value < eight ) then ! interpolate to get target
         slope = ( J_target_diff - J_diff_at_2 ) / (eight - two )
         now_target_diff1 = J_diff_at_2 + (J_cutoff_max_value-two)*slope
         now_target_diff = min( J_target_diff, now_target_diff1 )
@@ -647,7 +660,8 @@ c
         end if
       end if
 c
-c               basic scheme now applied
+c               basic scheme now applied that now_target_diff
+c               for delta(J/Je) set.
 c
       ratio_set = .false.  ! simplifies logic below
       diff_ratio = J_ratio_diff - now_target_diff
@@ -657,6 +671,9 @@ c
       else
          J_load_factor = now_target_diff / J_ratio_diff
       end if
+c
+c               limit algorithm predicted adjustments in load factor
+c               to dampen/accelerate loading rate (based on experience)
 c
       if( .not. ratio_set ) then
         if( J_load_factor < one ) then  ! decrease load step size
@@ -676,7 +693,7 @@ c               convergence, reduce next step size by 75%.
 c
       convergence_caused_reduction = .false.
       if( J_load_factor > quarter ) then
-        if( last_step_adapted .or. last_step_num_iters > 4 ) then 
+        if( last_step_adapted .or. last_step_num_iters > 8 ) then 
           J_load_factor = quarter
           convergence_caused_reduction = .true.
         end if
@@ -697,8 +714,8 @@ c
 9200  format(//,'>>>>> Summary for J-cutoff after step: ',i6,
      & /,'               user limit: ',f5.1,
      &   ' exceeded at: ',i3, ' of: ',i3, ' crack front positions',
-     & /,'               max J-ratio: ',f8.4,
-     & ' at front position: ',i4 ,' with J value: ', e14.6,
+     & /,'               max J on front ',e14.6,
+     & ' at position: ',i5 ,' J/Je ratio: ', f12.4,
      & /,'               change in J-ratio over previous step: ',f7.3,
      & /,'               Kr = K_I / K_J (FAD): ',f6.3)
 9205  format(//,'>>>>> User-specified limit on J/J_elastic ',

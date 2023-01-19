@@ -64,8 +64,8 @@ c
 c
 c                     doubles
 c
-       double precision,
-     & allocatable, dimension(:) :: swd_at_nodes
+       double precision, allocatable, dimension(:) :: swd_at_nodes,
+     &        front_J_ratios(:), front_J_values(:)
 c
        double precision, allocatable, dimension(:,:) ::
      &      strain_at_nodes, j_storage, j_from_ks, ks_from_j,

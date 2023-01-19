@@ -528,7 +528,7 @@ c             turn on bit in bit map for integer.
 c
       word = ( item - 1 ) / 30  + 1
       bit  = item - ( word-1 ) * 30
-      mapvec(word) = ior( mapvec(word),bits(bit) )
+      mapvec(word) = ibset( mapvec(word), bit-1 ) !ior( mapvec(word),bits(bit) )
 c
       return
       end
