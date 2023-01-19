@@ -121,8 +121,8 @@ constraints
     step 3-7  unit 0.2
 !  step 3-12  unit 0.1
 !
- output model flat patran convention text file "cantilever_model"
- output patran neutral 
+ output model flat patran convention text file "model"
+! output patran neutral 
 !
 *echo on
   nonlinear analysis parameters
