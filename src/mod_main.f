@@ -581,6 +581,7 @@ c
      &   third   = one/three,
      &   pt4     = 0.4d0, 
      &   half    = 0.5d0,
+     &   onehalf = 1.5d0, 
      &   ptsix   = 0.6d0, 
      &   pt75    = 0.75d0,
      &   point_eight  = 0.8d0,
@@ -596,7 +597,6 @@ c
      &   twentyth = 0.05d0,
      &   thousandth = 0.001d0,
      &   oneptone = 1.1d0 
-
 c
       double precision, parameter ::
      &   pi        = 3.1415926535897932384626433d0,
@@ -604,6 +604,7 @@ c
      &   root_half = sqrt(half),
      &   root2     = sqrt(two),
      &   root3     = sqrt(three),
+     &   root22    = sqrt(two)/two,
      &   root23    = sqrt(two/three),
      &   root32    = sqrt(three/two),
      &   iroot2    = one / sqrt(two),

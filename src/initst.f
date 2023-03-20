@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/15/22 rhd               *
+c     *                   last modified : 3/13/2023 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -519,6 +519,7 @@ c                       initialize the segmental stress strain curve definitions
 c
       seg_curves(1:max_seg_points,1:2,1:max_seg_curves) = zero
       seg_curve_table(1:max_seg_curves+1,1:max_seg_curve_sets) = 0
+      seg_curves_pchip(1:max_seg_curves) = .false.
       num_seg_points(1:max_seg_curves) = 0
       max_current_pts    = 0
       max_current_curves = 0

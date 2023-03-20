@@ -20,7 +20,6 @@ c
      &                            eps_n1_blocks,
      &                            urcs_n1_blocks, history_blk_list
 
-      use segmental_curves, only : max_seg_points, max_seg_curves
       implicit none
 c
       include 'include_sig_up'

@@ -1261,7 +1261,10 @@ c
      &                              seg_curve_table, active_curve_set,
      &                              sigma_curves, num_seg_points,
      &                              max_seg_points, seg_curves_type,
-     &                              curve_rates, sigma_inter_table
+     &                              curve_rates, sigma_inter_table,
+     &                              seg_curves_pchip_slopes,
+     &                              seg_curves_pchip
+      use constants
       implicit none
 c
 c                      parameter declarations
@@ -1271,16 +1274,19 @@ c
 c
 c                      local declarations
 c
-      integer :: i, first_curve, curve_set_type, pt_high, pt_low,
+      integer :: i, k, first_curve, curve_set_type, pt_high, pt_low,
      &           num_curves_in_set, numpts
       double precision :: stress_values(max_seg_points),
      &   curve_high(max_seg_points), curve_low(max_seg_points),
      &   eps_pls_dot, sig_high, sig_low, eps_high, eps_low,
      &   rate_high, rate_low, hprime_high, hprime_low, dep,
-     &   stress_low, stress_high, derivative
-      double precision, external :: mm03lint
-      double precision, parameter :: zero = 0d0, one = 1.d0,
-     &           two = 2.d0, deriv_factor = 0.02d0
+     &   stress_low, stress_high, derivative, t, s, delta
+      double precision, external :: mm03lint, mm03_h00, mm03_h10,
+     &                              mm03_h01, mm03_h11,
+     &                              mm03_dh00, mm03_dh10, mm03_dh01,
+     &                              mm03_dh11
+      double precision, parameter :: deriv_factor = 0.02d0
+      logical :: do_pchip
 c
       first_curve       = seg_curve_table(2,active_curve_set)
       curve_set_type    = seg_curves_type(first_curve)
@@ -1290,10 +1296,10 @@ c
 c               check for input point before first point on curve
 c               or beyond last point on curve.
 c
-      if( curve_set_type .eq. 2 ) then
+      if( curve_set_type .eq. 2 ) then ! rate dependent
         eps_pls_dot = zero
         if( dtime .gt. zero ) eps_pls_dot =  deplas / dtime
-        do i = 1, numpts
+        do i = 1, numpts ! build interpolated, rate segmental curve
          stress_values(i) = mm03lint( eps_pls_dot, num_curves_in_set,
      &                                curve_rates,
      &                                sigma_inter_table(1,i) )
@@ -1306,7 +1312,7 @@ c
 c
       if( ebarp .lt. curve_plseps_values(1) ) then
         value = stress_values(1)
-        hprime = 1.0e10
+        hprime = 1.0d10
         return
       end if
 c
@@ -1318,8 +1324,39 @@ c
         return
       end if
 c
-c            point is actually on the curve between points i and i-1.
-c            interpolate linearly to get stress. set plastic modulus.
+c                 for curve type = 0 (no rate or temp dependence),
+c                 we optionally use pchip interpolation on the segmental
+c                 curve to obtain the stress value given the plastic 
+c                 strain. the pchip derived slopes at user points
+c                 on the curve were compute during inout translation of
+c                 the curve points.
+c
+c                 here we just find the 2 curve pts that bracket the
+c                 given ebarp, k and k+1 then use cubic hermitian
+c                 polynomials to get the stress and H' value.
+c 
+      do_pchip = seg_curves_pchip(first_curve)
+      if( do_pchip .and. curve_set_type == 0 ) then
+        associate( x => curve_plseps_values, y => stress_values,
+     &             pchip_m => seg_curves_pchip_slopes(:,first_curve) )
+        do k = 1, numpts-1 ! find bracketing points on user curve
+         if( ebarp >= x(k) .and. ebarp <= x(k+1) ) then
+            delta = x(k+1) - x(k)   ! cubic interpolation
+            t = ( ebarp - x(k) ) / delta 
+            s = y(k)*mm03_h00(t) + delta*pchip_m(k)*mm03_h10(t) + 
+     &          y(k+1)*mm03_h01(t) + delta * pchip_m(k+1)*mm03_h11(t)
+            value = s 
+            hprime = y(k)*mm03_dh00(t) + delta*pchip_m(k)*mm03_dh10(t)
+     &                + y(k+1)*mm03_dh01(t) + 
+     &               delta * pchip_m(k+1)*mm03_dh11(t)
+            hprime = hprime / delta
+            exit
+         end if
+        end do
+        end associate
+        return
+      end if
+c
 c
       do i = 2, numpts
         if( ebarp .lt. curve_plseps_values(i) ) then
@@ -1432,6 +1469,92 @@ c
       end
 c     ****************************************************************
 c     *                                                              *
+c     *        functions for pchip interpolation of segmental curve  *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified: 3/12/23 rhd                 *
+c     *                                                              *
+c     *    cubic hermitian polynomials and 1st derivatives defined   *
+c     *    on the interval 0 <= t <= 1.0.                            *
+c     *                                                              *
+c     ****************************************************************
+c
+      function mm03_h00( t ) result( v )
+      use constants
+      implicit none
+      double precision, intent(in) :: t
+      double precision :: v 
+      v = two*t**3 - three*t**2 + one
+      return 
+      end function  mm03_h00
+
+      function mm03_h10( t ) result( v )
+      use constants
+      implicit none
+      double precision, intent(in) :: t
+      double precision :: v 
+      v = t**3 - two*t**2 + t
+      return 
+      end function mm03_h10
+
+      function mm03_h01( t ) result( v )
+      use constants
+      implicit none
+      double precision, intent(in) :: t
+      double precision :: v 
+      v = -two*t**3 + three*t**2
+      return 
+      end function mm03_h01
+
+      function mm03_h11( t ) result( v )
+      implicit none
+      double precision, intent(in) :: t
+      double precision :: v 
+      v = t**3 - t**2
+      return 
+      end function mm03_h11
+
+      function mm03_dh00( t ) result( v )
+      use constants
+      implicit none
+      double precision, intent(in) :: t
+      double precision :: v 
+      v = six*t**2 - six*t
+      return 
+      end function mm03_dh00
+
+      function mm03_dh10( t ) result( v )
+      use constants
+      implicit none
+      double precision, intent(in) :: t
+      double precision :: v 
+      v = three*t*t -four*t + one
+      return 
+      end function mm03_dh10
+
+      function mm03_dh01( t ) result( v )
+      use constants
+      implicit none
+      double precision, intent(in) :: t
+      double precision :: v 
+      v = -six*t*t + six*t
+      return 
+      end function mm03_dh01
+
+      function mm03_dh11( t ) result( v )
+      use constants
+      implicit none
+      double precision, intent(in) :: t
+      double precision :: v 
+      v = three*t*t -two*t
+      return 
+      end function mm03_dh11
+
+
+
+c     ****************************************************************
+c     *                                                              *
 c     *                        function mm03lint                     *
 c     *                                                              *
 c     *                       written by : rhd                       *
@@ -1503,7 +1626,7 @@ c
 c        set infor_data
 c
 c         1        number of history values per integration
-c                  point. Abaqus calles these "statev". Values
+c                  point. Abaqus calls these "statev". Values
 c                  double or single precsion based on hardware.
 c
 c         2        number of values in the symmetric part of the

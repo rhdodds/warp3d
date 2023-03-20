@@ -19,7 +19,6 @@ c
       subroutine rstgp1( props, lprops, iprops, local_work )
 c
       use global_data, only : mxelpr, max_slip_sys, nstr, mxvl
-      use segmental_curves, only : max_seg_points
       use elem_block_data,  only : initial_state_data
       use constants
 c
@@ -352,7 +351,6 @@ c
       subroutine rstgp2( props, lprops, iprops, local_work )
 c
       use global_data, only : mxelpr, max_slip_sys, nstr, mxvl, nstrs
-      use segmental_curves, only : max_seg_points, max_seg_curves
       use elem_block_data,  only : initial_state_data
       implicit none
 c
@@ -615,9 +613,9 @@ c
 c
       subroutine drive_01_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
-      use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       use main_data, only : extrapolated_du
+      use constants
 c
       implicit none
       include 'param_def'
@@ -642,7 +640,6 @@ c
       double precision, allocatable :: eps_elas(:,:),
      &  gp_temps(:), gp_rtemps(:), gp_dtemps(:), uddt_temps(:,:), 
      &  uddt(:,:), cep(:,:,:)
-      double precision, parameter :: zero = 0.d0
 c
       logical :: geonl, local_debug, temperatures, segmental,
      &           temperatures_ref, fgm_enode_props, nonlinear_update,
@@ -946,8 +943,7 @@ c
       implicit none
 c
       integer :: i
-      double precision :: one, two, e, nu, c1, c2, c3, c4
-      data one, two / 1.0d00, 2.0d00 /
+      double precision :: e, nu, c1, c2, c3, c4
 c
 c              get linear-elastic [D] with potentially temperature
 c              dependent properties
@@ -1002,14 +998,14 @@ c     ****************************************************************
       subroutine drive_01_update_b( span, mxvl, uddt,
      &                              local_cep, stress_n, stress_np1,
      &                              killed_status )
+      use constants 
       implicit none
 c
       integer :: span, mxvl
       logical :: killed_status(*)
       double precision ::
      &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
-     &  uddt(mxvl,6), zero
-      data zero / 0.0d00 /
+     &  uddt(mxvl,6)
 c
       integer i, k, m
 c
@@ -1053,9 +1049,9 @@ c
 c
       subroutine drive_02_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
-      use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       use main_data, only : extrapolated_du
+      use constants
 c
       implicit none
       include 'param_def'
@@ -1079,7 +1075,6 @@ c
       double precision ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
      &  gp_alpha, cep(mxvl,6,6), ddtse(mxvl,6), nowtemp
-      double precision, parameter :: zero = 0.d0
 c
       logical :: geonl, local_debug, temperatures,
      &           temperatures_ref, fgm_enode_props, signal_flag,
@@ -1304,11 +1299,11 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine drive_02_update_a
+      use constants
       implicit none
 c
       integer :: i
-      double precision :: one, two, e, nu, c1, c2, c3, c4
-      data one, two / 1.0d00, 2.0d00 /
+      double precision :: e, nu, c1, c2, c3, c4
 c
 c              get linear-elastic [D] with potentially temperature
 c              dependent properties
@@ -1364,14 +1359,14 @@ c     ****************************************************************
       subroutine drive_02_update_b( span, mxvl, ddtse, local_cep,
      &                              initial_stresses, stress_np1,
      &                              killed_status )
+      use constants
       implicit none
 c
       integer :: span, mxvl
       logical :: killed_status(*)
       double precision :: initial_stresses(6,span),
      &                    local_cep(mxvl,6,6), stress_np1(mxvl,6),
-     &                    ddtse(mxvl,6), zero
-      data zero / 0.0d00 /
+     &                    ddtse(mxvl,6)
 c
       integer i, k, m
 c
@@ -1758,11 +1753,11 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine drive_03_update_b
+      use constants
       implicit none
 c
       integer :: i
-      double precision :: one, two, e, nu, c1, c2, c3, c4
-      data one, two / 1.0d00, 2.0d00 /
+      double precision :: e, nu, c1, c2, c3, c4
 c
 c              get linear-elastic [D] with potentially temperature
 c              dependent properties
@@ -2003,14 +1998,14 @@ c     ****************************************************************
       subroutine drive_03_update_e( span, mxvl, uddt,
      &                              local_cep, stress_n, stress_np1,
      &                              killed_status )
+      use constants 
       implicit none
 c
       integer :: span, mxvl
       logical :: killed_status(*)
       double precision ::
      &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
-     &  uddt(mxvl,6), zero
-      data zero / 0.0d00 /
+     &  uddt(mxvl,6)
 c
       integer i, k, m
 c
@@ -2115,8 +2110,8 @@ c
       subroutine drive_04_update( gpn, props, lprops, iprops,
      &                            local_work, uddt, iout )
       use main_data, only : extrapolated_du
-      use segmental_curves, only : max_seg_points
       use elem_block_data, only  : gbl_cep_blocks => cep_blocks
+      use constants
 c
       implicit none
       include 'param_def'
@@ -2134,15 +2129,13 @@ c              locally defined variables
 c
       double precision ::
      &  time_n, dtime,  cep(mxvl,6,6), ddummy(mxvl), ds1,
-     &  ds2, dn, tns1, tns2, tnn, zero
+     &  ds2, dn, tns1, tns2, tnn
 c
       integer :: i, idummy(mxvl), span, felem, step, now_blk, iter,
      &           nnode, knumthreads, kthread, imxvl
 
       logical :: fgm_enode_props, nonlocal, temperatures,
      &           temperatures_ref, local_debug
-c
-      data zero / 0.0d00 /
 c
       local_debug       = .false.
       span              = local_work%span
@@ -2378,7 +2371,6 @@ c
 c
       subroutine drive_05_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
-      use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks,
      &                            nonlocal_flags, nonlocal_data_n1
       use main_data, only : extrapolated_du
@@ -2861,11 +2853,11 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine drive_05_update_a
+      use constants
       implicit none
 c
       integer :: i
-      double precision :: one, two, e, nu, c1, c2, c3, c4
-      data one, two / 1.0d00, 2.0d00 /
+      double precision :: e, nu, c1, c2, c3, c4
 c
 c              get linear-elastic [D] with potentially temperature
 c              dependent properties
@@ -2920,13 +2912,13 @@ c     ****************************************************************
       subroutine drive_05_update_b( span, mxvl, uddt,
      &                              local_cep, stress_n, stress_np1,
      &                              killed_status )
+      use constants
       implicit none
 c
       integer :: span, mxvl
       logical :: killed_status(*)
       double precision :: local_cep(mxvl,6,6), stress_n(mxvl,6),
      &                    stress_np1(mxvl,6), uddt(mxvl,6)
-      double precision, parameter :: zero = 0.0d00
 c
       integer i, k, m
 c
@@ -2973,7 +2965,6 @@ c
       use global_data, only : nstr, mxvl, mxelpr, max_slip_sys, nstrs,
      &                        nonlocal_shared_state_size
       use main_data, only : extrapolated_du
-      use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks,
      &                            nonlocal_flags, nonlocal_data_n1
       use constants
@@ -3205,9 +3196,9 @@ c
 c
       subroutine drive_07_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
-      use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       use main_data, only : extrapolated_du
+      use constants
 c
       implicit none
       include 'param_def'
@@ -3228,14 +3219,13 @@ c
 c
       double precision ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, uddt_temps(mxvl,nstr),
+     &  uddt_temps(mxvl,nstr),
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: geonl, local_debug, temperatures, 
      &           temperatures_ref, fgm_enode_props, signal_flag,
      &           adaptive_possible, cut_step_size_now
 c
-      data zero / 0.0d0 /
 c
       dtime             = local_work%dt
       span              = local_work%span
@@ -3376,8 +3366,7 @@ c
       implicit none
 c
       integer :: i
-      double precision :: one, two, e, nu, c1, c2, c3, c4
-      data one, two / 1.0d00, 2.0d00 /
+      double precision :: e, nu, c1, c2, c3, c4
 c
 c              get linear-elastic [D] with potentially temperature
 c              dependent properties
@@ -3432,14 +3421,14 @@ c     ****************************************************************
       subroutine drive_07_update_b( span, mxvl, uddt,
      &                              local_cep, stress_n, stress_np1,
      &                              killed_status )
+      use constants
       implicit none
 c
       integer :: span, mxvl
       logical :: killed_status(*)
       double precision ::
      &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
-     &  uddt(mxvl,6), zero
-      data zero / 0.0d00 /
+     &  uddt(mxvl,6)
 c
       integer i, k, m
 
@@ -3486,9 +3475,9 @@ c
       subroutine drive_umat_update( gpn, local_work, uddt, qn1, iout )
       use main_data, only : nonlocal_analysis,
      &                      extrapolated_du, non_zero_imposed_du
-      use segmental_curves, only : max_seg_points
       use elem_block_data, only : nonlocal_flags, nonlocal_data_n1,
      &                            gbl_cep_blocks => cep_blocks
+      use constants
 c
       implicit none
       include 'param_def'
@@ -3508,7 +3497,7 @@ c
      &           nprops, j, nj, start_loc, n
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, one, half, ddsddt(6), drplde(6), drpldt,
+     &  ddsddt(6), drplde(6), drpldt,
      &  big, pnewdt, predef(1), dpred(1), time(2), dtime,
      &  stress(6), stran(6), dstran(6), avg_stress(6),
      &  abq_props(50), temp_n, dtemp,  dstran_upd(6),
@@ -3531,8 +3520,7 @@ c
      &        process_flag
       integer :: map(6)
       character(len=8) :: cmname
-      data zero, one, big, check_key, half / 0.0d00, 1.0d00, 1.0d06,
-     &      -999999.9d00, 0.5d0 /
+      data big, check_key / 1.0d06, -999999.9d00 /
       data identity /1.0d00, 0.0d00, 0.0d00, 0.0d00, 1.0d00,
      &   0.0d00, 0.0d00, 0.0d00, 1.0d00 /
       data map / 1, 2, 3, 4, 6, 5 /
@@ -4072,9 +4060,9 @@ c
 c
       subroutine drive_09_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
-      use segmental_curves, only : max_seg_points
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       use main_data, only : extrapolated_du
+      use constants
 c
       implicit none
       include 'param_def'
@@ -4095,14 +4083,13 @@ c
 c
       double precision ::
      &  dtime, gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, uddt_temps(mxvl,nstr),
+     &  uddt_temps(mxvl,nstr),
      &  uddt(mxvl,nstr), cep(mxvl,6,6)
 c
       logical :: geonl, local_debug, temperatures,
      &           temperatures_ref, fgm_enode_props, signal_flag,
      &           adaptive_possible, cut_step_size_now
 c
-      data zero / 0.0d0 /
 c
       dtime             = local_work%dt
       span              = local_work%span
@@ -4229,11 +4216,11 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine drive_09_update_a
+      use constants
       implicit none
 c
       integer :: i
-      double precision :: one, two, e, nu, c1, c2, c3, c4
-      data one, two / 1.0d00, 2.0d00 /
+      double precision :: e, nu, c1, c2, c3, c4
 c
 c              get linear-elastic [D] with potentially temperature
 c              dependent properties
@@ -4287,14 +4274,14 @@ c     ****************************************************************
       subroutine drive_09_update_b( span, mxvl, uddt,
      &                              local_cep, stress_n, stress_np1,
      &                              killed_status )
+      use constants
       implicit none
 c
       integer :: span, mxvl
       logical :: killed_status(*)
       double precision ::
      &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
-     &  uddt(mxvl,6), zero
-      data zero / 0.0d00 /
+     &  uddt(mxvl,6)
 c
       integer i, k, m
 c
@@ -4340,8 +4327,8 @@ c
      &                            local_work, uddt_displ, iout )
       use main_data, only : imatprp, dmatprp,
      &                      extrapolated_du
-      use segmental_curves, only : max_seg_points
       use elem_block_data, only : nonlocal_flags, nonlocal_data_n1
+      use constants
 c
       implicit none
       include 'param_def'
@@ -4363,13 +4350,11 @@ c
      &           i, j, matnum, k, igp
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, one, dtime, uddt_temps(mxvl,nstr),
+     &  dtime, uddt_temps(mxvl,nstr),
      &  uddt(mxvl,nstr), cep(mxvl,6,6), tol
 c
       logical :: signal_flag, local_debug, temperatures,
      &           temperatures_ref, check_D, iter_0_extrapolate_off
-      data zero, one / 0.0d0, 1.0d0 /
-
 c
       dtime             = local_work%dt
       span              = local_work%span
@@ -4785,14 +4770,14 @@ c     ****************************************************************
       subroutine drive_10_update_a( span, mxvl, uddt,
      &                              local_cep, stress_n, stress_np1,
      &                              killed_status )
+      use constants
       implicit none
 c
       integer :: span, mxvl
       logical :: killed_status(*)
       double precision ::
      &  local_cep(mxvl,6,6), stress_n(mxvl,6), stress_np1(mxvl,6),
-     &  uddt(mxvl,6), zero
-      data zero / 0.0d00 /
+     &  uddt(mxvl,6)
 c
       integer i, k, m
 c

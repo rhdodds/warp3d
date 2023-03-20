@@ -4,7 +4,7 @@ c     *              f-90 module segmental_curves                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                    last modified : 5/9/2022 rhd              *          
+c     *                    last modified : 3/12/2023 rhd            *          
 c     *                                                              *          
 c     *     define the variables and data structures to support      *          
 c     *     segmental stress-strain curves                           *          
@@ -33,10 +33,10 @@ c                     double precision/reals
 c                                                                               
 !dir$ attributes align: 64 :: seg_curves, seg_curves_min_stress                
 !dir$ attributes align: 64 :: seg_curves_value, seg_curves_ym
-!dir$ attributes align: 64 :: seg_curves_nu                          
+!dir$ attributes align: 64 :: seg_curves_nu, seg_curves_pchip_slopes                          
 !dir$ attributes align: 64 :: seg_curves_alpha, seg_curves_gp_sigma_0                                 
 !dir$ attributes align: 64 :: seg_curves_gp_h_u,seg_curves_gp_beta_u                                 
-!dir$ attributes align: 64 :: seg_curves_gp_delta_u 
+!dir$ attributes align: 64 :: seg_curves_gp_delta_u
 c                                                                               
        double precision ::                                                      
      & seg_curves(max_seg_points,2,max_seg_curves),                             
@@ -48,7 +48,8 @@ c
      & seg_curves_gp_sigma_0(max_seg_curves),                                   
      & seg_curves_gp_h_u(max_seg_curves),                                       
      & seg_curves_gp_beta_u(max_seg_curves),                                    
-     & seg_curves_gp_delta_u(max_seg_curves)                                    
+     & seg_curves_gp_delta_u(max_seg_curves),
+     & seg_curves_pchip_slopes(max_seg_points,max_seg_curves)
 c                                                                               
 c                     integers                                                  
 c                                                                               
@@ -64,8 +65,8 @@ c
 c                                                                               
 c                     logicals                                                  
 c                                                                               
-      logical ::                                                                
-     &  seg_curve_def(max_seg_curves)                                           
+      logical :: seg_curve_def(max_seg_curves), 
+     &           seg_curves_pchip(max_seg_curves)                                         
 c                                                                               
 c          These variable below are used during problem                         
 c          solution to support block-by-block computations.                     
@@ -85,7 +86,7 @@ c
      &  curve_temps, curve_e_values, curve_nu_values,                           
      &  curve_alpha_values, curve_rates,                                        
      &  curve_gp_sig_0_values, curve_gp_h_u_values,                             
-     &  curve_gp_beta_u_values, curve_gp_delta_u_values                         
+     &  curve_gp_beta_u_values, curve_gp_delta_u_values
                                                                                 
 !dir$ attributes align: 64 :: curve_plseps_values                               
         double precision, dimension(max_seg_points) ::                          

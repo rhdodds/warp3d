@@ -774,7 +774,7 @@ c     *                   subroutine setup_segmental                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/13/2010 add only        *
+c     *                   last modified : 3/13/23                    *
 c     *                                                              *
 c     *     set up segemetnal stress-strain curves for use in        *
 c     *     stress updating                                          *
@@ -819,17 +819,17 @@ c
       if( iand(bit_flags,4) .eq. 0 ) local_work%segmental = .false.
       local_work%power_law = .not.  local_work%segmental
 c
-      if( local_work%segmental ) then
-        if( local_work%fgm_enode_props )
+      if( .not. local_work%segmental ) return
+c
+      if( local_work%fgm_enode_props )
      &       call errmsg2( 31, dumr, '  ', dumr, dumd  )
-        curve_set_number  = iprops(21,1)
-        first_curve       = seg_curve_table(2,curve_set_number)
-        no_pts            = num_seg_points(first_curve)
-        local_work%number_points    = no_pts
-        local_work%curve_set_number = curve_set_number
-        local_work%eps_curve(1:no_pts) =
-     &          seg_curves(1:no_pts,1,first_curve)
-      end if
+      curve_set_number  = iprops(21,1)
+      first_curve       = seg_curve_table(2,curve_set_number)
+      no_pts            = num_seg_points(first_curve)
+      local_work%number_points    = no_pts
+      local_work%curve_set_number = curve_set_number
+      local_work%eps_curve(1:no_pts) = 
+     &  seg_curves(1:no_pts,1,first_curve)
 c
       return
       end

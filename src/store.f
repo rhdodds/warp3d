@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 11/16/22 rhd               *
+c     *                   last modified : 3/20/23 rhd                *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -254,7 +254,6 @@ c
       write (fileno) check_data_key
       write(out,9010)
 c
-c
 c                       write out logical and character arrays.
 c                       use blocked store for large logical vectors.
 c                       write character variables/arrays directly.
@@ -265,6 +264,7 @@ c
       call wrtbk( fileno, trn, nonode)             ! logical vec
       call wrtbk( fileno, stpchk, max_step_limit ) ! logical vec
       call wrtbk( fileno, repeat_incid, noelem )   ! logical vec
+      write(fileno) seg_curves_pchip(1:max_seg_curves) ! logical vec 
 c
       write(fileno) lodnam, lodtyp, matnam, elelib ! short char vecs
       write(fileno) smatprp                        ! char array
@@ -352,6 +352,9 @@ c
 c
       call wrtbk( fileno, tol, prec_fact*mxcvtests)
       call wrtbk( fileno, mdiag, prec_fact*nodof )
+c
+c                            segmental curve definitions
+c 
       call wrt3d( fileno, seg_curves, prec_fact*max_seg_points,2,
      &            prec_fact*max_current_pts, 2, max_current_curves )
       call wrtbk( fileno, seg_curves_min_stress,
@@ -372,6 +375,7 @@ c
      &            prec_fact*max_current_curves )
       call wrtbk( fileno, seg_curves_gp_delta_u,
      &            prec_fact*max_current_curves )
+      write(fileno) seg_curves_pchip_slopes ! max_seg_pts x max_seg_curves
       write (fileno) check_data_key
       write(out,9100)
 c

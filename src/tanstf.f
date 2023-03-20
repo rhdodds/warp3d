@@ -851,7 +851,7 @@ c     *                   subroutine tanstf_allocate                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 7/29/2017 rhd              *          
+c     *                   last modified : 3/13/23 rhd                *          
 c     *                                                              *          
 c     *     allocate data structure in local_work for updating       *          
 c     *     element stiffnesses                                      *          
@@ -861,7 +861,6 @@ c
 c                                                                               
       subroutine tanstf_allocate( local_work )                                  
       use global_data ! old common.main
-      use segmental_curves, only : max_seg_points, max_seg_curves               
       implicit none                                                             
                                                                                 
       include 'include_tan_ek'                                                  

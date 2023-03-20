@@ -4,7 +4,7 @@ c     *                      subroutine incurv                       *
 c     *                                                              *          
 c     *                       written by : kck                       *          
 c     *                                                              *          
-c     *                   last modified : 7/29/2011 rhd              *          
+c     *                   last modified : 3/17/2023 rhd              *          
 c     *                                                              *          
 c     *     this subroutine supervises and conducts the input of     *          
 c     *     segmentally defined stress-strain curves including       *          
@@ -13,20 +13,26 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine incurv( sbflg1, sbflg2 )                                       
-      use segmental_curves                                                      
-      implicit integer (a-z)                                                    
+      use segmental_curves 
+      use constants       
+      use global_data, only : out                                              
+      implicit none                                                    
       include 'param_def'                                                       
 c                                                                               
 c                local declarations                                             
-c                                                                               
-      logical matchs, numi, numd, sbflg1, sbflg2, new_line, local_debug,        
-     &        endcrd, local_gp_model_flag, found_points                         
-      double precision                                                          
-     &   stress_pt, strain_pt, dumd, ym, zero                                   
+c           
+      integer :: i, j, dum                                                                   
+      logical :: sbflg1, sbflg2, new_line, local_debug, dopchip,       
+     &           local_gp_model_flag, found_points                         
+      logical, external :: matchs, numi, numd, endcrd
+      double precision :: stress_pt, strain_pt, dumd, ym, alpha, beta,
+     &                    tau, slope
+      double precision, allocatable :: pchip_m(:), pchip_delta(:),
+     &                                 x(:), y(:)
       real dumr                                                                 
       character(len=1) :: dums                                                  
-      data zero, local_debug / 0.0, .false. /                                   
-c                                                                               
+c
+      local_debug = .false.                                                                               
       if( sbflg1 ) then                                                         
          call errmsg(222,dum,dums,dumr,dumd)                                    
          go to 30                                                               
@@ -64,15 +70,17 @@ c            in the material definition.
 c                                                                               
       local_gp_model_flag = .false.                                             
       seg_curves_value(num_curve) = zero                                        
-      seg_curves_type(num_curve)  = 0                                           
-      if ( endcrd(dumr) ) go to 30                                              
+      seg_curves_type(num_curve)  = 0 
+      if( matchs('pchip',5) ) seg_curves_pchip(num_curve) = .true.
+      if( matchs('smooth',5) ) seg_curves_pchip(num_curve) = .true.
+      if( endcrd(dumr) ) go to 30                                              
 c                                                                               
-      if ( matchs('temperature',4) ) then                                       
+      if( matchs('temperature',4) ) then                                       
         call incurv_temperature( local_gp_model_flag )                          
         go to 30                                                                
       end if                                                                    
 c                                                                               
-      if ( matchs('plastic',4) ) then                                           
+      if( matchs('plastic',4) ) then                                           
         call incurv_strain_rate                                                 
         go to 30                                                                
       end if                                                                    
@@ -91,9 +99,9 @@ c             error checking, save, reopen, etc. code work, we define
 c             two phoney points on a curve.                                     
 c                                                                               
  30   continue                                                                  
-      if ( local_debug ) then                                                   
-        write(*,*) '>> curve type: ',seg_curves_type(num_curve)                 
-        write(*,*) '>> curve type value: ',seg_curves_value(num_curve)          
+      if( local_debug ) then                                                   
+       write(out,*) '>> curve type: ',seg_curves_type(num_curve)                 
+       write(out,*) '>> curve type value: ',seg_curves_value(num_curve)          
       end if                                                                    
 c                                                                               
       found_points = .false.                                                    
@@ -149,8 +157,8 @@ c
 c         for type=0 curves, the first point cannot have zero strain            
 c         (if it does, we cannot compute the modulus!)                          
 c                                                                               
-      if (  seg_curves_type(num_curve) .eq. 0 .and.                             
-     &      seg_curves(1,1,num_curve) .eq. zero ) then                          
+      if(  seg_curves_type(num_curve) .eq. 0 .and.                             
+     &     seg_curves(1,1,num_curve) .eq. zero ) then                          
         call errmsg(233,num_points,dums,dumr,dumd)                              
         do i = 1, num_points                                                    
           seg_curves(i,1,num_curve) = zero                                      
@@ -162,8 +170,8 @@ c
 c         for type=1,2 curves, the first point must have a zero                 
 c         plastic strain so that we know the yield stress                       
 c                                                                               
-      if (  seg_curves_type(num_curve) .ne. 0 .and.                             
-     &      seg_curves(1,1,num_curve) .ne. zero ) then                          
+      if(  seg_curves_type(num_curve) .ne. 0 .and.                             
+     &     seg_curves(1,1,num_curve) .ne. zero ) then                          
         call errmsg2(21,num_points,dums,dumr,dumd)                              
         do i = 1, num_points                                                    
           seg_curves(i,1,num_curve) = zero                                      
@@ -175,8 +183,8 @@ c
 c         the strain values must be monotonically increasing                    
 c                                                                               
       do i = 2, num_points                                                      
-           if ( seg_curves(i,1,num_curve) .le.                                  
-     &          seg_curves(i-1,1,num_curve) ) then                              
+           if( seg_curves(i,1,num_curve) .le.                                  
+     &         seg_curves(i-1,1,num_curve) ) then                              
              call errmsg2( 15, num_points, dums, dumr, dumd )                   
              do j = 1, num_points                                               
                 seg_curves(i,1,num_curve) = zero                                
@@ -193,7 +201,7 @@ c         input to the material model is thus stress vs. plastic strain.
 c         for temperature or rate dependent curves, the strain                  
 c         input values must be plastic strains.                                 
 c                                                                               
-       if ( seg_curves_type(num_curve) .eq. 0 ) then                            
+       if( seg_curves_type(num_curve) .eq. 0 ) then                            
          ym = seg_curves(1,2,num_curve) / seg_curves(1,1,num_curve)             
          do i = 1, num_points                                                   
            seg_curves(i,1,num_curve) = seg_curves(i,1,num_curve) -              
@@ -209,26 +217,114 @@ c
      &       min( seg_curves_min_stress(num_curve),                             
      &          seg_curves(i,2,num_curve) )                                     
        end do                                                                   
-                                                                                
+c
+c          for type = 0 curve build the PCHIP slopes at each
+c          specified curve point. skip for gp model
+c
+      dopchip = ( seg_curves_type(num_curve) == 0 ) .and. 
+     &          ( .not. local_gp_model_flag )
+      if( dopchip ) then
+         call incurve_setup_pchip  
+         if( local_debug ) then
+           write(out,*) '>> debug for incurv'                                       
+           write(out,*) '>> PCHIP slopes for curve points'
+           do i = 1, num_points
+             slope = seg_curves_pchip_slopes(i,num_curve) 
+             write(out,9110) i, seg_curves(i,1,num_curve), 
+     &         seg_curves(i,2,num_curve), slope
+           end do
+         end if
+      end if                                                                       
 c                                                                               
-       if ( local_debug ) then                                                  
-         write(*,*) '>> debug for incurv'                                       
-         write(*,*) ' curve number: ',num_curve                                 
-         write(*,*) ' plastic strain, stress values'                            
-         do i = 1, num_points                                                   
-           write(*,9000) i, seg_curves(i,1,num_curve),                          
-     &                      seg_curves(i,2,num_curve)                           
-         end do                                                                 
-         write(*,9100) seg_curves_min_stress(num_curve)                         
-       end if                                                                   
+      if( local_debug ) then                                                  
+        write(out,*) '>> debug for incurv'                                       
+        write(out,*) ' curve number: ',num_curve                                 
+        write(out,*) ' plastic strain, stress values'                            
+        do i = 1, num_points                                                   
+          write(out,9000) i, seg_curves(i,1,num_curve),                          
+     &                    seg_curves(i,2,num_curve)
+        end do                                                                 
+        write(out,9100) seg_curves_min_stress(num_curve)                         
+      end if                                                                   
 c                                                                               
-       sbflg1 = .true.                                                          
-       sbflg2 = .true.                                                          
-       return                                                                   
+      sbflg1 = .true.                                                          
+      sbflg2 = .true.                                                          
+      return                                                                   
 c                                                                               
- 9000  format(3x,i3,f14.6,f15.4)                                                
- 9100  format(3x,'min stress value: ',f15.4)                                    
-       end                                                                      
+ 9000 format(3x,i3,f14.6,f15.4)                                                
+ 9100 format(3x,'min stress value: ',f15.4)    
+ 9110 format(3x,i4,f14.7,f14.5,f15.4)
+c
+      contains
+c     ========
+
+      subroutine incurve_setup_pchip  
+      implicit none
+
+      integer :: i, k, numpts, iskm1, isk
+      double precision :: G, S1, S2, h1, h2, alpha1, alpha2, alpha,
+     &                    denom, del1, del2, d
+      numpts = num_points
+c
+      allocate( pchip_m(numpts), pchip_delta(numpts), x(numpts),
+     &          y(numpts) )
+c
+      do i = 1, numpts
+        x(i) = seg_curves(i,1,num_curve)
+        y(i) = seg_curves(i,2,num_curve)
+      end do
+c
+      do k = 1, numpts - 1
+           pchip_delta(k) = ( y(k+1) - y(k) ) / ( x(k+1) - x(k) )
+      end do
+c
+      do k = 2, numpts - 1
+         G = zero
+         S1 = pchip_delta(k-1)
+         S2 = pchip_delta(k) 
+         iskm1 = 1
+         if( pchip_delta(k-1) < zero ) iskm1 = -1
+         isk = 1
+         if( pchip_delta(k) < zero ) isk = -1
+         if( iskm1 * isk > 0 ) then
+            h1 = x(k) - x(k-1)
+            h2 = x(k+1) - x(k)
+            alpha1 = h1 + two*h2
+            alpha2 = three*(h1 + h2)
+            alpha = alpha1 / alpha2
+            denom = alpha * S2 + (one-alpha)*S1
+            G = S1*S2 / denom
+         end if
+         pchip_m(k) = G
+      end do
+c
+c           one sided harmonic mean at first point. matches SciPy
+c           and Moler's 1994 book (MathWorks)
+c           
+      del1 = pchip_delta(1) 
+      del2 = pchip_delta(2)
+      h1 = x(2) - x(1)
+      h2 = x(3) - x(2)
+      d = ((two*h1+h2)*del1 - h1*del2)/(h1+h2)
+      if( (sign(one,d) * sign(one,del1)) < zero ) then ! different signs
+       d = zero
+      else
+       if( (sign(one,del1) * sign(one,del2)) < zero .and.
+     &         (abs(d)>abs(three*del1)) ) d = three * del1
+      endif
+      pchip_m(1) = d
+      pchip_m(numpts) = pchip_delta(numpts-1)
+c
+      do i = 1, numpts
+        seg_curves_pchip_slopes(i,num_curve) = pchip_m(i)
+      end do
+c
+      deallocate( pchip_m, pchip_delta, x, y )
+      return
+                            
+      end subroutine incurve_setup_pchip
+      end subroutine 
+                                                                      
 c     ****************************************************************          
 c     *                                                              *          
 c     *                subroutine incurv_temperature                 *          

@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 11/16/22 rhd               *
+c     *                   last modified : 3/20/23 rhd                *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -255,6 +255,7 @@ c
       call rdbk( fileno, stpchk, max_step_limit ) ! logical vec
       call init_maps( fileno, 3 )
 c
+      read(fileno) seg_curves_pchip(1:max_seg_curves ) ! logical vec   
       read(fileno) lodnam, lodtyp, matnam, elelib ! short char vecs
       read(fileno) smatprp                        ! char array
       read(fileno) patterns_step_1(1:10) ! derived type
@@ -345,6 +346,7 @@ c
       call rdbk( fileno, tol, prec_fact*mxcvtests )
       call mem_allocate( 12 )
       call rdbk( fileno, mdiag, prec_fact*nodof )
+c
       call rd3d( fileno, seg_curves, prec_fact*max_seg_points,2,
      &             prec_fact*max_current_pts, 2, max_current_curves )
       call rdbk( fileno, seg_curves_min_stress,
@@ -365,6 +367,7 @@ c
      &            prec_fact*max_current_curves )
       call rdbk( fileno, seg_curves_gp_delta_u,
      &            prec_fact*max_current_curves )
+      read(fileno) seg_curves_pchip_slopes! max_seg_pts x max_seg_curves
       call chk_data_key( fileno, 5, 6 )
       write(out,9100)
 c
