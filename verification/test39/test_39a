@@ -21,14 +21,14 @@ c
 c
  structure nasa_ct2
 c
- stress-strain curve 1
+ stress-strain curve 1 pchip  $ ** note ** use of pchip option
   0.00483  50.0,
   0.015	   56.5,
   0.04	   62.5,
   0.1	   68.5,
   0.16	   71.0,
-  0.2	   71.0,
- 10.2	  271.0
+  0.2	   72.0,
+  1.0      73
 c
  material al2024
     properties mises e 10352 nu 0.3 yld_pt 50.0 curve 1
@@ -50,23 +50,6 @@ c
  *input from 'test_39a_incids'
 c
  blocking  automatic size=32
-c
-c       *** old vectorized blocking if ever needed again ***
-c
-c     1   128     1
-c     2   128   129
-c     3   128   257
-c     4   128   385
-c     5   128   513
-c     6   128   641
-c     7   128   769
-c     8   128   897
-c     9   128  1025
-c    10   128  1153
-c    11   128  1281
-c    12   128  1409
-c    13    24  1537
-c    14    32  1561
 c
  constraints
   *input from "test_39a_cons"

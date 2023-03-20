@@ -14,10 +14,10 @@ c  crack extends by 27 elements (cells) in 150 load steps.
 c
  structure mt_panel
 c
-  stress-strain curve 2
-      0.004774 50.24, 0.00767 55.42, 0.01686 60.00,
-      0.02956 65.41, 0.04688 70.22, 0.0676 72.76, 0.1133 76.16,
-      10000 1000
+  stress-strain curve 2 pchip $ ** note ** use of pchip
+     0.004774 50.24, 0.00767 55.42, 0.01686 61.5, 0.02956 66.,
+     0.04688 70.22, 0.0676 73,  0.1133 76, 10000 1000
+
 c
    material al2219_T87
     properties mises e 10524. nu 0.32 curve 2 rho 0.0
@@ -38,30 +38,6 @@ c
 *input from test_39b_incid
 c
  blocking automatic size=32
-c
-#  blocking   $  old vectorized if ever needed
-#      1    99     1
-#      2    98   100
-#      3     6   198
-#      4   128   204
-#      5   128   332
-#      6   128   460
-#      7   128   588
-#      8   128   716
-#      9   128   844
-#     10   128   972
-#     11   128  1100
-#     12   128  1228
-#     13   128  1356
-#     14   128  1484
-#     15   125  1612
-#     16   115  1737
-#     17    77  1852
-#     18    33  1929
-#     19    21  1962
-#     20    11  1983
-#     21     2  1994
-# 
 c
 *input from test_39b_cons $ sym. bc file of all non-loading disp.
 c
