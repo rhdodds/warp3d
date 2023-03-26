@@ -104,7 +104,7 @@ HARDWARE_MACHINE_TYPE  = -march=native
 MACHINE_TYPE = $(MINIMUM_MACHINE_TYPE) 
 #
 FCOPTS   =  -O3  $(MACHINE_TYPE) -m64 -fbacktrace -ffixed-form \
-            -fcray-pointer -fopenmp -fdec -cpp \
+            -fcray-pointer -fopenmp -fdec -cpp -fallow-argument-mismatch \
             $(FTRAP) $(INLINE) -J$(ODIR) 
 #
 FOR      = $(COMPILER) $(FCOPTS)
