@@ -107,7 +107,7 @@
  crack growth parameters
   type of crack growth smcs
   smcs type 5 power 4 tp_critical 1.9,
-       cutoff_triaxiality 0.0 display
+       cutoff_triaxiality 0.0 max_eps_critical 2.0 display
 !  smcs type 4 A 187.0 n 0.03 c_1 0.059 c_2 126. c_3 0.92,
 !                 max_eps_critical 0.8,
 !                 cutoff_triaxiality 0.0 display
@@ -119,7 +119,7 @@
              plastic strain limit 0.2  $ <<<< note the limit
   adaptive load control on max plastic strain 0.02,
          alpha_min 0.75 alpha_max 2.0 allowable_release 5
-  print status top 20 elements
+  print status on top 50 elements
 !   stop if killed elements on 116
 !      smcs states on stream steps 10-10000 by 10
 !       killed element limit 300
