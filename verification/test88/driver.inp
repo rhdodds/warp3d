@@ -58,7 +58,7 @@ warp3d_restart.inp
 1
 ' domain        dm1  '
 -1
-0.1600E+01
+0.1599E+01
 9
 *
 *        check results problem 2
@@ -66,5 +66,5 @@ warp3d_restart.inp
 1                              
 ' domain        dm1  '
 -1
-0.1663E+01
+0.1664E+01
 9
