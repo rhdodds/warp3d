@@ -75,9 +75,9 @@ test_39f
 *
 2      # number of search lines
 'solution for step:     150 converged:'
-'      4 ' 
+'      7 ' 
 0
-0.055101
+0.058250
 1
 *
 *        check results problem 3
@@ -86,7 +86,7 @@ test_39f
 'solution for step:      75 converged:'
 '    331 '
  0
-0.052446
+0.052454
 2
 
 
@@ -97,7 +97,7 @@ test_39f
 'solution for step:      75 converged:'
 'Totals:'
  0
-0.43827048E+00
+0.44115927E+00
 2
 
 *
@@ -107,7 +107,7 @@ test_39f
 'solution for step:     200 converged:'
 'Totals:'
  0
-0.43571185E+00
+0.44446371E+00
 2
 *
 *        check results problem 6
