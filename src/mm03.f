@@ -1656,7 +1656,7 @@ c     *             subroutine mm03_states_values                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *               last modified : 1/11/15 (rhd)                  *
+c     *               last modified : 4/23/23 rhd                    *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -1668,8 +1668,9 @@ c                       access some global data structures
 c
       use elem_block_data, only: history_blocks, history_blk_list
       use main_data, only: elems_to_blocks
+      use constants
 c
-      implicit integer (a-z)
+      implicit none
 c
 c                       parameters
 c
@@ -1678,14 +1679,13 @@ c
 c
 c                       locals
 c
-      double precision,
-     & allocatable :: history_dump(:,:,:), one_elem_states(:)
-      integer :: relem, elnum, hist_size, blockno
+      integer :: relem, elnum, hist_size, blockno, felem, elem_type, 
+     &           mat_type, int_points, span
       logical :: do_a_block, local_debug
-      double precision :: zero
-      data zero / 0.0d00 /
+      double precision, allocatable :: history_dump(:,:,:), 
+     &                                 one_elem_states(:)
 c
-c           build deformation plasticity states values output.
+c           build mises/gurson plasticity states values output.
 c
 c              itype > 0 => this is the block number. do all elements
 c                           in the block
