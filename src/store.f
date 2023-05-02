@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/20/23 rhd                *
+c     *                   last modified : 4/19/23 rhd                *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -528,15 +528,9 @@ c
 c
          write(fileno) check_data_key
          if( crack_growth_type .eq. 3 ) then   ! smcs
-               call wrtbk( fileno, smcs_weighted_T,
-     &              prec_fact * num_kill_elem )
-               call wrtbk( fileno, smcs_weighted_zeta,
-     &              prec_fact * num_kill_elem )
-               call wrtbk( fileno, smcs_weighted_bar_theta,
-     &              prec_fact * num_kill_elem )
                call wrtbk( fileno, smcs_old_epsplas,
      &              prec_fact * num_kill_elem )
-               call wrtbk( fileno, smcs_weighted_tear_parm,
+               call wrtbk( fileno, smcs_tear_param,
      &              prec_fact * num_kill_elem )
                isize = 0
                if( allocated(smcs_states_intlst) ) isize =
@@ -571,8 +565,8 @@ c
 c
          if( print_status ) then
             call wrtbk( fileno, dam_print_list, num_print_list )
-            call wrtbk( fileno, old_mises, num_print_list*prec_fact )
-            call wrtbk( fileno, old_mean, num_print_list*prec_fact )
+            call wrtbk( fileno, gt_old_mises, num_print_list*prec_fact )
+            call wrtbk( fileno, gt_old_mean, num_print_list*prec_fact )
          end if
          write (fileno) check_data_key
 c
@@ -602,7 +596,7 @@ c                                   last step.
 c
          if ( load_size_control_crk_grth ) then
             if ( crack_growth_type .eq. 1 ) then
-               call wrtbk( fileno, old_porosity,
+               call wrtbk( fileno, gt_old_porosity,
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, del_poros,
      &              prec_fact * mxstp_store)
@@ -610,7 +604,7 @@ c
                call wrtbk( fileno, old_plast_strain,
      &              prec_fact * num_kill_elem )
             else if ( crack_growth_type .eq. 4 ) then
-               call wrtbk( fileno, old_deff,
+               call wrtbk( fileno, cohes_old_deff,
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, del_deff,
      &              prec_fact * mxstp_store )

@@ -4,7 +4,7 @@ c     *                      subroutine read_damage                  *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 9/22/21 rhd                *          
+c     *                   last modified : 4/19/23 rhd                *          
 c     *                                                              *          
 c     *              reads damage data from restart file             * 
 c     *                                                              *          
@@ -42,8 +42,8 @@ c              read dam_print list
 c                                                                               
       case( 2 )
       call rdbk( fileno, dam_print_list, num_print_list )                       
-      call rdbk( fileno, old_mises, num_print_list*prec_fact )                  
-      call rdbk( fileno, old_mean, num_print_list*prec_fact )                   
+      call rdbk( fileno, gt_old_mises, num_print_list*prec_fact )                  
+      call rdbk( fileno, gt_old_mean, num_print_list*prec_fact )                   
 c                                                                               
 c              read kill_order_list                            
 c                                                                               
@@ -92,13 +92,13 @@ c              load size control during crack growth
 c                                                                               
       case( 9 )
       if( crack_growth_type .eq. 1 ) then                                       
-         call rdbk( fileno, old_porosity, num_kill_elem * prec_fact )           
+         call rdbk( fileno, gt_old_porosity, num_kill_elem * prec_fact )           
          call rdbk( fileno, del_poros, mxstp_store * prec_fact )                
       else if( crack_growth_type .eq. 3 ) then                                  
          call rdbk( fileno, old_plast_strain, num_kill_elem *                   
      &              prec_fact )                                                 
       else if( crack_growth_type .eq. 4 ) then                                  
-         call rdbk( fileno, old_deff, num_kill_elem * prec_fact )               
+         call rdbk( fileno, cohes_old_deff, num_kill_elem * prec_fact )               
          call rdbk( fileno, del_deff, mxstp_store * prec_fact )                 
       end if                                                                    
 c                                                                               
@@ -115,14 +115,8 @@ c
 c              read the data smcs         
 c                                                                               
       case( 11 )
-      call rdbk( fileno, smcs_weighted_T, num_kill_elem * prec_fact )           
-      call rdbk( fileno, smcs_weighted_zeta, 
-     &           num_kill_elem * prec_fact )           
-      call rdbk( fileno, smcs_weighted_bar_theta, 
-     &           num_kill_elem * prec_fact )           
       call rdbk( fileno, smcs_old_epsplas, num_kill_elem * prec_fact ) 
-      call rdbk( fileno, smcs_weighted_tear_parm, 
-     &           num_kill_elem * prec_fact )           
+      call rdbk( fileno, smcs_tear_param, num_kill_elem * prec_fact )           
       read(fileno) isize
       if( isize > 0 )then
           allocate(smcs_states_intlst(isize)) 
