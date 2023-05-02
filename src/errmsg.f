@@ -1958,7 +1958,7 @@ c
  2010 continue
       num_error = num_error + 1
       write(out,9211)
- 9211 format(/1x,'>>>>> error: incorrect syntax for crack growth',
+ 9211 format(/1x,'>>>>> error: incorrect syntax for crack growth ',
      &           'parameter command. a new'/14x,'such command will be ',
      &           'sought.'/)
       go to 9999

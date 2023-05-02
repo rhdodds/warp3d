@@ -19,7 +19,7 @@ c     ****************************************************************
 c                                                                               
       subroutine cohes_cut_step( debug )                                        
       use global_data ! old common.main
-      use elem_extinct_data, only : old_deff, dam_state                         
+      use elem_extinct_data, only : cohes_old_deff, dam_state                         
       use damage_data                                                           
       implicit integer (a-z)                                                    
 c                                                                               
@@ -110,8 +110,8 @@ c
 c                                                                               
          new_deff_normalized     = deff / peak_displ                            
          max_del_deff_normalized = max( max_del_deff_normalized,                
-     &                  new_deff_normalized - old_deff(elem_ptr) )              
-         old_deff(elem_ptr) = new_deff_normalized                               
+     &                  new_deff_normalized - cohes_old_deff(elem_ptr) )              
+         cohes_old_deff(elem_ptr) = new_deff_normalized                               
 c                                                                               
       end do                                                                    
       if( local_debug ) write(out,9900) max_del_deff_normalized*100.0           

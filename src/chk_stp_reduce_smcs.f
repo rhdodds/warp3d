@@ -5,7 +5,7 @@ c     *                   subroutine smcs_cut_step                   *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 4/13/21 rhd                *          
+c     *                   last modified : 4/15/23 rhd                *          
 c     *                                                              *          
 c     *         adaptively control the global load step size based   *          
 c     *         on increments of plastic strain between load steps   *
@@ -20,23 +20,23 @@ c
      &           perm_load_fact, num_elements_in_force_release,
      &           smcs_adapt_alpha_min, smcs_adapt_alpha_max,    
      &           smcs_allowable_in_release
-      use dam_param_code, only :  dam_param_3_get_values
       use constants
 c                                                 
       implicit none                                                    
-      logical :: debug                                                                                                                                            
+      logical, intent(in) :: debug                                                                                                                                            
 c                                                                               
 c              local declarations                                                  
 c                              
       integer :: elem, elem_ptr, count, elem_max_change, 
-     &           allowed_elems_in_release                                              
-      logical :: ldebug, increase_size, ldummy                                         
-      double precision :: sig_mean, sig_mises, triaxiality, 
-     &                    new_plast_strain, mean_zeta, mean_bar_theta,
-     &                    max_change, old_perm_factor, eps_crit, factor,
-     &                    default_cut_factor, mean_omega, sig_1,
-     &                    tear_param, increase_multiplier, delta 
+     &           allowed_elems_in_release, dowhat                                           
+      logical :: ldebug, increase_size, ldummy, get_princ                                         
+      double precision :: new_plast_strain, max_change, 
+     &                    old_perm_factor,factor, default_cut_factor,
+     &                    increase_multiplier, delta 
       double precision, parameter :: one_toler = 0.999d0
+c
+      include 'include_damage_values'
+      type(values_T) :: values
 c                
       ldebug = debug
 c
@@ -57,11 +57,12 @@ c
         elem_ptr = dam_ptr( elem )                                             
         if( elem_ptr .eq. 0 ) cycle   ! element not killable 
         if( dam_state(elem_ptr) .gt. 0 ) cycle ! elem killed already     
-c                                              or being killed                
-        call dam_param_3_get_values(
-     &      elem, debug, new_plast_strain, eps_crit, sig_mean, 
-     &      sig_mises, triaxiality, mean_zeta, mean_omega,
-     &      mean_bar_theta, 2, tear_param, ldummy, sig_1 )   
+c 
+        dowhat = 1  
+        get_princ = .false. ! princ stresses not needed here    
+        call dam_param_smcs_get_values( elem, dowhat, values, 
+     &                                  get_princ )                                                                   
+        new_plast_strain = values%eps_plas
         delta = new_plast_strain - old_plast_strain(elem_ptr) 
         if( delta > max_change ) then
            max_change = delta
@@ -140,26 +141,26 @@ c
 c                                                                               
       return   
 c
- 9000 format(">>> crack growth processor decreasing global ",
+ 9000 format(/">>> crack growth processor decreasing global ",
      & "load step size:",
      & /,5x,"max change plastic strain over step:",f15.8,2x,
      &  "element: ",i8, /,                                
      & 5x,"user-specified allowable strain change:",f15.8,    
      & /,5x,"step-size (decrease) factor multiplier: ",f10.5,
-     & /,5x,"updated global step multiplier: ",e13.6,//)
- 9010 format(">>> crack growth processor decreasing global ",
+     & /,5x,"updated global step multiplier: ",g13.3,/)
+ 9010 format(/">>> crack growth processor decreasing global ",
      & "load step size:",
      & /,5x,"max # elements in release: ",i4,
      & 5x,"exceeds allowable of: ",i4,    
      & /,5x,"step-size (decrease) factor multiplier: ",f10.5,
-     & /,5x,"updated global step multiplier: ",e13.6,//)
- 9100 format(">>> crack growth processor increasing global ",
+     & /,5x,"updated global step multiplier: ",g13.3,/)
+ 9100 format(/">>> crack growth processor increasing global ",
      & "load step size:",
      & /,5x,"max change plastic strain over step:    ",f15.8,2x, 
      &  "element: ",i8, /,                                
      & 5x,"user-specified allowable strain change: ",f15.8,    
      & /,5x,"step-size (increase) factor multiplier: ",f10.5,
-     & /,5x,"updated global step multiplier: ",e13.6,//)
+     & /,5x,"updated global step multiplier: ",g13.3,/)
  9050 format(5x,"**** max change, allocable change:",f15.8)
 c                                       
             end        

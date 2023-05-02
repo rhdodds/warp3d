@@ -5,7 +5,7 @@ c     *                   subroutine gurson_cut_step                 *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/15/20 rhd               *          
+c     *                   last modified : 4/22/23 rhd                *          
 c     *                                   adaptive during release of *          
 c     *                                   forces on killed eleemnts  *          
 c     *                                                              *          
@@ -17,29 +17,28 @@ c     *         then adjust load step size down                      *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine gurson_cut_step( debug ) 
+      subroutine gurson_cut_step
 c                                      
       use global_data, only : out, noelem
-      use elem_extinct_data, only : old_porosity, dam_state                     
+      use elem_extinct_data, only : gt_old_porosity, dam_state                     
       use damage_data, only : all_elems_killed, dam_ptr, mxstp_store,
      &                        del_poros, num_elements_in_force_release,
      &                        max_porosity_change, load_reduced,
      &                        perm_load_fact, num_steps_min, 
-     &                        no_killed_elems        
-      use dam_param_code, only : dam_param  
+     &                        no_killed_elems   
       use constants    
 c            
       implicit none
 c                                 
-      logical, intent(in) :: debug                                                             
-c                                                                               
 c           local declarations                                                  
 c          
-      integer :: elem, elem_ptr, i                                                                      
-      double precision :: new_porosity, max_del_poros    
-      logical :: not_cut, all_killed, no_adaptive_during_force_release                                  
-c                                                                               
-      if( debug ) write( out,*) '>>>>>> in gurson_cut_step'                     
+      integer :: elem, elem_ptr, i, nn                                                                    
+      double precision :: new_porosity, max_del_poros, values(5)    
+      logical :: debug, not_cut, all_killed, 
+     &           no_adaptive_during_force_release                                  
+c   
+      debug = .false.                                                                          
+      if( debug ) write(out,*) '>>>>>> in gurson_cut_step'                     
 c                                                                               
 c           if all elements in the model have been killed, we                   
 c           can skip processing here                                            
@@ -57,26 +56,32 @@ c
          elem_ptr = dam_ptr( elem )                                             
          if( elem_ptr .eq. 0 ) cycle                                            
          if( dam_state(elem_ptr) .ne. 0 ) cycle                                 
-         all_killed = .false.                                                   
-c                                                                               
-c              calculate new porosity for this element                          
-c                                                                               
-         call dam_param( elem, debug=debug, porosity=new_porosity )
+         all_killed = .false. 
+         nn = 5  
+         call mm_return_values( "avg_porosity", elem, values, nn )     
+         new_porosity = values(1)
 c                                                                               
 c              find the change in porosity over the last step for this          
 c              element -- if the change is the largest so far, store it.        
 c              also store the porosity for comparison next step.                
 c                                                                               
          max_del_poros = max( max_del_poros,                                    
-     &                        new_porosity - old_porosity( elem_ptr ) )         
-         old_porosity(elem_ptr) = new_porosity                                  
+     &              new_porosity - gt_old_porosity( elem_ptr ) )         
+         gt_old_porosity(elem_ptr) = new_porosity                                  
 c                                                                               
       end do ! elem     
 c                                                              
-      if( debug ) write (out,*) '   >>> max poros change:',                     
-     &     max_del_poros                                                        
+      if( debug ) then
+         write(out,9100)  max_del_poros 
+         write(out,*) ' no_killed_elems: ',no_killed_elems
+         write(out,*) ' all_killed: ',all_killed
+         write(out,*) ' no_adaptive_during_force_release: ',
+     &             no_adaptive_during_force_release
+         write(out,*) ' num_elements_in_force_release: ',
+     &            num_elements_in_force_release
+      end if       
 c                                                                               
-c           now store the maximum porosity in a data structure which            
+c           store the maximum porosity in a data structure which            
 c           holds the porosity values last "mxstp_store" steps                  
 c                                                                               
       do i = mxstp_store, 2, -1                                                 
@@ -105,12 +110,14 @@ c           with a load multiplier for the next step.
 c                                                                               
       call gurson_load_factor( del_poros, mxstp_store,                          
      &     max_porosity_change, load_reduced, perm_load_fact,                   
-     &     num_steps_min, no_killed_elems, out, debug )                         
+     &     num_steps_min, no_killed_elems, out )
 c                                                                               
  9999 continue                                                                  
       if( debug ) write( out, * ) '<<<<< leaving gurson_cut_step'               
 c                                                                               
       return  
+c
+ 9100 format(/,">>>>> max porosity change: ",f10.5)
 c                                                                  
       end subroutine gurson_cut_step                                                                
 c                                                                               
@@ -121,7 +128,7 @@ c     *                   subroutine gurson_load_factor              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 12/15/20 rhd               *          
+c     *                   last modified : 4/22/23 rhd                *          
 c     *                                   tfactor set back to 2.0    *          
 c     *                                   from 4.0 to comply with    *          
 c     *                                   manual                     *          
@@ -142,13 +149,13 @@ c     ****************************************************************
 c                                                                               
       subroutine gurson_load_factor( del_poros, mxstp_store,                    
      &     max_porosity_change, load_reduced, perm_load_fact,                   
-     &     num_steps_min, no_killed_elems, out, debug )   
+     &     num_steps_min, no_killed_elems, out )
       use constants                      
       implicit none                                                    
 c
       integer, intent(in) :: out, mxstp_store
       integer, intent(out) :: num_steps_min
-      logical, intent(in) :: debug,  no_killed_elems  
+      logical, intent(in) ::  no_killed_elems  
       logical, intent(out):: load_reduced 
       double precision, intent(in) :: del_poros(*), max_porosity_change     
       double precision, intent(out) :: perm_load_fact              
@@ -156,12 +163,14 @@ c
 c           local declarations                                                  
 c         
       integer :: j                                                                      
-      integer, parameter :: max_steps_min = 3                                             
+      integer, parameter :: max_steps_min = 3    
+      logical :: debug                                         
       double precision :: ave_del_poros, ratio, tfactor                                                         
       double precision, parameter ::  max_factor = 1.2d0,
      &                                min_factor = 0.8d0            
-c                                                                               
-      if( debug ) write ( out, * ) '   >>>>>> in gurson_load_factor'            
+c       
+      debug = .false.                                                                       
+      if( debug ) write (out,*) '   >>>>>> in gurson_load_factor'            
 c                                                                               
 c         evaluate ratio of the max change in porosity for last step over       
 c         the maximum requested change in porosity. If the ratio is             
@@ -247,16 +256,16 @@ c
 c                                                                               
       return                                                                    
  9338 format(                                                                   
-     &/1x,'>>>>> Note: maximum delta-f:',f7.3,' over last step exceeds',        
+     &/1x,'>>>>> Note: maximum delta-f:',f8.4,' over last step exceeds',        
      &/,  '             allowed delta-f of:',f7.3,' by more than max',          
      &/,  '             ratio factor of:',f5.2,'. Current step size:',          
      &                  f7.3,                                                   
      &/,  '             reduced by factor of:',f6.2,' to:',f6.2)                
 c                                                                               
  9339 format(                                                                   
-     &/1x,'>>>>> Note: the average delta-f: ',f5.2,' over last 3',              
-     &/,13x,'steps is smaller that target value: ',f5.2,'. Step size',          
-     &/,13x,'increased by a factor of: ',f4.1,' x the',                         
+     &/1x,'>>>>> Note: the average delta-f: ',f8.4,' over last 3',              
+     &/,13x,'steps is smaller that target value: ',f8.4,'. Step size',          
+     &/,13x,'increased by a factor of: ',f5.2,' x the',                         
      &/,13x,'current value:',f7.2,' to a new value:',f7.2,/)                    
                                                                                 
       end                                                                       

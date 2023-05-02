@@ -5,7 +5,7 @@ c     *              subroutine check_for_step_reduction             *
 c     *                                                              *
 c     *                       written by : ag                        *
 c     *                                                              *
-c     *                   last modified : 2/12/2018 rhd              *
+c     *                   last modified : 4/22/23 rhd                *
 c     *                                                              *
 c     *        This routine branches on the type of load step        *
 c     *        reduction to check before computing the step.         *
@@ -53,7 +53,7 @@ c             be adjusted up and down using same algorithms as
 c             the gurson elements
 c
       if ( load_size_control_crk_grth ) then
-         if ( crack_growth_type .eq. 1 ) call gurson_cut_step ( debug )
+         if ( crack_growth_type .eq. 1 ) call gurson_cut_step
          if ( crack_growth_type .eq. 2 ) then
             if (const_front) then
                call ctoa_cut_step_const ( debug )

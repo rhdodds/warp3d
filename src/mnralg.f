@@ -666,7 +666,6 @@ c
       if( temperatures ) call mnralg_scale_temps( 3, iout )
 c
 c          some damage models require updating of controlling variables
-c          (e.g. SMCS uses plastic strain weighted mean stress, zeta, ..).
 c          others use only values stored in element stress/history 
 c          data so do not need updating. print various output tables,
 c          issue packets as needed for damage variables.

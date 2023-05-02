@@ -346,16 +346,21 @@ c
 c                                                                               
 c           branch on the proper command                                        
 c                                                                               
- 510  continue                                                                  
+ 510  continue  
+      print_status   = .false.
+      print_top_list = .false.                                             
       if ( matchs('nodes',4) )   call splunj                                    
       if ( matchs('crack',5) )   call splunj                                    
       if ( matchs('status',4) )  call splunj                                    
 c                                                                               
       if ( matchs('plane',5) )  goto 520                                        
-      if ( matchs('front',5) )  goto 530                                        
-      if ( matchs('off',3) )    goto 540                                        
+      if ( matchs('front',5) )  goto 530  
       if ( matchs('on',2) )     goto 545  
-      if ( matchs('top',3) )    goto 570                                      
+      if ( matchs('off',3) )    then
+            print_status   = .true.        
+            print_top_list = .false.                                             
+            goto 10
+      end if    
       if ( endcrd(dum) )        goto 10                                         
 c                                                                               
       call errmsg( 201, dum, dums, dumr, dumd )                                 
@@ -374,18 +379,12 @@ c
       list_crkfrnt_nodes = .true.                                               
       goto 510                                                                  
 c                                                                               
-c          ======= turn off printing of crack status =======                    
-c                                                                               
- 540  continue                                                                  
-      print_status = .false.   
-      print_top_list = .false.                                                 
-      goto 510                                                                  
-c                                                                               
-c          ======= turn on printing of crack status =======                     
+c          ======= turn on default printing of crack status =======                     
 c                                                                               
  545  continue                                                                  
-      print_status = .true.        
-      print_top_list = .false.                                             
+      print_status   = .true.        
+      print_top_list = .false.     
+      if( matchs_exact( "top" ) ) go to 570                                        
 c                                                                               
 c            if we are using node release crack growth, we cant                 
 c            have a list, so search for another command on the line.            
@@ -394,18 +393,18 @@ c
 c                                                                               
 c            input the order of the elements to be printed.  If not             
 c            specified, then print all.                                         
-c                                                                               
+c           
       if ( .not. matchs('order',5) ) go to 550                                  
       if ( matchs('elements',4) ) then                                          
         call splunj                                                             
       else                                                                      
         call backsp( 1 )                                                        
-      end if                                                                    
+      end if  
       call scan
       if( allocated(scan_order_list) ) deallocate( scan_order_list )
       allocate( scan_order_list(20) )
       call trlist_allocated( scan_order_list, list_size, noelem,                              
-     &                       scan_order_list_size, errnum )                               
+     &                       scan_order_list_size, errnum ) 
 c                                                                               
 c                       branch on the return code from trlist. a                
 c                       value of 1 indicates no error. a value of               
@@ -451,7 +450,7 @@ c           translate list into a dynamically allocated array -- first
 c           must parse the list to check if all any elements are not            
 c           killable                                                            
 c                                                                               
- 560  continue                                                                  
+ 560  continue    
       iplist = 1                                                                
       icn = 0                                                                   
       num_print_list= 0                                                         
@@ -472,16 +471,18 @@ c
       if ( num_print_list .le. 0 ) then                                         
          call errmsg( 225, dum, dums, dumr, dumd )                              
          print_status = .false.                                                 
-         go to 510                                                              
+         go to 10                                                             
       end if                                                                    
 c                                                                               
 c           now allocate and fill the order array                               
 c                                                                               
       call allocate_damage( 2 )                                                 
       call incrack_print_list_fill( scan_order_list,
-     &                              scan_order_list_size, debug )                                                          
+     &                              scan_order_list_size, debug )  
 c                                                                               
-      goto 510  
+      goto 10
+c
+c           number of "top" elements to print stastus
 c
  570  continue
       if( .not. integr( num_top_list ) ) then
@@ -1211,18 +1212,24 @@ c
 c
       if( use_mpi ) then
          call incrack_errmsg( 66 )
+         call scan_flushline
          go to 10
       end if
 c
       if( .not. matchs('distortion',6) ) then
          call incrack_errmsg( 67 )
+         call scan_flushline
          go to 10
       end if
 c
       if( matchs('metrics',6) ) call splunj
-      if( matchs_exact('off') ) go to 10
+      if( matchs_exact('off') )then
+          call scan_flushline
+          go to 10
+      end if    
       if( .not. matchs_exact('on') ) then
          call incrack_errmsg( 68 )
+         call scan_flushline
          go to 10
       end if
 c
@@ -1242,6 +1249,7 @@ c
          use_distortion_metric = .false.
          Oddy_print_initial = .false.
          call allocate_damage( 16 ) ! delete if allocated
+         call scan_flushline
          go to 10
         end if
         if( matchs_exact('off') ) go to 2510
@@ -1250,6 +1258,7 @@ c
          use_distortion_metric = .false.
          Oddy_print_initial = .false.
          call allocate_damage( 16 ) ! delete if allocated
+         call scan_flushline
          go to 10
         end if
         Oddy_print_initial = .true.
@@ -1268,6 +1277,7 @@ c
          use_distortion_metric = .false.
          Oddy_print_initial = .false.
          call allocate_damage( 16 ) ! delete if allocated
+         call scan_flushline
          go to 10
       end if
       if( matchs('critical',3) ) call splunj
@@ -1277,6 +1287,7 @@ c
          use_distortion_metric = .false.
          Oddy_print_initial = .false.
          call allocate_damage( 16 ) ! delete if allocated
+         call scan_flushline
          go to 10
       end if
 c
@@ -1291,6 +1302,7 @@ c
          use_distortion_metric = .false.
          Oddy_print_initial = .false.
          call allocate_damage( 16 ) ! delete if allocated
+         call scan_flushline
          go to 10 
       end if
       if( matchs('strain',3) ) call splunj
@@ -1300,12 +1312,14 @@ c
          use_distortion_metric = .false.
          Oddy_print_initial = .false.
          call allocate_damage( 16 ) ! delete if allocated
+         call scan_flushline
          go to 10 
       end if
 c
       if( matchs_exact('display') ) write(out,9060) 
      &     use_distortion_metric, Oddy_print_initial, 
      &     Oddy_critical_ratio, distortion_plastic_limit 
+      call scan_flushline
       go to 10
 c                                                                               
 c          ---------------------------------------------------------                           
@@ -1847,6 +1861,7 @@ c
      &      deallocate( smcs_states_intlst )
 c
       if( matchs('files',4) ) call splunj
+      if( matchs('output',4) ) call splunj
       if( matchs_exact('on') ) then
          smcs_states = .true.
       elseif( matchs_exact('off') ) then 

@@ -5,12 +5,12 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 8/28/21 rhd                *          
+c     *                   last modified : 4/21/23 rhd                *          
 c     *                                                              *          
 c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
 c     ****************************************************************          
-c                                                                               
+c  
 c                                                                               
       subroutine allocate_damage ( dowhat )       
 c                              
@@ -19,20 +19,22 @@ c
       use elem_extinct_data                                                     
       use node_release_data                                                     
       use damage_data   
-      use dam_param_code, only : dam_param
       use constants
 c                                                        
       implicit none 
 c
-      integer :: dowhat                                                   
+      integer :: dowhat, ido                                                   
 c                                                                               
       integer :: dum, elem, elem_ptr, i
       double precision ::                                                          
      &      dumd1, dumd2, dumd3, dumd4, dumd5, dumd6, dumd7,                      
-     &     dumd8, dumd9, dumd10, porosity, plast_strain,                                              
+     &     dumd8, dumd9, dumd10, plast_strain,                                              
      &     values(20)         
-      logical :: debug, duml, standard_kill_method                                                       
-      real :: dumr                                                                 
+      logical :: debug, duml, standard_kill_method, get_princ                                                      
+      real :: dumr
+c
+      include 'include_damage_values'   
+      type(values_T) :: elem_values
 c                                                                               
       debug = .false.
       standard_kill_method = .true.
@@ -67,13 +69,13 @@ c
          if( allocated(dam_print_list) ) deallocate( dam_print_list )              
          allocate( dam_print_list(num_print_list) )                                
 c                                                                                 
-         if( allocated(old_mises) ) deallocate( old_mises )                        
-         allocate( old_mises( num_print_list ) )                                   
-         old_mises(1:num_print_list) = zero                                        
+         if( allocated(gt_old_mises) ) deallocate( gt_old_mises )                        
+         allocate( gt_old_mises( num_print_list ) )                                   
+         gt_old_mises(1:num_print_list) = zero                                        
 c                                                                                 
-         if( allocated( old_mean ) ) deallocate( old_mean )                        
-         allocate( old_mean( num_print_list ) )                                    
-         old_mean(1:num_print_list) = zero                                         
+         if( allocated( gt_old_mean ) ) deallocate( gt_old_mean )                        
+         allocate( gt_old_mean( num_print_list ) )                                    
+         gt_old_mean(1:num_print_list) = zero                                         
 c                                                                               
 c                                                                               
 c                                allocate kill_order_list                       
@@ -90,8 +92,7 @@ c
             return
          end if                                                                    
          allocate(dam_node_elecnt(nonode))                                         
-         dam_node_elecnt = 0
-c                                                                               
+         dam_node_elecnt = 0                                                                               
 c                                                                               
 c                               allocate dam_face_nodes and                     
 c                               dam_dbar_elems. these store the                 
@@ -184,7 +185,10 @@ c
          old_angles_at_front(1:num_crack_plane_nodes,1:mxconn) = zero              
          overshoot_allocated = .true.                                              
 c                                                                               
-c                                                                               
+c   
+c            element deletion. type 1 is Gurson. type 3 forms
+c            of smcs. type 4 cohesive. type 5 user requested.'
+c                                                                                      
 c                            allocate: (for step size control)                  
 c                                g_stp_cntrl_allocated: indicates that          
 c                                     the structures for step size control      
@@ -208,12 +212,13 @@ c                                       for comparison to the current value
 c                                                                               
       case( 9 ) ! dowhat
          select case( crack_growth_type )                                         
-           case( 1 )   !   crack_growth_type                                                            
+           case( 1 )   !   crack_growth_type  gurson                                                           
 c                                                                               
 c            gurson growth, initialize storage of old porosities                
 c                                                                               
-             if ( allocated( old_porosity ) ) deallocate( old_porosity )               
-             allocate( old_porosity( num_kill_elem ) )                                 
+             if ( allocated( gt_old_porosity ) ) 
+     &                deallocate( gt_old_porosity )               
+             allocate( gt_old_porosity( num_kill_elem ) )                                 
 c                                                                               
 c             Now initialize the old_porosity with the current                  
 c             porosity values...  If we are reallocating due to a               
@@ -228,22 +233,21 @@ c
                 do elem  = 1, noelem                                                    
                    elem_ptr = dam_ptr(elem)                                             
                    if( elem_ptr .eq. 0 ) cycle                                         
-                   old_porosity(elem_ptr) = props(26,elem)                          
+                   gt_old_porosity(elem_ptr) = props(26,elem)                          
                 end do                                                                  
              else                                                                      
                 do elem  = 1, noelem                                                    
                    elem_ptr = dam_ptr(elem)                                             
                    if ( elem_ptr .eq. 0 ) cycle                                         
-                   call dam_param( elem, debug=debug, 
-     &                             porosity=porosity )                             
-                   old_porosity(elem_ptr) = porosity                                  
+                   call mm_return_values("avg_porosity", values )                             
+                   gt_old_porosity(elem_ptr) = values(1)
                    if( debug )
      &                  write(out,'("   Poros. for:",i5,"=",e13.6)')             
-     &                  elem, porosity                                              
+     &                  elem, values(1)
                 end do   ! elem                                                                
              end if ! incflg                                                                    
 c                                                                               
-           case( 3 )  !   crack_growth_type                                                            
+           case( 3, 5 )  !   crack_growth_type  smcs, user                                                          
 c                                                                               
 c            crack growth is smcs, initialize storage of 
 c            old plastic strains       
@@ -270,21 +274,23 @@ c
                 do elem = 1, noelem                                                     
                    elem_ptr = dam_ptr( elem )                                           
                    if( elem_ptr .eq. 0 ) cycle                                         
-                   call dam_param( elem, debug=debug,                      
-     &                             eps_plas=plast_strain )                                     
-                   old_plast_strain( elem_ptr ) = plast_strain                          
+                   ido = 1
+                   get_princ = .false. 
+                   call dam_param_smcs_get_values( elem, ido,  
+     &                   elem_values, get_princ )    
+                   old_plast_strain(elem_ptr) = elem_values%eps_plas
                    if( debug )
      &                  write(out,'("   Pl. e for:",i5,"is",e13.6)')             
      &                       elem, plast_strain                                          
                 end do                                                                  
               end if  ! incflg                                                                    
 c                                                                               
-           case( 4 ) ! crack_growth_type                                                                
+           case( 4 ) ! crack_growth_type  cohesive                                                             
 c          
 c             crack growth using cohesive elements                              
 c                                                                               
-              if( allocated(old_deff) ) deallocate(old_deff)                           
-              allocate( old_deff(num_kill_elem) )                                       
+              if( allocated(cohes_old_deff) ) deallocate(cohes_old_deff)                           
+              allocate( cohes_old_deff(num_kill_elem) )                                       
 c                                                                               
 c             Now initialize the old_deff with the current                      
 c             deff values...  If we are reallocating due to a                   
@@ -299,14 +305,14 @@ c
                  do elem  = 1, noelem                                                    
                    elem_ptr = dam_ptr(elem)                                             
                    if( elem_ptr .eq. 0 ) cycle                                         
-                   old_deff(elem_ptr) = zero                                        
+                   cohes_old_deff(elem_ptr) = zero                                        
                  end do                                                                  
               else                                                                      
                  do elem  = 1, noelem                                                    
                     elem_ptr = dam_ptr(elem)                                             
                     if( elem_ptr .eq. 0 ) cycle                                         
                     call dam_param_cohes( elem, duml, debug, values, 1 )                 
-                    old_deff(elem_ptr) = values(6)                                       
+                    cohes_old_deff(elem_ptr) = values(6)                                       
                     if( debug )
      &                 write(out,'("   deff. for:",i5,"=",e13.6)')              
      &                       elem, values(6)                                             
@@ -379,32 +385,20 @@ c
      &        deallocate( dam_dbar_elems )               
           if( allocated( dam_face_nodes ) )
      &        deallocate( dam_face_nodes )     
-          if( allocated( old_porosity ) )
-     &        deallocate( old_porosity )    
+          if( allocated( gt_old_porosity ) )
+     &        deallocate( gt_old_porosity )    
 c 
-          if( allocated( smcs_weighted_T ) )
-     &        deallocate( smcs_weighted_T )               
           if( allocated( smcs_old_epsplas ) ) 
      &       deallocate( smcs_old_epsplas )               
-          if( allocated( smcs_weighted_zeta ) ) 
-     &        deallocate( smcs_weighted_zeta  )  
-          if( allocated( smcs_weighted_bar_theta ) ) 
-     &        deallocate( smcs_weighted_bar_theta  )  
-          if( allocated( smcs_weighted_tear_parm ) ) 
-     &        deallocate( smcs_weighted_tear_parm  )  
+          if( allocated( smcs_tear_param ) ) 
+     &        deallocate( smcs_tear_param  )  
 c
-          allocate( smcs_weighted_T(num_kill_elem) )
           allocate( smcs_old_epsplas(num_kill_elem) )
-          allocate( smcs_weighted_zeta(num_kill_elem) )
-          allocate( smcs_weighted_bar_theta(num_kill_elem) )
-          allocate( smcs_weighted_tear_parm(num_kill_elem) )
+          allocate( smcs_tear_param(num_kill_elem) )
 c
           do i = 1, num_kill_elem
-            smcs_weighted_T(i)          = zero
-            smcs_old_epsplas(i)         = zero  
-            smcs_weighted_zeta(i)       = zero  
-            smcs_weighted_bar_theta(i)  = zero  
-            smcs_weighted_tear_parm(i)  = zero  
+            smcs_old_epsplas(i) = zero  
+            smcs_tear_param(i)  = zero  
           end do
 c
 c                            mesh regularization                             
@@ -420,8 +414,8 @@ c
      &        deallocate( dam_dbar_elems )               
           if( allocated( dam_face_nodes ) )
      &        deallocate( dam_face_nodes )     
-          if( allocated( old_porosity ) )
-     &        deallocate( old_porosity )    
+          if( allocated( gt_old_porosity ) )
+     &        deallocate( gt_old_porosity )    
 c 
           if( allocated( smcs_d_values ) ) 
      &        deallocate( smcs_d_values  )  

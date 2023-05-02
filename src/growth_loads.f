@@ -75,7 +75,6 @@ c
      &                        use_distortion_metric,
      &                        tol_regular =>
      &                        tolerance_mesh_regularization     
-      use dam_param_code, only : growth_set_dbar      
       use constants                                                  
 c                                                                               
       implicit none
@@ -170,8 +169,7 @@ c            row 2 of dam_dbar_elems stores the released
 c            fraction up to now.                                                
 c                                                                               
         if( release_type .eq. 2 ) then                                         
-          call growth_set_dbar( elem, elem_ptr, debug, -2,
-     &                          dbar_now=dbar_now )           
+          call growth_set_dbar( elem, elem_ptr, -2, dbar_now )           
           dbar_zero      = dam_dbar_elems(1,elem_ptr)                           
           refer_deform   = release_fraction * gurson_cell_size                  
           now_fraction   = (dbar_now-dbar_zero)/refer_deform                    
