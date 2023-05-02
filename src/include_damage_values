@@ -1,0 +1,31 @@
+c
+c
+c             simplify passing damage related variables for an element.
+c             if this changes, recompile the **entire** code.
+c             the makefile does this
+c
+      type :: values_T
+        sequence
+        double precision :: eps_plas
+        double precision :: old_eps_plas
+        double precision :: deps_plas
+        double precision :: sig_mean
+        double precision :: sig_mises
+        double precision :: triaxiality
+        double precision :: sig_princ(3)
+        double precision :: max_princ_stress
+        double precision :: zeta
+        double precision :: omega
+        double precision :: bar_theta
+        double precision :: tearing_param
+        double precision :: damage_factor
+        double precision :: eps_critical
+        double precision :: porosity  ! Gurson models
+        double precision :: gt_matrix_eps_plas
+        double precision :: gt_matrix_stress  
+        double precision :: ext_shape ! extended Gurson model
+        double precision :: ext_spacing ! extended Gurson model
+        logical ::          kill_now, ext_gurson 
+      end type
+      
+ 
