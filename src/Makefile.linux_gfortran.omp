@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 11/16/22 rhd
+#   Last modifications: 5/1/23 rhd
 #
 #   How to run:
 #
@@ -68,7 +68,7 @@
 #          in the linux_pacakages/lib directory of the WARP3D distribution
 
 OSNAME   := Linux
-BUILDNUM := 4260
+BUILDNUM := 4270
 #
 BUILD_SYS := gfortran
 ODIR = ././../obj_linux_gfortran_omp
@@ -288,6 +288,7 @@ OBJ =	 \
 	$(OD)/mm10_f.o   \
 	$(OD)/mm11.o       \
 	$(OD)/mmnoopt.o	\
+	$(OD)/mm_return_values.o	\
 	$(OD)/mpi_code.o	 \
 	$(OD)/mpi_handle_slaves.o \
 	$(OD)/mpc_modify.o	 \
