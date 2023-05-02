@@ -7,9 +7,9 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 2/15/2022 rhd
+#   Last modifications: 5/1/23 rhd
 #
-#    Makefile for WARP3D on systems running Windows 10 (7/8)
+#    Makefile for WARP3D on systems running Windows 10
 #    on x86 Processors (64-bit mode).
 #
 #    This nmake script is initiated by the the command shell script
@@ -61,7 +61,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 4260
+BUILDNUM = 4270
 PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows
@@ -238,6 +238,7 @@ OBJ =	 \
 	$(OD)/mm10_f$O	 \
 	$(OD)/mm11$O  \
 	$(OD)/mmnoopt$O	 \
+	$(OD)/mm_return_values$O	 \
 	$(OD)/mpi_code$O	 \
 	$(OD)/mpi_handle_slaves$O \
 	$(OD)/mpc_modify$O	 \
@@ -959,6 +960,10 @@ $(OD)/mm11$O : mm11.f $(OD)/mod_crystals$O param_def
 $(OD)/mmnoopt$O : mmnoopt.f $(OD)/mod_crystals$O param_def
 	$(F90) /O3 /Qip  /c mmnoopt.f
 	$(MVC) mmnoopt$O $@
+	
+$(OD)/mm_return_values$O : mm_return_values.f 
+	$(F90) /O3 /Qip  /c mm_return_values.f
+	$(MVC) mm_return_values$O $@
 
 $(OD)/mnralg$O : mnralg.f param_def $(OD)/mod_main$O \
                  $(OD)/mod_adaptive_steps$O $(OD)/distributed_assembly$O\

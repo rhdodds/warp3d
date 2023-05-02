@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 11/16/22 rhd
+#   Last modifications: 5/1/23 rhd
 #
 #   How to run:
 #
@@ -23,7 +23,7 @@
 #     solver and LAPACK/BLAS routines
 #
 #     Build tested with gfortran version 10+ and MKL 2021.3
-#     on MacOS 11.6 (Big Sur)
+#     on MacOS 11.6.2 (Big Sur)
 #
 #     How we handle MKL libraries. The few required libraries are
 #     included in the WARP3D directory OSX_MKL_files.
@@ -78,7 +78,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 4260
+BUILDNUM := 4270
 #
 ifeq  ($(BUILD_SYS), gfortran)
   ODIR = ././../obj_mac_os_x_gfortran
@@ -153,7 +153,7 @@ else  #  Intel Fortran options
   ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
                          -align array64byte  -qopt-zmm-usage=high
   HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE =  $(HARDWARE_SPECIFIC) # $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) 
+  MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) 
 #
   FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
               $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
@@ -195,7 +195,7 @@ MODS     := $(OD)/mod_adaptive_steps.o \
 			$(OD)/distributed_assembly.o  # contain a module definition
 #
 INCLUDES := param_def include_mm10 include_sig_up include_tan_ek \
-			include_usr_parm
+			include_usr_parm include_damage_values
 #
 #                all *.o files for linking.  module files are listed
 #                first for readability. try to keep ordering alphabetic
@@ -338,6 +338,7 @@ OBJ =	 \
 	$(OD)/mm10_f.o   \
 	$(OD)/mm11.o       \
 	$(OD)/mmnoopt.o	\
+	$(OD)/mm_return_values.o \
 	$(OD)/mpi_code.o	 \
 	$(OD)/mpi_handle_slaves.o \
 	$(OD)/mpc_modify.o	 \
