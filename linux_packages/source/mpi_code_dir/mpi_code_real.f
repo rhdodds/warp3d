@@ -982,17 +982,13 @@ c
      & "wmpi_do_uexternaldb. ",/,2x,"Analysis terminated...",//)
 c
        end
-
-c
-c
-c
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine wmpi_send_basic              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/26/2018 rhd             *
+c     *                   last modified : 3/26/23 rhd                *
 c     *                                                              *
 c     *       This subroutine allows the root processor to send      *
 c     *       basic model data, such as the coordinates, incidences, *
@@ -1021,7 +1017,6 @@ c
       use segmental_curves
       use contact, only : use_contact
       use mm10_defs, only : one_crystal_hist_size, common_hist_size
-
 c
       implicit none
       include "mpif.h"
@@ -1128,6 +1123,11 @@ c
      &               MPI_VAL,0,MPI_COMM_WORLD,ierr)
       call MPI_BCAST(seg_curves_gp_delta_u,max_seg_curves,
      &               MPI_VAL,0,MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(seg_curves_pchip_slopes,max_seg_curves*
+     &               max_seg_points,
+     &               MPI_VAL,0,MPI_COMM_WORLD,ierr)
+      call MPI_BCAST(seg_curves_pchip,max_seg_curves,MPI_LOGICAL,0,
+     &               MPI_COMM_WORLD,ierr)
       call MPI_BCAST(matprp,mxmtpr*mxmat,MPI_REAL,0,MPI_COMM_WORLD,
      &               ierr)
       call MPI_Bcast(imatprp,mxmtpr*mxmat,MPI_INTEGER,0,MPI_COMM_WORLD,
