@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 5/1/23 rhd
+#   Last modifications: 7/11/23 rhd
 #
 #   How to run:
 #
@@ -78,7 +78,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 4270
+BUILDNUM := 4280
 #
 ifeq  ($(BUILD_SYS), gfortran)
   ODIR = ././../obj_mac_os_x_gfortran
@@ -153,7 +153,7 @@ else  #  Intel Fortran options
   ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
                          -align array64byte  -qopt-zmm-usage=high
   HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) 
+  MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC)
 #
   FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
               $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
