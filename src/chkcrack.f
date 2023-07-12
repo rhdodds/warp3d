@@ -89,7 +89,7 @@ c     *                      subroutine chk_elem_kill                *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 9/15/21 rhd                *          
+c     *                   last modified : 7/11/23 rhd                *          
 c     *                                                              *          
 c     *        checks conditions to see if crack growth will occur   *          
 c     *        by element extinction. if so start the deletion.      *          
@@ -117,7 +117,7 @@ c
      &     use_mesh_regularization,
      &     tol_regular =>
      &     tolerance_mesh_regularization, use_distortion_metric, 
-     &     Oddy_critical_ratio    
+     &     Oddy_critical_ratio, use_weighted    
       use constants                   
 c                                                         
       implicit none
@@ -847,7 +847,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *        internal subroutine chk_output_kill_messages_3        *
 c     *                                                              *
-c     *                   last modified : 4/15/23 rhd                *
+c     *                   last modified : 7/11/23 rhd                *
 c     *                                                              *
 c     *        SMCS crack growth. newly killed element messages      *
 c     *                                                              *
@@ -899,23 +899,29 @@ c
       if( .not. smcs_deleted_list_file_flag ) return
 c
       associate( v => smcs_elem_values )
+c
       inquire( file=smcs_deleted_list_file_name, exist=fexists )
       open( newunit=device,file=smcs_deleted_list_file_name,
      &      form='formatted', status='unknown', 
-     &      access='sequential', position='append' )  
-      if( distortion_killed ) then 
-       if( .not. fexists ) write(device,9019)
-       write(device,9022) current_load_time_step,
-     &                   elem, v%eps_plas, v%eps_critical,
-     &                   v%triaxiality, v%zeta, v%bar_theta,
-     &                   v%tearing_param, max_Oddy
-      else
-        if( .not. fexists ) write(device,9018)
-        write(device,9020) current_load_time_step,
+     &      access='sequential', position='append' )
+c  
+      if( .not. fexists ) then
+           write(device,9018)
+           if( use_weighted ) write(device,9118)
+           if( .not. use_weighted ) write(device,9119)
+           write(device,9120)
+      end if
+c
+      if( distortion_killed ) 
+     &      write(device,9022) current_load_time_step,
+     &                   elem, v%eps_plas, 0.0,
+     &                   0.0, 0.0, 0.0,
+     &                   0.0, max_Oddy
+      if( .not. distortion_killed ) 
+     &      write(device,9020) current_load_time_step,
      &                   elem, v%eps_plas, v%eps_critical,
      &                   v%triaxiality, v%zeta, v%bar_theta,
      &                   v%tearing_param
-      end if
       close(unit=device)    
 c      
       end associate
@@ -924,21 +930,17 @@ c
 c
  9010 format(/," >> element death:",i7," before next step. ",             
      &       'eps-plastic: ',f8.5)
- 9018 format('!',/,'!  SMCS quantities when critical damage ',
-     & 'reached for elements', /,
-     & '!   (element deletion begins at listed step number)',
-     & /,'!',/,
-     & 6x,'step    elem      ebarp  ebarp_crit    T   xi',
-     &  '   bar_theta   tear_param')  
- 9019 format('!',/,'!  SMCS quantities when damage D = 1 ',
-     & 'reached for elements', /,
-     & '!   (element deletion begins at listed step number)',
-     & /,'!',/,
-     & 6x,'step    elem      ebarp  ebarp_crit    T   xi',
-     &  '   bar_theta   tear_param   Oddy metric')  
+ 9018 format('!',/,'!  SMCS quantities when critical damage D = 1 ',
+     & 'or Oddy limit reached for elements', /,
+     & '!   (element deletion begins at listed step number)' )
+ 9118 format('!',/,'!  T, xi, hat_theta are *plastic-weighted* values')
+ 9119 format('!',/,'!  T, xi, hat_theta are *current* values')
+ 9120 format('!',/,
+     & 6x,'step    elem      ebarp  ebarp_crit    T       xi',
+     &  '   hat theta   tear_param    Oddy metric')  
  9020 format(2x,2i8,3x,f8.5,4x,f8.5,1x,f6.3,2x,f6.3,2x,f6.3,4x,f8.3)      
  9022 format(2x,2i8,3x,f8.5,4x,f8.5,1x,f6.3,2x,f6.3,2x,f6.3,4x,f8.3,
-     &       2x,f8.3)      
+     &       8x,f8.3)      
  9025 format(/,' >> element death: ',i7,' by tearing parameter: ',f6.3)
  9030 format(/,' >> element death: ',i7,' by eps plastic: ',f8.5,
      &  ' tearing parameter: ',f6.3)

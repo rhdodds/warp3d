@@ -5,7 +5,7 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 4/21/23 rhd                *          
+c     *                   last modified : 5/18/23 rhd                *          
 c     *                                                              *          
 c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
@@ -400,6 +400,26 @@ c
             smcs_old_epsplas(i) = zero  
             smcs_tear_param(i)  = zero  
           end do
+c
+          if( use_weighted ) then
+                if( allocated( smcs_weighted_T ) ) then
+                   deallocate( smcs_weighted_T ) 
+                end if
+                if( allocated( smcs_weighted_zeta ) ) then
+                   deallocate( smcs_weighted_zeta ) 
+                end if
+                if( allocated( smcs_weighted_bar_theta ) ) then
+                   deallocate( smcs_weighted_bar_theta ) 
+                end if
+                allocate( smcs_weighted_T(num_kill_elem) )
+                allocate( smcs_weighted_zeta(num_kill_elem) )
+                allocate( smcs_weighted_bar_theta(num_kill_elem) )
+                do i = 1, num_kill_elem
+                    smcs_weighted_zeta(i) = zero 
+                    smcs_weighted_bar_theta(i) = zero 
+                    smcs_weighted_T(i) = zero 
+                end do
+          end if         
 c
 c                            mesh regularization                             
 c                                                                               

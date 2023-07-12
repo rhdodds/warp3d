@@ -10,7 +10,7 @@ c     *                      subroutine dam_print_smcs               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 4/15/23 rhd                *          
+c     *                   last modified : 7/11/23 rhd                *          
 c     *                                                              *          
 c     *     Prints out the status of SMCS elements                   *          
 c     *     marked as killable at the beginning of a load step       *  
@@ -30,7 +30,8 @@ c
      &                        num_kill_elem, print_status, 
      &                        print_top_list, num_top_list, 
      &                        smcs_states, smcs_stream, smcs_text,
-     &                        smcs_states_intlst, smcs_type
+     &                        smcs_states_intlst, smcs_type,
+     &                        use_weighted
       use constants
 c                                                        
       implicit none                                                    
@@ -155,9 +156,12 @@ c
       if( local_count > 0 ) then
         if( print_info ) then
            write(out,9200)
+           if( use_weighted ) write(out,9205)
+           if( .not. use_weighted ) write(out,9206)
            write(out,9210)
-           print_info = .false.
-        end if   
+         end if   
+        if( .not. print_info ) write(out,9202)
+        print_info = .false.
         if( smcs_type == 5 ) write(out,9215)
       end if                                                              
 c
@@ -188,19 +192,26 @@ c
      & '   ---------  ---------  ----------')                                        
  9030 format(2x,'element   eps-pls    eps-crit   damage  ',                      
      & 'sig-mean  sig-mises    T       xi',
-     & '       omega    bar theta  tear_param',/,2x,                                   
+     & '       omega       theta   tear_param',/,2x,                                   
      & '-------   -------    --------  -------  ',                        
      & '--------  ---------  -----   ------   ---------  ',
-     & '---------  ----------')
+     & '  -------  ----------')
  9100 format(1x,i8,2(2x,f9.6),4x,f5.3,1x,f9.3,2x,f9.3,1x,f6.3,3x,
      &       f6.3,6x,f6.3,5x,f6.3,5x,f7.3,2x,a1) 
  9110 format(1x,i8,2(2x,f9.6),2x,f5.3,1x,f9.3,2x,f9.3,3x,f9.7,
      &  3x,f6.3,3x,f6.3,6x,f6.3,5x,f6.3,5x,f7.3,2x,a1) 
  9200 format(8x,"* -- T (sig_mean/sig_mises) < 1.0")                                                
- 9210 format(10x,"-- T is element average triaxiality",/,
+ 9202 format(10x,"** See earlier messages w/ first element values ",
+     & "about T, xi, ... definitions")                                                
+ 9205 format(10x,
+     & "-- T, xi, omega, theta are *plastic weighted* average values")
+ 9206 format(10x,
+     & "-- T, xi, omega, theta are *current* values")
+ 9210 format(
+     & 10x,"-- T is element average triaxiality",/,
      & 10x,"-- xi is element average of normalized Lode angle",/,
      & 10x,"-- omega is element average of Lode angle parameter",/,
-     & 10x,"-- bar theta is element average of Lode angle parameter",
+     & 10x,"-- theta is element average of Lode angle parameter",
      &       " - type 4 MMC",/,
      & 10x,"-- tear_param is element average Sandia/Wellman tearing",
      &     " parameter- type 5",
@@ -376,7 +387,6 @@ c
 c
 c              write a result record for every element. non-killable
 c              elements have all zero values
-c 
 c     
       associate( v => values )
 c  
@@ -439,7 +449,7 @@ c
      &"      6  triax    Triaxiality",/,
      &"      7  xi       xi",/,
      &"      8  omega    omega",/,
-     &"      9  theta    bar theta",/
+     &"      9  theta    hat theta",/
      &"     10  tear_p   tearing_parm")
  9110 format(10e15.6)
  9200 format( i7.7 )                              
@@ -454,7 +464,7 @@ c     *           subroutine dam_param_smcs_get_values               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 4/19/23 rhd                *          
+c     *                   last modified : 5/18/23 rhd                *          
 c     *                                                              *          
 c     *             SMCS compute values for this element w/ optional *
 c     *             update of values                                 *
@@ -480,9 +490,14 @@ c
      &                            smcs_type_4_A, smcs_type_4_n,
      &                            smcs_type_4_c1, smcs_type_4_c2,
      &                            smcs_type_4_c3, smcs_type_5_power,
-     &                            smcs_type_5_tp_critical
+     &                            smcs_type_5_tp_critical,
+     &                            num_kill_elem, use_weighted
       use elem_extinct_data, only : smcs_old_epsplas, 
-     &                              smcs_tear_param
+     &                              smcs_tear_param,
+     &                              smcs_weighted_T,
+     &                              smcs_weighted_zeta,
+     &                              smcs_weighted_bar_theta
+c
       use constants
 c                                                                               
 c        elem      -- (input)   element number to be checked for                
@@ -518,7 +533,8 @@ c
      &    princ_dcosines(3,3), princ_values(3), t
       logical :: update, local_debug, threed_solid_elem, l1, l2, l3,
      &           l4, l5, l6, l7, l8, l9, l10, kill_now_local
-     &          
+      double precision, save, allocatable :: weighted_T(:)
+         
       double precision, parameter :: 
      &     small_plastic_strain = 1.0d-07, small_mises = 1.0d-07,
      &     type_2_tol = 1.0d-06, 
@@ -654,6 +670,15 @@ c
          smcs_old_epsplas(elem_ptr) = eps_plas 
       end if
 c
+      if( use_weighted .and. update )
+     &    call dam_param_smcs_get_values_weighted
+      if( use_weighted ) then ! history avg values
+         triaxiality = smcs_weighted_T(elem_ptr) / eps_plas
+         zeta        = smcs_weighted_zeta(elem_ptr) / eps_plas
+         omega       = one - zeta*zeta 
+         bar_theta   = smcs_weighted_bar_theta(elem_ptr) / eps_plas
+      end if
+c
 c               if no plastic strain yet, set defaults and return.
 c
       values%eps_plas         = eps_plas
@@ -674,9 +699,9 @@ c
 c      
       if( eps_plas < small_plastic_strain ) return
 c
-c               use current triaxiality, zeta, omega, bar_theta
-c               values to set critical plastic strain. or check
-c               tearing parameter
+c               use current or weighted triaxiality, zeta, omega, 
+c               bar_theta values to set critical plastic strain. or
+c               check tearing parameter
 c
       eps_crit = max_eps_critical
 c
@@ -692,6 +717,7 @@ c
         values%eps_plas     = eps_plas
         values%eps_critical = eps_crit
         values%kill_now     = kill_now_local
+        values%triaxiality  = triaxiality
         values%damage_factor = eps_plas / eps_crit
         if( local_debug ) write(out,9110) t1, t2, eps_crit,
      &                    values%damage_factor
@@ -773,17 +799,17 @@ c
           if( local_debug ) write(out,9310) t, deps_plas * tp_kernel,
      &         t + deps_plas * tp_kernel
           smcs_tear_param(elem_ptr) = t + deps_plas * tp_kernel
-         end if
+        end if
 c
-         tear_param = smcs_tear_param(elem_ptr)
-         eps_crit = max_eps_critical
-         kill_now_local = tear_param >= smcs_type_5_tp_critical .or. 
+        tear_param = smcs_tear_param(elem_ptr)
+        eps_crit = max_eps_critical
+        kill_now_local = tear_param >= smcs_type_5_tp_critical .or. 
      &                     eps_plas >= max_eps_critical
-         values%eps_critical  = eps_crit
-         values%kill_now      = kill_now_local
-         values%damage_factor = tear_param / smcs_type_5_tp_critical
-         values%tearing_param = tear_param
-         if( local_debug ) write(out,9315) tear_param,
+        values%eps_critical  = ten ! just for printing
+        values%kill_now      = kill_now_local
+        values%damage_factor = tear_param / smcs_type_5_tp_critical
+        values%tearing_param = tear_param
+        if( local_debug ) write(out,9315) tear_param,
      &     values%damage_factor, kill_now_local
 c
        case default
@@ -834,6 +860,47 @@ c
      & /,15x,'old TP: ',f6.3,'  incr TP: ',f6.3,'  updated TP:',f6.3 )
  9315 format(10x,'TP returned values:',
      & /,15x,'TP: ',f6.3,'  damage: ',f6.3,'  kill:',l2 )
-
+c
+      contains
+c     ****************************************************************          
+c     *                                                              *          
+c     *       subroutine dam_param_smcs_get_values_weighted          *          
+c     *                                                              *          
+c     *                       written by : rhd                       *          
+c     *                                                              *          
+c     *                   last modified : 4/15/23 rhd                *          
+c     *                                                              *          
+c     *     For use of weighted by plastic strain values, accumulate *
+c     *     current values * deps_plas into global vectors           *  
+c     *     drives writing binary packets and states file results    *        
+c     *                                                              *          
+c     ****************************************************************          
+c                                                                               
+c
+      subroutine dam_param_smcs_get_values_weighted
+      implicit none
+c
+      double precision :: tp_kernel, tear, x, now_triaxiality
+c
+      if( sig_mises <= small_mises ) return
+c
+      now_triaxiality = sig_mean / sig_mises 
+      if( now_triaxiality < smcs_cutoff_triaxiality ) return
+c
+      x = smcs_weighted_T(elem_ptr)
+      x = x + deps_plas * now_triaxiality
+      smcs_weighted_T(elem_ptr) = x
+c
+      x = smcs_weighted_zeta(elem_ptr)
+      x = x + deps_plas * zeta
+      smcs_weighted_zeta(elem_ptr) = x
+c
+      x = smcs_weighted_bar_theta(elem_ptr)     
+      x = x + deps_plas * bar_theta
+      smcs_weighted_bar_theta(elem_ptr) = x
+c
+      return  
+c
+      end subroutine dam_param_smcs_get_values_weighted
       end subroutine dam_param_smcs_get_values
 
