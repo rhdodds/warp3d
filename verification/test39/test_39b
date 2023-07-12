@@ -66,7 +66,7 @@ c
      bbar stabilization factor 0.0
 c  
    crack growth parameters
-      type of crack growth smcs
+      type of crack growth smcs use current
       crack plane normal y coordinate 0.0
       force release type traction-separation
       cell height 0.0195313

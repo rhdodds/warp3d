@@ -85,7 +85,7 @@ c
    bbar stabilization factor 0.0
 ! 
   crack growth parameters
-     type of crack growth smcs
+     type of crack growth smcs use weighted
      force release type steps 5
      print status on order  1 31 2 32 3 33 4 34 5 35 6 36 7 37 8 38,
                          9 39 10 40 11 41 12 42 13 43 14 44 15 45,
