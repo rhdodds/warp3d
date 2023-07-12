@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/19/23 rhd                *
+c     *                   last modified : 5/18/23 rhd                *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -54,7 +54,8 @@ c
       integer, parameter :: check_data_key=2147483647
       character :: dbname*100
       logical :: nameok, scanms, delfil, wrt_nod_lod, write_table,
-     &           initial_stresses_exist, standard_kill_method
+     &           initial_stresses_exist, standard_kill_method,
+     &           weighted_written
       real :: dumr
       real, parameter :: rzero = 0.0
       double precision :: dumd
@@ -193,7 +194,7 @@ c
      &              cp_elems_present, J_cutoff_active, 
      &              J_cutoff_restart_file, J_ratio_adaptive_steps,
      &              J_compute_step_2_automatic, last_step_adapted,
-     &              J_diff_at_2_set     
+     &              J_diff_at_2_set, use_weighted     
       write(fileno) sparse_stiff_file_name, packet_file_name,
      &              initial_stresses_file
       write (fileno) check_data_key
@@ -538,6 +539,12 @@ c
                write(fileno) isize
                if( isize > 0 ) write(fileno)
      &             smcs_states_intlst(1:isize)
+               if( use_weighted ) then
+                  isize = num_kill_elem * prec_fact 
+                  call wrtbk( fileno, smcs_weighted_T, isize )
+                  call wrtbk( fileno, smcs_weighted_zeta, isize )
+                  call wrtbk( fileno, smcs_weighted_bar_theta, isize )
+                end if
          end if
          write(fileno) check_data_key
 c
@@ -587,6 +594,7 @@ c
      &              (2*prec_fact)*num_kill_elem )
             end if
          end if
+c
          write (fileno) check_data_key
          write(out,9130)
 c

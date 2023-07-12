@@ -4,7 +4,7 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 3/20/23 rhd                *
+c     *                   last modified : 5/18/23 rhd                *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
@@ -34,6 +34,9 @@ c
      & one_crystal_hist_size, common_hist_size
       use erflgs
       use j_data
+      use elem_extinct_data, only : smcs_weighted_T,
+     &                              smcs_weighted_zeta,
+     &                              smcs_weighted_bar_theta
 c
       implicit none
 c
@@ -52,7 +55,7 @@ c
       character ::  dbname*100, string*80, dums*1
       logical :: flexst, scanms, nameok, initial_stresses_exist,
      &           read_nod_load, msg_flag, read_table, exist_flag,
-     &           standard_kill_method
+     &           standard_kill_method, weighted_written
       real :: dumr, restart_time
       real, external :: wcputime
       double precision :: dumd
@@ -181,7 +184,7 @@ c
      &             cp_elems_present, J_cutoff_active, 
      &             J_cutoff_restart_file, J_ratio_adaptive_steps,
      &             J_compute_step_2_automatic, last_step_adapted,
-     &             J_diff_at_2_set
+     &             J_diff_at_2_set, use_weighted 
       read(fileno) sparse_stiff_file_name, packet_file_name,
      &             initial_stresses_file
       call chk_data_key( fileno, 1, 1 )
