@@ -118,10 +118,16 @@ c
       call rdbk( fileno, smcs_old_epsplas, num_kill_elem * prec_fact ) 
       call rdbk( fileno, smcs_tear_param, num_kill_elem * prec_fact )           
       read(fileno) isize
-      if( isize > 0 )then
+      if( isize > 0 ) then
           allocate(smcs_states_intlst(isize)) 
           read(fileno)  smcs_states_intlst(1:isize)   
       end if 
+      if( use_weighted ) then
+        isize = num_kill_elem * prec_fact 
+        call rdbk( fileno, smcs_weighted_T, isize )
+        call rdbk( fileno, smcs_weighted_zeta, isize )
+        call rdbk( fileno, smcs_weighted_bar_theta, isize )
+      end if  
 c                                                                               
 c              read the mesh regularization data
 c                                                                               

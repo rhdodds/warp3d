@@ -4,7 +4,7 @@ c     *              f-90 module crack_growth_data                   *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 8/14/2021 rhd              *          
+c     *                   last modified : 5/18/23 rhd                *          
 c     *                                                              *          
 c     *     define the data structures for crack growth              *          
 c     *                                                              *          
@@ -36,6 +36,9 @@ c
      &                                       smcs_d_values(:),
      &                                       smcs_eps_plas_at_death(:),
      &                                       smcs_stress_at_death(:)    
+      double precision, allocatable       :: smcs_weighted_T(:),
+     &                                       smcs_weighted_zeta(:),
+     &                                       smcs_weighted_bar_theta(:)
 c
 c                     stiffness matrices for element in process of
 c                     being killed. used as option for SMCS based

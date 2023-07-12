@@ -80,7 +80,7 @@ c
      &  smcs_text, smcs_deleted_list_file_flag, use_estiff_at_death,
      &  use_mesh_regularization, use_distortion_metric,
      &  gt_list_file_flag, Oddy_print_initial,
-     &  smcs_removed_list_file_flag         
+     &  smcs_removed_list_file_flag, use_weighted        
 c                                                                               
 c                     character                             
 c      
