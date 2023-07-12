@@ -4,7 +4,7 @@ c     *                      subroutine incrack                      *
 c     *                                                              *          
 c     *                       written by : AG                        *          
 c     *                                                              *          
-c     *                   last modified : 10/18/22 rhd               *          
+c     *                   last modified : 5/18/23 rhd                *          
 c     *                                                              *          
 c     *                   input crack growth parameters              *
 c     *                                                              *          
@@ -190,7 +190,10 @@ c
       else if ( matchs('gurson',4) ) then                                       
              lcktype = 1                                                        
       else if ( matchs('smcs',4) ) then                                         
-             lcktype = 3                                                        
+             lcktype = 3      
+             if( matchs_exact('use') ) call splunj
+             if( matchs('current',4) ) use_weighted = .false.                                                  
+             if( matchs('weighted',4) ) use_weighted = .true.
       else if ( matchs('node_release',4) ) then                                 
              lcktype = 2                                                        
       else if ( matchs('discrete',4) ) then                                     
@@ -1445,14 +1448,14 @@ c
 c
       if( regular_type == 1 ) then
 c
-c              up_max <number>
+c              up_max <number> or uf <number>
 c
         if( endcrd(dum) ) then
             call incrack_errmsg( 50 )
             return
         end if        
 c
-        if( .not. matchs_exact('up_max') ) then
+        if( .not. matchs_exact('uf') ) then
            call incrack_errmsg( 35 )
            return
         end if
@@ -1672,13 +1675,20 @@ c
       implicit none
 c
 c
-c        smcs type 1 gamma, alpha, beta, kappa, triaxiality_cutoff
+c        smcs type 1 gamma, alpha, beta, kappa, triaxiality_cutoff,
+c                    max_eps_critical 
 c
 c        smcs type 2 gamma, beta_1, beta_2, A_plus, A_minus, kappa,
-c                    triaxiality_cutoff
+c                    triaxiality_cutoff, max_eps_critical 
 c
 c        smcs type 3 gamma, alpha_1, alpha_2, beta_1, beta_2,
-c                    triaxiality_cutoff
+c                    triaxiality_cutoff, max_eps_critical 
+c
+c        smcs type 4 A, n, c_1, c_2, c_3, max_eps_critical 
+c                    triaxiality_cutoff 
+c
+c        smcs type 5 power tp_critical, max_eps_critical
+c                    triaxiality_cutoff,
 c
 c
       logical :: ok
