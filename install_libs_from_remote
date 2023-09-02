@@ -26,7 +26,7 @@ cp -a OSX_MKL_files $WARP3D_HOME
 #
 cd $WARP3D_HOME
 #
-/bin/rm -r ./warp3d_external_libs_2023_May
+/bin/rm -r ./warp3d_external_libs_2023_May  
 /bin/rm -r ./warp3d_external_libs_2023_May.zip
 #
 exit
