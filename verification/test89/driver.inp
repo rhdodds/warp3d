@@ -57,16 +57,16 @@ warp3d_restart.inp
 *
 2
 'solution for step:     125 converged'
-'    2545 '
+'    2480 '
 0
-0.086457
+0.157702
 1
 *
 *        check results problem 2
 *
 2
 'solution for step:     250 converged'
-'    2622 '
+'    2529 '
 0
-0.103035
+0.121290
 1

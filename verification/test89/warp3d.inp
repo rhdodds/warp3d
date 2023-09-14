@@ -111,7 +111,7 @@
 !  smcs type 4 A 187.0 n 0.03 c_1 0.059 c_2 126. c_3 0.92,
 !                 max_eps_critical 0.8,
 !                 cutoff_triaxiality 0.0 display
-  regularization on type 3 Length_scale 0.005 Gf 0.04 m 1.0 alpha 4
+  regularization on type 3 Length_scale 0.005 uf 0.0005 beta 2.0 alpha 4
   smcs deleted elements file on  name 'deleted_elements_data.out'
   smcs removed elements file on  name 'removed_elements_data.out'
   distortion metric on write initial values file on,
