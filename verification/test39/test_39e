@@ -67,7 +67,7 @@
       smcs type 4 A 133.8 n 0.187 c_1 0.06 c_2 65 c_3 0.93,
               cutoff_triaxiality 0.0 display 
       smcs deleted elements file on name "list_deleted"
-      smcs states on stream steps 1-200
+      smcs states on text steps 1-200
       killed element limit 200
       adaptive load control on plastic strain change 0.05 $ 5 x yield
 !

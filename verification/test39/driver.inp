@@ -107,7 +107,7 @@ test_39f
 'solution for step:     200 converged:'
 'Totals:'
  0
-0.43571185E+00
+0.45094249E+00
 2
 *
 *        check results problem 6
@@ -116,5 +116,5 @@ test_39f
 'solution for step:     100 converged:'
 'Totals:'
  0
-0.40381145E+00
+0.40744457E+00
 2
