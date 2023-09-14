@@ -34,10 +34,6 @@ c
 c    a restart file is also written along the way after every
 c    10 or so load increments.
 c
-c    here we employ catastrophic, strain-controlled nucleation
-c    to smoothly relax stresses in elements just prior to 
-c    actually killing them.
-c
 c    the material in linear + power law with n=10, E/sig-0=500,
 c    nu=0.3. initial porosity in the cell is 0.005.
 c    
@@ -50,8 +46,7 @@ c
 material void_strip
  properties gurson e 29000 nu 0.3 yld_pt 58.0 n_power 10,
             f_0 0.005 q1 1.25 q2 1.0 q3 1.5625 rho 0.0,
-c            killable
-            killable, e_n 0.4 s_n 0.05 f_n 0.50 nucleation
+            killable
 c
 number of nodes 1568 elements 715
 c
@@ -3939,7 +3934,7 @@ c
 c
  loading bend
   nonlinear
-    step 1-60 constraints 0.002
+    step 1-500 constraints 0.002
 c
   nonlinear analysis parameters
    solution technique direct sparse 
@@ -3949,31 +3944,39 @@ c
    time step 1000000
    trace solution on
    extrapolate on
-   consistent q-matrix on
+   consistent q-matrix off
    bbar stabilization factor 0.0
+   binary packets on file "zpackets.bin"
 c
   crack growth parameters
    type of crack growth gurson
    print status on order  1 31 2 32 3 33 4 34 5 35 6 36 7 37 8 38,
                          9 39 10 40 11 41 12 42 13 43 14 44 15 45,
                         16 46 17 47 18 48 19 49 20 50
+!       print status on  top 20 elements
    kill sequentially on order 1 31 2 32
    force release type traction-separation
    crack plane normal y coord 0.0
    cell height 0.004
    release fraction 0.1
    critical porosity 0.2
+   adaptive load control off max porosity change 0.05
+    distortion metrics off Oddy critical ratio 2,
+          plastic strain limit 1
+    gurson deleted elements file on 'ztest.gurson'
+   
 c
    compute displacements for loading bend step 1-10
      output displacements 5 7 15
    compute displacements for loading bend step 20
      output displacements 5 7 15
    compute displacements for loading bend step 30
+   output flat text element states
    *input test_18_get_j
-   save to file 'seb_db'
+   save to file 'seb_db_thru_step_30.db'
 c
    compute displacements for loading bend step 60
-   *input test_18_get_j
+    *input test_18_get_j
 c
   stop
 

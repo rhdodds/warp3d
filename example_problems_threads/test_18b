@@ -42,17 +42,7 @@ c    the material in linear + power law with n=10, E/sig-0=500,
 c    nu=0.3. initial porosity in the cell is 0.005.
 c    
 
- restart from file 'seb_db'
+ restart from file 'seb_db_thru_step_30.db'
    compute displacements for loading bend step 40
    *input test_18_get_j
-   save to file 'seb_db'
-c
-   compute displacements for loading bend step 50
-   *input test_18_get_j
-   save to file 'seb_db'
-c
-   compute displacements for loading bend step 60
-   *input test_18_get_j
-   save to file 'seb_db'
-  stop
-
+stop

@@ -97,13 +97,16 @@
    crack plane normal y coord 0.0
    cell height 0.004
    release fraction 0.1
-   critical porosity 0.2
-!   stop if killed elements on 37
-   adaptive load control off max porosity change 0.05
-    use distortion on 25 plastic strain limit 5
+   critical porosity 0.20
+   stop if killed elements on 37
+   adaptive load control on max porosity change 0.01
+   distortion metrics off Oddy critical ratio 3,
+         plastic strain limit 1
+    gurson deleted elements file on 'test_18_deleted_elements.gurson'
 !
    compute displacements for loading bend step 1-10
      output displacements 5 7 15
+     output flat text  element states
    compute displacements for loading bend step 20
      output displacements 5 7 15
    compute displacements for loading bend step 30
