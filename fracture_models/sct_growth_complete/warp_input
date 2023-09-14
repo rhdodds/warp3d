@@ -30534,9 +30534,11 @@ c
  loading predisp
   nonlinear
     step 1-17 dummy 0.1 constraints 0.05
-    step 18-200 dummy 0.1 constraints 0.025
+    step 18-500 dummy 0.1 constraints 0.025
 c
 c
+! output patran neutral
+!
  nonlinear analysis parameters
    solution technique direct sparse
    maximum iterations 5
@@ -30553,6 +30555,7 @@ c
    time step 1.0e06
    trace solution on
    extrapolate on
+   ine search on
 c
    crack growth parameters
      critical porosity 0.2
@@ -30562,7 +30565,7 @@ c
      cell height  .15000000E-03
      release fraction 0.10
      crack plane normal y coordinate 0.0
-     adaptive load control on maximum porosity change 0.05
+     adaptive load control on maximum porosity change 0.02
 c
 c
 c    start the analysis. perform periodic saves fro possible
@@ -30841,6 +30844,16 @@ compute displacements for load predisp steps 196-200
 output displacements 11228  14798
 *input from 'get_reaction'
 *input from 'get_j'
+
+compute displacements for load predisp steps 300
+!  output flat stream displacements
+!  output flat stream element stresses
+!  output flat stream element states
+stop
+output displacements 11228  14798
+*input from 'get_reaction'
+*input from 'get_j'
+
 output patran binary displacements
 output patran binary stresses
 save
