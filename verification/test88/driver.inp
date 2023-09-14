@@ -1,5 +1,5 @@
 #
-#       driver.inp for test89
+#       driver.inp for test88
 #
 #       format:
 #        2 lines for title
@@ -29,8 +29,8 @@
 #
 #
 #
-Test 89 (SMCS initiation @ blunt notch, growth, C(T) w/ hole)
-============================================================
+Test 88 (SMCS ductile growth w/ mesh regularization)
+====================================================
 
 
 #
@@ -40,13 +40,13 @@ Test 89 (SMCS initiation @ blunt notch, growth, C(T) w/ hole)
 #
 #    list of problem titles for output
 #
-test_89
+test_88
 test_88_restart
 *
 *   list of output files
 *
-test_89_out
-test_89_restart_out
+test_88_out
+test_88_restart_out
 *
 *    list of input files
 *
@@ -55,18 +55,16 @@ warp3d_restart.inp
 *
 *        check results problem 1
 *
-2
-'solution for step:     125 converged'
-'    2480 '
-0
-0.157702
 1
+' domain        dm1  '
+-1
+0.9936E+00
+9
 *
 *        check results problem 2
 *
-2
-'solution for step:     250 converged'
-'    2529 '
-0
-0.121290
-1
+1                              
+' domain        dm1  '
+-1
+0.1651E+01
+9
