@@ -54,10 +54,11 @@
 !
   crack growth parameters
     type of crack growth smcs
-    regularization on type 3  Length_scale 0.004 Gf 0.078 m 1.0 alpha 4,
+    regularization on type 3  Length_scale 0.004 uf 0.0008 beta 2.0 alpha 4,
            display
     smcs type 5 power 4.0 tp_critical 3.0 display
     smcs deleted elements file on name "list_deleted"
+    smcs removed elements file on name "list_removed"
     smcs states off text steps 1-200
     killed element limit 55
     kill sequentially on order 1 31 2 32 3 33 4 34 5 35 6 36 7 37,
@@ -66,7 +67,7 @@
 !
  output commands use file "get_output.inp" steps 1-1000
 !
-compute displacements for loading test step 150
+compute displacements for loading test step 100
 *input './get_J_average.inp'
 save to file 'restart.db'
 stop
