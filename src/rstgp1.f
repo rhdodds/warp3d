@@ -1708,6 +1708,7 @@ c
  9060 format(10x,'...update stresses nonlinear procedure...' )
  9070 format(10x,'...update stresses use linear [D]...' )
  9080 format(10x,'...[D]s saved to global structure...')
+ 9100 format(1x,"@1.1  mises. zero cep, stress for element: ",i6)
 c
       contains
 c     ========

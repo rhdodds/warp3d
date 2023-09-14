@@ -4,7 +4,7 @@ c     *                      subroutine read_damage                  *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 4/19/23 rhd                *          
+c     *                   last modified : 9/5/23 rhd                 *          
 c     *                                                              *          
 c     *              reads damage data from restart file             * 
 c     *                                                              *          
@@ -30,20 +30,17 @@ c
 c
       select case( action )
 c
-c              read dam_state, dam_ifv (only for standard 
-c              kill method
+c              read dam_state, dam_ifv
 c                                                                               
       case( 1 )
       call rdbk( fileno, dam_state, num_kill_elem )                             
-      if( std_kill ) call rd2d( fileno, dam_ifv, prec_fact*mxedof,
+      call rd2d( fileno, dam_ifv, prec_fact*mxedof,
      &        prec_fact*mxedof, num_kill_elem )                                                
 c                                                                               
 c              read dam_print list                             
 c                                                                               
       case( 2 )
       call rdbk( fileno, dam_print_list, num_print_list )                       
-      call rdbk( fileno, gt_old_mises, num_print_list*prec_fact )                  
-      call rdbk( fileno, gt_old_mean, num_print_list*prec_fact )                   
 c                                                                               
 c              read kill_order_list                            
 c                                                                               
@@ -139,15 +136,6 @@ c
      &           num_kill_elem * prec_fact )
       call rdbk( fileno, smcs_start_kill_step, num_kill_elem )   
 c
-      read(fileno) count
-      if( count == 0 ) return
-      do j = 1, count
-        read(fileno) i, nrow_ek
-        killed_estiffs(i)%num_terms = nrow_ek
-        allocate( killed_estiffs(i)%estiff(nrow_ek) )
-        read(fileno) killed_estiffs(i)%estiff(1:nrow_ek)
-      end do
-c                                                                               
 c              read the Oddy distortion metrics
 c                                                                               
       case( 13 )

@@ -5,7 +5,7 @@ c     *                      subroutine allocate_damage              *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 5/18/23 rhd                *          
+c     *                   last modified : 8/30/2023 rhd              *          
 c     *                                                              *          
 c     *     allocates information for the damage routines as needed  *   
 c     *                                                              *          
@@ -61,22 +61,11 @@ c
          dam_ifv = zero    
 c                                                                                  
 c                               allocate dam_print_list                         
-c                               also allocate old_mises and                     
-c                               old_mean to calculate change in                 
-c                               stress over step.                               
 c                                                                               
       case( 2 ) ! dowhat
          if( allocated(dam_print_list) ) deallocate( dam_print_list )              
          allocate( dam_print_list(num_print_list) )                                
 c                                                                                 
-         if( allocated(gt_old_mises) ) deallocate( gt_old_mises )                        
-         allocate( gt_old_mises( num_print_list ) )                                   
-         gt_old_mises(1:num_print_list) = zero                                        
-c                                                                                 
-         if( allocated( gt_old_mean ) ) deallocate( gt_old_mean )                        
-         allocate( gt_old_mean( num_print_list ) )                                    
-         gt_old_mean(1:num_print_list) = zero                                         
-c                                                                               
 c                                                                               
 c                                allocate kill_order_list                       
 c                                                                               
@@ -439,26 +428,28 @@ c
 c 
           if( allocated( smcs_d_values ) ) 
      &        deallocate( smcs_d_values  )  
+          if( allocated( smcs_d_values_old ) )   
+     &        deallocate( smcs_d_values_old  )   
           if( allocated( smcs_eps_plas_at_death ) )
      &        deallocate( smcs_eps_plas_at_death  )  
           if( allocated( smcs_stress_at_death ) )
      &        deallocate( smcs_stress_at_death  )  
-          if( allocated( killed_estiffs ) )
-     &        deallocate( killed_estiffs )               
           if( allocated( smcs_start_kill_step ) )
      &        deallocate( smcs_start_kill_step )               
 c
           allocate( smcs_d_values(num_kill_elem) )
+          allocate( smcs_d_values_old(num_kill_elem) )   
           allocate( smcs_eps_plas_at_death(num_kill_elem) )
           allocate( smcs_stress_at_death(num_kill_elem) )
-          allocate( killed_estiffs(num_kill_elem) )
           allocate( smcs_start_kill_step(num_kill_elem) )
+          allocate( dam_ifv(mxedof,num_kill_elem) )      
+          dam_ifv = zero     
 c
           do i = 1, num_kill_elem
              smcs_d_values(i)            = zero
+             smcs_d_values_old(i)        = zero  
              smcs_eps_plas_at_death(i)   = zero
-             smcs_stress_at_death(i)      = zero
-             killed_estiffs(i)%num_terms = 0
+             smcs_stress_at_death(i)     = zero
              smcs_start_kill_step(i) = 0
           end do
 c

@@ -4,10 +4,12 @@ c     *                      subroutine oudups                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 3/22/21   rhd              *          
+c     *                   last modified : 8/30/23 rhd                *          
 c     *                                                              *          
 c     *     gathers data for a block of elements to support          *          
-c     *     generation of a patran, packet or hard copy output.      *          
+c     *     generation of a patran, packet or hard copy output.      *  
+c     *                                                              *
+c     *     zero results for element being or already killed         *        
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -20,7 +22,11 @@ c
      &                            eps_n_blocks, urcs_n_blocks,                  
      &                            history_blk_list                              
       use elblk_data, only : elem_hist, blk_size_hist, urcs_blk_n,              
-     &                       rot_blk_n1, ddtse, blk_size_gp                     
+     &                       rot_blk_n1, ddtse, blk_size_gp  
+      use damage_data, only : dam_ptr, growth_by_kill,
+     &                        use_mesh_regularization
+      use elem_extinct_data, only : dam_state
+      use constants
 c                                                                               
       implicit none                                                             
 c                                                                               
@@ -30,8 +36,9 @@ c
 c             local declarations                                                
 c                                                                               
       integer :: blk, rel_elem, hist_size, hist_offset, rot_offset,             
-     &           eps_offset, sig_offset, mxhist, mxngp                          
-      logical :: is_solid                                                       
+     &           eps_offset, sig_offset, mxhist, mxngp, relem,
+     &           element, elem_ptr                          
+      logical :: is_solid, process_blk                                                       
       logical, parameter ::  local_debug = .false.                              
 c                                                                               
       blk         = elems_to_blocks(felem,1)                                    
@@ -90,6 +97,83 @@ c
         call tanstf_gastr( ddtse, eps_n_blocks(blk)%ptr(eps_offset),            
      &         ngp, nstr, span )                                                
       end if                                                                    
+c  
+c              for killed elements in block, zero local copy of results.
+c
+      process_blk = is_solid .and. growth_by_kill .and.
+     &              dam_ptr(felem) > 0 .and. use_mesh_regularization
+      if( .not. process_blk ) return
+c
+      do relem = 1, span                                                            
+         element  = felem + relem - 1       
+         elem_ptr = dam_ptr(element)    
+         if( dam_state(elem_ptr) == 0 ) cycle ! element not yet killing
+         call oudups_1( relem, elem_hist(1,1,1), ngp, 
+     &                  mxhist, mxngp, hist_size, span, mxvl    )
+         if( stress) call oudups_2( relem, urcs_blk_n, ngp, 
+     &                              nstrs, span, mxvl )      
+         if( .not. stress ) call oudups_2( relem, ddtse, ngp, 
+     &                                     nstr, span, mxvl )
+      end do
+c
+      return
+c
+      contains              
+c     ========
+c     ****************************************************************          
+c     *                                                              *          
+c     *              internal subroutine oudups_1                    *          
+c     *                                                              *          
+c     ****************************************************************          
+c
+      subroutine oudups_1( relem, history_local, ngp,                  
+     &                     mxhist, mxngp, hist_size, span, mxvl )               
+      implicit none                                                             
 c                                                                               
-      return                                                                    
-      end                                                                       
+c               parameter declarations                                          
+c                                                                               
+      integer, intent(in) :: relem, ngp, mxhist, mxngp, hist_size, 
+     &                       mxvl, span                         
+      double precision, intent(out) :: history_local(mxvl,mxhist,mxngp)
+c                                                                               
+c               local declarations                                              
+c                                                                               
+      integer :: j, k                                                           
+c                                                                               
+      do k = 1, ngp                                                           
+         do  j = 1, hist_size                                                   
+            history_local(relem,j,k) = zero
+         end do                                                                 
+      end do    
+c                                                                    
+      return
+      end subroutine oudups_1
+c        
+c     ****************************************************************          
+c     *                                                              *          
+c     *              internal subroutine oudups_2                    *          
+c     *                                                              *          
+c     ****************************************************************          
+c
+      subroutine oudups_2( relem, ml, ngp, nprm, span, mxvl )                        
+      implicit none                                                             
+c                                                                               
+c               parameter declarations                                          
+c                                                                               
+      integer :: relem, ngp, nprm, span, mxvl                                                
+      double precision :: ml(mxvl,nprm,ngp)
+c                                                                               
+      integer :: j, k                                                        
+c                                                                               
+      do k = 1, ngp                                                           
+        do  j = 1, nprm                                                        
+          ml(relem,j,k) = zero
+        end do                                                              
+      end do                                                                 
+c
+      return       
+      end subroutine oudups_2
+c
+      end subroutine oudups                                                                 
+
+                                                                  

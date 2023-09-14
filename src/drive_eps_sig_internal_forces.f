@@ -48,7 +48,7 @@ c
      &                                 block_stress_norm2s(:),
      &                                 block_strain_norm2s(:)
       double precision :: start_time, sum_stress_norm2s,
-     &                    sum_strain_norm2s,
+     &                    sum_strain_norm2s, 
      &                    end_time, sum_ifv_threads(max_threads)
       double precision, external :: omp_get_wtime
       logical, allocatable, dimension(:)  :: step_cut_flags,
@@ -373,15 +373,15 @@ c
       return
 c
 c
-8900  format(1x,'drive_eps_sig. rank=5, blk norms strains, stresses:',
+ 8900 format(1x,'drive_eps_sig. rank=5, blk norms strains, stresses:',
      &       i10,e14.6,2x,e14.6 )
  9000 format(1x,'drive_eps_sig. rank, terms_ifv, norm ifv,',
      & ' sum_sig_norm sum_eps_norm:',
      &       i4,i12,e14.6,2x,e14.6,2x,e14.6)
  9010 format(/,1x,
      &  'drive_eps_sig. norm2 ifv after reduce to root: ',e14.6)
- 9300 format(i5,':>>> ready to call addifv:',
-     &     /,10x,'blk, span, felem                 :',3i10)
+ 9300 format(':>>> ready to call addifv.',
+     &     ' myid, blk, span, felem:',4i10)
  9400 format(5x,'>>> dump of internal force vector:')
  9410 format(i10,2x,f20.8)
       end
@@ -468,7 +468,7 @@ c              if whole block is completely killed, just zero
 c              and leave. 
 c
       call chk_killed_blk( span, felem, step, local_work%blk, 
-     &      local_work%killed_status_vec, local_work%block_killed, 2 )
+     &      local_work%killed_status_vec, local_work%block_killed )
       if( local_work%block_killed ) then
         einfvec_blocks(blk)%ptr(1:span,1:totdof) = zero
         return
@@ -565,7 +565,8 @@ c
      &             local_work%trne,
      &             local_work%trnmte,
      &             local_work%ue,
-     &             local_work%due, trn )
+     &             local_work%due, trn,
+     &             local_work%killed_status_vec )
 c
       call dupstr_blocked( blk, span, felem, num_int_points,
      &   num_enodes, num_enode_dof, totdof, mat_type,

@@ -5,14 +5,16 @@ c     *                   subroutine smcs_cut_step                   *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 4/15/23 rhd                *          
+c     *                   last modified : 8/26/2023 rhd              *          
 c     *                                                              *          
 c     *         adaptively control the global load step size based   *          
 c     *         on increments of plastic strain between load steps   *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine smcs_cut_step( debug )                                        
+      subroutine smcs_cut_step( debug )
+c
+      use main_data, only : last_step_adapted                                              
       use global_data, only : noelem, out   ! old common.main
       use elem_extinct_data, only : old_plast_strain, dam_state  
       use damage_data, only : dam_ptr,
@@ -52,23 +54,28 @@ c
 c
 c              get plastic eps in each killable element that has not
 c              already been killed (=2 means no history update)                            
-c                                                                               
+c
+        dowhat = 1  
+        get_princ = .false. ! princ stresses not needed here    
+c
+c$OMP PARALLEL DO  PRIVATE( elem, elem_ptr, values, delta )
+c$OMP&         REDUCTION(+: count)
+                                                                               
       do elem = 1, noelem                                                       
         elem_ptr = dam_ptr( elem )                                             
         if( elem_ptr .eq. 0 ) cycle   ! element not killable 
         if( dam_state(elem_ptr) .gt. 0 ) cycle ! elem killed already     
 c 
-        dowhat = 1  
-        get_princ = .false. ! princ stresses not needed here    
         call dam_param_smcs_get_values( elem, dowhat, values, 
      &                                  get_princ )                                                                   
-        new_plast_strain = values%eps_plas
-        delta = new_plast_strain - old_plast_strain(elem_ptr) 
+        delta = values%eps_plas - old_plast_strain(elem_ptr) 
+c$OMP CRITICAL
         if( delta > max_change ) then
            max_change = delta
            elem_max_change = elem
         end if
-        old_plast_strain(elem_ptr) = new_plast_strain  
+c$OMP END CRITICAL        
+        old_plast_strain(elem_ptr) = values%eps_plas
         count = count + 1
       end do ! over elements 
 c
@@ -115,7 +122,7 @@ c              may be able to increase global loading given
 c              small plastic strain increments
 c              rules:
 c              - if global load multiplier = 1.0, no increase
-c              - if elements are beiing released, no increase
+c              - if the last global load step was adapted, no increase
 c              - multiplier is smaller of 1.5 and actual value to
 c                match allowable strain increment.
 c              - in no case can perm_load_factor exceed 1.0
@@ -124,7 +131,7 @@ c              in a single step.
 c
       increase_size = max_change < allowable_change
       if( perm_load_fact > one_toler ) increase_size = .false.
-      if( num_elements_in_force_release > 0 ) increase_size = .false.
+      if( last_step_adapted ) increase_size = .false.
       if( increase_size ) then   ! too small
         factor = allowable_change / max_change 
         if( factor > increase_multiplier ) factor = increase_multiplier

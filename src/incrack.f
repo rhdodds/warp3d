@@ -1329,7 +1329,7 @@ c          ---------------------------------------------------------
 c          | gurson deleted (elements) file on|off (name) <string> |                           
 c          ---------------------------------------------------------                           
 c                                                                               
- 2600 continue            
+ 2600 continue   
       if( matchs_exact('deleted') ) then
         call incrack_gt_list_file
         go to 10
@@ -1572,31 +1572,41 @@ c
            call incrack_errmsg( 62 )
            return
          end if
-
-      case( 3 )  ! G_f w/ d = exponential form of G/G_f
-         if( .not. matchs_exact('Gf') ) then 
-           call incrack_errmsg( 56 )
+c
+      case( 3 )  ! exponential with up/uf
+        if( endcrd(dum) ) then
+            call incrack_errmsg( 50 )
+            return
+        end if        
+        if( .not. matchs_exact('uf') ) then
+           call incrack_errmsg( 35 )
+           return
+        end if
+        if( .not. numd( regular_up_max ) ) then
+           call incrack_errmsg( 36 )
+           return
+        end if
+        if( regular_up_max <= zero ) then
+           call incrack_errmsg( 37 )
+           return
+        end if 
+c
+c              input data for the type
+c 
+        if( endcrd(dum) ) then
+           call incrack_errmsg( 50 )
+           return
+        end if        
+        if( .not. matchs_exact('beta') ) then 
+           call incrack_errmsg( 76 )
            return
          end if 
-         if( .not. numd( regular_Gf ) ) then 
-           call incrack_errmsg( 57 )
+         if( .not. numd( regular_beta ) ) then 
+           call incrack_errmsg( 77 )
            return
          end if
-         if( regular_Gf <= zero ) then
-           call incrack_errmsg( 58 )
-           return
-         end if
-         if( .not. matchs_exact('m') ) then 
-           call incrack_errmsg( 60 )
-           return
-         end if 
-         if( .not. numd( regular_m_power ) ) then 
-           call incrack_errmsg( 61 )
-           call scan_flushline
-           return
-         end if
-         if( regular_m_power <= zero ) then
-           call incrack_errmsg( 62 )
+         if( regular_beta < one ) then
+           call incrack_errmsg( 78 )
            return
          end if
          if( .not. matchs_exact('alpha') ) then 
@@ -1608,7 +1618,6 @@ c
            call scan_flushline
            return
          end if
-c
       case default
          call incrack_errmsg( 35 )
          call die_abort
@@ -1634,7 +1643,7 @@ c
      &                     regular_GF, regular_m_power
          case( 3 ) 
            write(out,9002) regular_type, regular_length,
-     &                     regular_GF, regular_m_power, regular_alpha
+     &                     regular_up_max, regular_beta, regular_alpha
          end select
          write(out,9030) 
       end if
@@ -1645,7 +1654,7 @@ c
  9000 format(/,5x,'... mesh regularization parameter values: ',/,
      & 10x,'regular type:        ',i2, /,
      & 10x,'length-scale:      ',f10.5, /,
-     & 10x,'up-max:            ',f10.5 )
+     & 10x,'up-max (uf):       ',f10.5 )
  9001 format(/,5x,'... mesh regularization parameter values: ',/,
      & 10x,'regular type:        ',i2, /,
      & 10x,'length-scale:      ',f10.5, /,
@@ -1654,8 +1663,8 @@ c
  9002 format(/,5x,'... mesh regularization parameter values: ',/,
      & 10x,'regular type:        ',i2, /,
      & 10x,'length-scale:      ',f10.5, /,
-     & 10x,'Gf:                ',f10.5, /,
-     & 10x,'m exponent:        ',f10.5, /,
+     & 10x,'uf:                ',f10.5, /,
+     & 10x,'beta:              ',f10.5, /,
      & 10x,'alpha:             ',f10.5 )
  9010 format(/,10x,'... number of curve points, values (x,y):',i3)
  9020 format(15x,i2,2f10.5)
@@ -1979,6 +1988,7 @@ c
       end if
 c
       gt_list_file_name(1:) = temp_name(1:nchars)
+      
       inquire( file=gt_list_file_name, exist=fexists )
       if( fexists ) then
          call incrack_errmsg( 20 ) 
@@ -3724,19 +3734,19 @@ c
  9034 format(/1x,'>>>>> error: invalid value for length-scale',            
      & /14x,'command ignored',/)        
 c          
- 9035 format(/1x,'>>>>> error: expecting keyword: up_max',            
+ 9035 format(/1x,'>>>>> error: expecting keyword: uf',            
      & /14x,'command ignored',/)        
 c          
- 9036 format(/1x,'>>>>> error: expecting value for up_max',            
+ 9036 format(/1x,'>>>>> error: expecting value for uf',            
      & /14x,'command ignored',/)  
 c      
- 9037 format(/1x,'>>>>> error: invalid value for up_max',            
+ 9037 format(/1x,'>>>>> error: invalid value for uf',            
      & /14x,'command ignored',/)        
 c      
  9038 format(/1x,'>>>>> error: expecting keyword: num_points',            
      & /14x,'command ignored',/)        
 c      
- 9039 format(/1x,'>>>>> error: invalid number of points. must be',            
+ 9039 format(/1x,'>>>>> error: invalid number of points. ust be',            
      & /14x,'>0 and <=10. command ignored',/)        
 c      
  9040 format(/1x,'>>>>> error: expecting number of points',            
@@ -3818,7 +3828,16 @@ c
 c                                                                               
  9075 format(/1x,'>>>>> error: expecting keyword: Oddy  ... ',            
      & /14x,'line ignored',/)                       
-c                  
+c
+ 9076 format(/1x,'>>>>> error: expecting keyword: beta',            
+     & /14x,'command ignored',/)                  
+c
+ 9077 format(/1x,'>>>>> error: expecting value of beta',            
+     & /14x,'command ignored',/)       
+c
+ 9078 format(/1x,'>>>>> error: beta must be >= 1.0',            
+     & /14x,'command ignored',/)       
+c                
  9999 format(/1x,'>>>>> Fatal Error: routine incrck_errmsg.',                   
      &   /16x,   'should have not reach this point.')                           
 c                                                                                

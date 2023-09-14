@@ -965,15 +965,15 @@ c     *                      subroutine errchk_21                    *
 c     *                                                              *
 c     *                       written by : asg                       *
 c     *                                                              *
-c     *                   last modified : 3/30/21 rhd                *
+c     *                   last modified : 9/7/23 rhd                 *
 c     *                                                              *
-c     *    this subroutine checks the parameters for crack growth    *
+c     *    checks the parameters for crack growth                    *
 c     *    for consistency.                                          *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine errchk_21
-      use global_data ! old common.main
+      use global_data 
 c
       use damage_data
       implicit integer (a-z)
@@ -996,19 +996,16 @@ c               actions.
 c
       if( growth_by_kill ) then
 c
-         if( load_size_control_crk_grth ) then
 c
-          if ( .not. g_stp_cntrl_allocated )
-     &             call allocate_damage( 9 )
-            if ( crack_growth_type .eq. 1 .and.
-     &             max_porosity_change .eq. zero) then
-               max_porosity_change = tenth *  porosity_limit
-            else
-               max_porosity_change = max_porosity_change *
-     &              porosity_limit
-            end if
-c
-         end if
+          if( crack_growth_type .eq. 1 .and. 
+     &       porosity_limit <= zero )
+     &           call errmsg(199,dum,dums,dumr,dumd)
+          if( load_size_control_crk_grth ) then
+          if( .not. g_stp_cntrl_allocated ) call allocate_damage( 9 )
+          if( crack_growth_type .eq. 1 .and. 
+     &       max_porosity_change <= zero )
+     &           call errmsg(275,dum,dums,dumr,dumd)
+          end if 
 c
          if( release_type .eq. 2 ) then
 c

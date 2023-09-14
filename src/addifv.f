@@ -4,7 +4,7 @@ c     *                      subroutine addifv                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 3/23/21 rhd                *          
+c     *                   last modified : 8/25/23 rhd                *          
 c     *                                                              *          
 c     *     assembles the internal force vectors for a block of      *          
 c     *     similar, elements into the global internal force vector. *          
@@ -36,7 +36,7 @@ c             locals
 c   
       logical :: elems_in_blk_killable, standard_process
 c                                                                                 
-      if( debug ) write (out,*) '>>>>  inside addifv'                           
+c      if( debug ) write (out,*) '>>>>  inside addifv'                           
 c
 c              with crack growth by element death, more logic
 c              is required. if 1st element in block is killable
@@ -88,7 +88,7 @@ c
 c
       integer :: i, j
 c
-c              no killable elements in block. standard update
+c              no killable elements in block. simple scatter update
 c
        do j = 1, totdof ! for each element in blk                                                         
          do i = 1, span                                                         
@@ -142,7 +142,7 @@ c              for subsequent reduction. need to save since we don't know
 c              yet when element will be killed.
 c
       do j = 1, totdof ! for each element in blk                                                         
-         do i = 1, span                                                         
+         do i = 1, span  ! simple scatter update                                                       
 c$OMP ATOMIC UPDATE                                                             
             ifv(bedst(j,i)) = ifv(bedst(j,i)) + eleifv(i,j)                     
          end do                                                                 
@@ -173,19 +173,14 @@ c             crack growth data structures.
 c             this is not real efficient but we don't know here                 
 c             which elements have just been killed.                             
 c                                                                               
-      if( .not. allocated( dam_ptr ) ) then ! sanity check                      
-          write(out,9100)                                                       
-          call die_abort                                                        
-      end if                                                                    
-c                                                                               
       do relem = 1, span                                                            
          element  = felem + relem - 1       
-         elem_ptr =  dam_ptr(element)                                        
-         if( dam_state(elem_ptr) .eq. 0 ) then  ! not yet killed                        
-            do j = 1, totdof                                                    
-               dam_ifv(j,elem_ptr) = eleifv(relem,j)                        
-            end do                                                              
-         end if                                                                 
+         elem_ptr =  dam_ptr(element)    
+         if( dam_state(elem_ptr) > 0 ) cycle  ! already killed       
+!DIR$ IVDEP   
+         do i = 1, totdof
+            dam_ifv(i,elem_ptr) = eleifv(relem,i)   
+         end do                        
       end do                                                                    
 c                                                                               
       if( debug ) write(out,*) '<<<<  leaving  addifv_no_regularization'                         
@@ -204,7 +199,7 @@ c     ****************************************************************
 c     *                                                              *          
 c     *        internal subroutine addifv_regularization             *          
 c     *                                                              *          
-c     *                   last modified : 3/18/2021 rhd              *          
+c     *                   last modified : 8/25/2023 rhd              *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
@@ -213,28 +208,43 @@ c
       implicit none
 c
       integer :: i, j, relem, element, elem_ptr
-      double precision :: f, d_now
+      logical, parameter :: local_debug = .false.
 c
-c              reduce the element internal forces by the current damage.
-c              all elements in block are killable. those not yet being
-c              released have d = 0.
+c              element strains, stresses, internal forces were 
+c              computed assuming *no* damage
 c
-      if( .not. allocated( dam_ptr ) ) then ! sanity check                      
-          write(out,9100)                                                       
-          call die_abort                                                        
-      end if                                                                    
-c                                                                               
+c              all elements in block are killable. those not yet in
+c              death have dam_state = 0. zero ifv for elements in 
+c              killing or killed state. then do a regular scatter 
+c              update
+c
+      if( local_debug ) write(out,*) 
+     &          "@10.5 entered addifv_regularization "           
+c
+c             if we have NOT started releasing the internal forces,             
+c             store the element contribution to the ifv in the                  
+c             crack growth data structures.                                     
+c             this is not real efficient but we don't know here                 
+c             which elements have just been killed.    
+c             for already in death, zero anyway for safety in case a bug                         
+c                 
       do relem = 1, span                                                            
          element  = felem + relem - 1       
-         elem_ptr = dam_ptr(element)                                        
-         if( dam_state(elem_ptr) == 0 ) cycle ! not killable  
-         d_now = smcs_d_values(elem_ptr)  
-         if( d_now > tol_regular ) d_now = one 
-         f = one - d_now                  
-!DIR$ IVDEP                                                                     
-         eleifv(relem,1:totdof) = f * eleifv(relem,1:totdof)                        
-      end do                                                                    
-c                                                                               
+         elem_ptr =  dam_ptr(element)    
+         if( dam_state(elem_ptr) .eq. 0  ) then! not yet killed 
+!DIR$ IVDEP   
+           do i = 1, totdof
+              dam_ifv(i,elem_ptr) = eleifv(relem,i)   
+           end do   
+         end if                                
+         if( dam_state(elem_ptr) > 0 ) then
+!DIR$ IVDEP   
+           do i = 1, totdof
+              eleifv(relem,i) = zero
+           end do   
+         end if        
+      end do  ! relem                                                                   
+c               
        do j = 1, totdof ! for each element in blk                                                         
          do i = 1, span                                                         
 c$OMP ATOMIC UPDATE                                                             
@@ -266,7 +276,7 @@ c
  9100 format(1x,'FATAL ERROR: in addifv_regularization. contact ',
      &   'WARP3D developers. Job terminated'//)             
  9200 format(/,2x,'... addifv for block with first element: ',i7)               
- 9300 format(5x,8e14.6)     
+ 9300 format(5x,8e14.6)
 c
       end subroutine addifv_regularization   
 

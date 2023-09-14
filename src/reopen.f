@@ -63,8 +63,6 @@ c
 c
       msg_flag = .true.
 c
-c
-c
 c                       figure out filename:
 c                               if resfil unset (no filename),
 c                               make a filename from the structure name.
@@ -184,9 +182,9 @@ c
      &             cp_elems_present, J_cutoff_active, 
      &             J_cutoff_restart_file, J_ratio_adaptive_steps,
      &             J_compute_step_2_automatic, last_step_adapted,
-     &             J_diff_at_2_set, use_weighted 
+     &             J_diff_at_2_set, use_weighted, gt_list_file_flag
       read(fileno) sparse_stiff_file_name, packet_file_name,
-     &             initial_stresses_file
+     &             initial_stresses_file, gt_list_file_name
       call chk_data_key( fileno, 1, 1 )
 c
 c                       read in double precision variables.
@@ -501,8 +499,8 @@ c
      &              smcs_adapt_alpha_min, smcs_adapt_alpha_max,
      &              regular_length, regular_up_max,
      &              tolerance_mesh_regularization, Oddy_critical_ratio,
-     &              regular_alpha, regular_GF, regular_m_power,
-     &              regular_points,  ! (10x2)
+     &              regular_alpha, regular_beta, regular_GF,
+     &              regular_m_power, regular_points,  ! (10x2)
      &              distortion_plastic_limit
 c
       read(fileno) smcs_deleted_list_file_name, 

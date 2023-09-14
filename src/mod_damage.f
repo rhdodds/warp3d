@@ -49,7 +49,7 @@ c
      &   crkpln_srch_tol, max_deff_change,                                      
      &   critical_cohes_deff_fract, 
      &   ppr_kill_displ_fraction, tolerance_mesh_regularization,
-     &   regular_length, regular_up_max, regular_alpha,
+     &   regular_length, regular_up_max, regular_alpha, regular_beta,
      &   regular_Gf, regular_m_power, Oddy_critical_ratio
 c                                                                               
 c                     scalar integers                                           

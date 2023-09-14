@@ -96,7 +96,8 @@ c
 c                                                                               
       return                                                                    
 c                                                                               
-      end                                                                       
+      end 
+                                                                            
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine do_nlek_block                *          
@@ -132,7 +133,7 @@ c
      &                              temperatures_ref,                           
      &                              fgm_node_values_defined                                                                                                    
       use damage_data, only : growth_by_kill, use_mesh_regularization,
-     &                        use_estiff_at_death                                                                                                           
+     &                        use_estiff_at_death, dam_ptr                                                                                                          
       use contact, only : use_contact    
       use constants                                       
 c                                                                               
@@ -226,24 +227,14 @@ c
 c                
       estiff_blocks(blk)%ptr(1:nrow_ek,1:span) = zero                           
 c                                                                               
-c             check if blk has all *fully* killed elements -- if so                
+c             for crack growth by element deletion. 
+c             check if blk has all *fully* killed elements-- if so                
 c             skip all calculations. use zero element [k]s or [k]s at
 c             death reduced by damage factor d_value                          
 c
       call chk_killed_blk( span, felem, now_step, local_work%blk,
-     &      local_work%killed_status_vec, local_work%block_killed, 1 )  
-c
-      std_kill_method = .not. use_mesh_regularization
-      if( local_work%block_killed ) then
-        if( std_kill_method ) return
-        if( growth_by_kill .and. use_estiff_at_death  ) then
-           call tanstf_copy_killed_stiff( blk, span, felem, nrow_ek )
-           return       
-        end if    
-        write(out,9000)
-        call die_abort
-      end if  
-                                                                  
+     &      local_work%killed_status_vec, local_work%block_killed )  
+      if( local_work%block_killed ) return
 c                                                                               
 c             build data structures for elements in this block.                 
 c             this is a gather operation on nodal coordinates,                  
@@ -316,9 +307,9 @@ c                    restore saved [ke] at start of release and
 c                    reduce stiffness by damage factor 
 c      
       if( growth_by_kill ) then
-        block_is_killable = iand( iprops(30,felem),2 ) .ne. 0    
+        block_is_killable = dam_ptr(felem) > 0  ! chk 1st elem in blk  
         if( block_is_killable ) call tanstf_process_killable_blk( blk,
-     &      span, felem, nrow_ek )
+     &      span, felem, nrow_ek, now_step, now_iter )
       end if
 c                                                                               
 c              if contact, add penalty stiffnesses                              
@@ -1185,160 +1176,50 @@ c
 c                                                                               
       return                                                                    
       end                                                                       
-c     ****************************************************************          
-c     *                                                              *          
-c     *            subroutine tanstf_copy_killed_stiff               *          
-c     *                                                              *          
-c     *                       written by : rhd                       *          
-c     *                                                              *          
-c     *                   last modified : 03/18/21 rhd               *          
-c     *                                                              *          
-c     *     all elements in block are killed or being killed         *
-c     *     handle [Ke] for mesh_regularization                      *          
-c     *                                                              *          
-c     ****************************************************************          
-c                                                                               
 
-      subroutine tanstf_copy_killed_stiff( blk, span, felem, nrow_ek ) 
-      use global_data, only : out
-c                                                                               
-      use elem_block_data,   only : estiff_blocks                               
-      use elem_extinct_data, only : killed_estiffs, smcs_d_values                                                                                               
-      use damage_data, only : dam_ptr, use_estiff_at_death,
-     &                        use_mesh_regularization,
-     &                        tol_regular =>
-     &                        tolerance_mesh_regularization     
-      
-      use constants                                                                                                   
-c
-      implicit none    
-c
-      integer, intent(in) :: blk, span, felem, nrow_ek 
-c
-      integer :: relem, element, elem_ptr 
-      logical, parameter :: debug = .false.
-      double precision :: f, d_now     
-c
-      if( .not. use_mesh_regularization ) return
-      if( .not. use_estiff_at_death ) return ! zeroes for [Ke]
-c
-c              all elements in block have "d" > 0 or we would not
-c              be here. fill block [Ke]s with the saved [Ke] at
-c              start of killing with degraded values
-c
-      if( debug ) write(out,9900) blk
-c
-      do relem = 1, span
-        element = felem + relem - 1
-        elem_ptr = dam_ptr(element)
-        if( debug ) write(out,*) "  relem, element, elem_ptr :",
-     &            relem, element, elem_ptr
-        if( elem_ptr .eq. 0 ) then ! bad
-          write(out,9000) 1
-          call die_abort
-        end if
-        d_now = smcs_d_values(elem_ptr)
-        if( d_now > tol_regular ) d_now = one
-        f = one - d_now
-        estiff_blocks(blk)%ptr(1:nrow_ek,relem) = f *  
-     &        killed_estiffs(elem_ptr)%estiff(1:nrow_ek) 
-      end do
-c
-      return
- 9000 format(/,'FATAL ERROR: tanstf_copy_killed_stiff.',
-     &   ' Contact WARP3D group',             
-     &       /,'             Job terminated at ',i2,//)                         
- 9900 format(".... tanstf_copy_killed_stiff. copy estiffs. blk:",i8)
- 9910 format("... pulled element stiffness:",10(/10x,f20.6))
-      end
 c     ****************************************************************          
 c     *                                                              *          
 c     *            subroutine tanstf_process_killable_blk            *          
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 03/23/21                   *          
+c     *                   last modified : 08/25/23 rhd               *          
 c     *                                                              *          
-c     *     replace estiff for killed element with estiff at         *
-c     *     death reduced by damage factor. or save [Ke] in case     *  
-c     *     element is about to be killed.        
+c     *     replace estiff for killed elements by zero               *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine tanstf_process_killable_blk( blk, span, felem,
-     &                                        nrow_ek )      
+      subroutine tanstf_process_killable_blk( blk, span, felem, 
+     &             nrow_ek, now_step, now_iter )      
       use global_data, only : out
       use elem_block_data,   only : estiff_blocks                               
-      use elem_extinct_data, only : killed_estiffs, dam_state,
-     &                              smcs_d_values                                                                                               
-      use damage_data, only : dam_ptr, use_mesh_regularization,
-     &                        tol_regular =>
-     &                        tolerance_mesh_regularization     
+      use elem_extinct_data, only : dam_state                                                                                               
+      use damage_data, only : dam_ptr     
       use constants                                                                                                       
 c
       implicit none    
 c
-      integer, intent(in) :: blk, span, felem, nrow_ek 
+      integer, intent(in) :: blk, span, felem, nrow_ek, now_step, 
+     &                       now_iter
 c
-      integer :: relem, element, elem_ptr 
-      logical :: standard_kill_method 
+      integer :: relem, element, elem_ptr, i
       logical, parameter :: debug = .false.  
-      double precision :: f, d_now   
-c
-      if( debug ) write(out,9900) blk, use_mesh_regularization
 c
 c              using element extinction Gurson, cohesive, SMCS.
 c              standard kill method -> zero element stiffness.
-c                  this should not be necessary unless element 
-c                  driver to get [Ke] has logic error
 c
-      standard_kill_method = .not. use_mesh_regularization
-      if( standard_kill_method ) then
-        do relem = 1, span                                                     
+      do relem = 1, span                                                     
           element  = felem + relem - 1                                          
           elem_ptr = dam_ptr(element)
           if( elem_ptr == 0 ) cycle   ! element not yet killed                            
-          if( dam_state(elem_ptr) .ne. 0 ) ! element in release    
-     &           estiff_blocks(blk)%ptr(1:nrow_ek,relem) = zero                  
-        end do
-        return
-      end if
-c
-c             using SMCS element extinction w/ mesh
-c             regularization
-c
-c               - element in process of being killed.
-c                    restore saved [ke] at start of release and  
-c                    reduce stiffness by damage factor 
-c               - not yet started killing. save [Ke] to element extinct
-c                    data structure for this purpose. cycle
-c
-      do relem = 1, span                                                     
-        element = felem + relem - 1                                          
-        elem_ptr = dam_ptr(element)
-        if( elem_ptr == 0 ) cycle ! element not killable
-        if( dam_state(elem_ptr) /= 0 ) then ! partial or full death   
-           d_now = smcs_d_values(elem_ptr)
-           if( d_now > tol_regular ) d_now = one ! full killed
-           f = one - d_now
-           estiff_blocks(blk)%ptr(1:nrow_ek,relem) = f *  
-     &        killed_estiffs(elem_ptr)%estiff(1:nrow_ek) 
-           cycle
-        end if                    
-        if( .not. allocated( killed_estiffs(elem_ptr)%estiff ) ) 
-     &       allocate( killed_estiffs(elem_ptr)%estiff(nrow_ek) )
-        killed_estiffs(elem_ptr)%estiff(1:nrow_ek) = 
-     &             estiff_blocks(blk)%ptr(1:nrow_ek,relem)  
-        killed_estiffs(elem_ptr)%num_terms = nrow_ek
-      end do  ! relem
+          if( dam_state(elem_ptr) == 0 ) cycle ! element in release  
+!DIR$ IVDEP
+          do i = 1, nrow_ek            
+            estiff_blocks(blk)%ptr(i,relem) = zero       
+          end do           
+      end do
 c
       return
 c                                                                               
- 9900 format("... tanstf_process_killable_blk. blk, save [ke]:",i8,l2)
- 9910 format("... Saving element stiffness:",10(/10x,f20.6))
- 9920 format("... pulled element stiffness:",10(/10x,f20.6))
       end
-   
-
-                                                      
  

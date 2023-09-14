@@ -23,7 +23,7 @@ c
 c                                                                               
 c            If crack growth is present in this analysis, slowly release        
 c            any loads imposed on the structure due to killed elements          
-c            or released nodes.  This release ensures smooth convergence        
+c            or released nodes.  This release helps convergence        
 c            of the solution while the geometry of the model is changed         
 c            due to crack growth.                                               
 c                                                                               
@@ -54,7 +54,7 @@ c     *                      subroutine killed_elem_loads            *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 8/28/2021 rhd              *          
+c     *                   last modified : 8/26/2023 rhd              *          
 c     *                                                              *          
 c     *     this subroutine releases the nodal loads that are        *          
 c     *     imposed on the structure when an element is killed       *          
@@ -67,14 +67,13 @@ c
 c
       use global_data, only : out, noelem, iprops, load, mxedof, mxgp
       use elem_extinct_data, only : dam_ifv, dam_state, dam_dbar_elems,
-     &                              smcs_d_values, Oddy_metrics          
+     &                              smcs_d_values, Oddy_metrics,
+     &                              smcs_d_values_old         
       use damage_data, only : dam_ptr, max_dam_state, release_fraction,
      &                        gurson_cell_size, release_type,
      &                        num_elements_in_force_release,
      &                        use_mesh_regularization, 
-     &                        use_distortion_metric,
-     &                        tol_regular =>
-     &                        tolerance_mesh_regularization     
+     &                        use_distortion_metric 
       use constants                                                  
 c                                                                               
       implicit none
@@ -82,11 +81,12 @@ c
 c              locals
 c
       integer :: rcount, elem, num_dof, sdof, elem_ptr, dof, numpts
-      logical :: no_print, std_kill
+      logical :: no_print, std_kill, header_regular, header_Oddy
       logical, parameter :: debug = .false.                                                
       integer :: edest(mxedof)                                                     
       double precision :: dbar_now, refer_deform, now_fraction, d_now, 
-     &                    last_fraction, fraction, dbar_zero, ldincr
+     &                    last_fraction, fraction, dbar_zero, ldincr,
+     &                    d_old, d_incr
 c
 c              standard element death (Gurson, SMCS): 
 c                 immediate reduction of [Ke] to zero, zeroing of
@@ -104,42 +104,51 @@ c                 killed elements to the dload vector to simulate the slow
 c                 release of the killed element forces.
 c  
 c              mesh regularization death for SMCS:
-c                 element internal forces are gradually  reduced to
-c                 zero through the damage parameter 'd'. internal
-c                 forces at death have not been saved.    
-c  
-c                 for this option. no actions are needed here. 
-c                 code here prints current value of 'd' for elements        
-c                                                                               
-c                                                                               
+c                 eleifv were saved at start of killing.
+c                 add a fraction of the internal load vector saved from              
+c                 killed elements to the dload vector to simulate the slow           
+c                 release of the killed element forces.
+c
 c              loop over all elements. skip non-killable elements                 
 c              immediately. if element is killable, process as above
 c     
       if( debug ) write(out,9000)       
       std_kill = .not. use_mesh_regularization
       if( std_kill ) write(out,9200)   
-      if( use_mesh_regularization ) write(out,9201)                                                       
+      header_regular = .true.   
+      header_Oddy = .true.                                                    
       no_print = .true.                                                         
       rcount   = 0                                                              
 c                                                                               
-      do elem = 1, noelem                                                       
+      do elem = 1, noelem   
+c                                                          
         elem_ptr = dam_ptr(elem)                                                
         if( elem_ptr .eq. 0 ) cycle  ! element not killable                                          
         if( dam_state(elem_ptr) .eq. 0 ) cycle ! not yet killed       
         if( use_mesh_regularization ) then
+            d_old = smcs_d_values_old(elem_ptr)   ! patch
             d_now = smcs_d_values(elem_ptr)
-            if( d_now > tol_regular ) cycle
-            if( d_now <= zero ) cycle
+            if( d_now >= one ) smcs_d_values_old(elem_ptr) = one 
+            d_incr = d_now - d_old
+            if( d_incr < zero ) d_incr = zero 
+            fraction = d_incr
             if( use_distortion_metric ) then
-              write(out,9600) elem, smcs_d_values(elem_ptr), 
+              if( fraction > zero ) then
+               if( header_Oddy ) write(out,9201) 
+               header_Oddy = .false.
+               write(out,9600) elem, d_now, d_old, d_incr,
      &                        Oddy_metrics(elem_ptr,2) /
      &                        Oddy_metrics(elem_ptr,1)
+              end if 
             else
-              write(out,9610) elem, smcs_d_values(elem_ptr)
+              if( fraction > zero ) then
+                if( header_regular ) write(out,9201) 
+                header_regular = .false.
+                write(out,9610) elem, d_old, d_now, d_incr
+              end if  
             end if
             no_print = .false.
-            rcount = rcount + 1
-            cycle
+            if( fraction <= zero ) cycle 
         end if                         
         if( release_type .eq. 1 ) then                                         
           if( dam_state(elem_ptr) .gt. max_dam_state ) cycle                   
@@ -158,7 +167,7 @@ c
         if( release_type .eq. 1 ) then                                         
              fraction = one / dble(max_dam_state)                                   
              now_fraction =  dble(dam_state(elem_ptr)) /                        
-     &                       dble(max_dam_state)                                
+     &                       dble(max_dam_state)   
         end if                                                                  
 c                                                                               
 c            for traction-separation law we have to get current                 
@@ -186,23 +195,31 @@ c
         end if                                                                  
 c                                                                               
 c            output message about release of element forces                     
-c                                                                               
-      write(out,9300) elem, now_fraction * 100.0                               
-      no_print = .false.                                                        
-      rcount   = rcount + 1                                                   
-c                                                                               
-      num_dof = iprops(2,elem) * iprops(4,elem)                               
-c                                                                               
+c  
+        if( .not. use_mesh_regularization )  then                                                                           
+          write(out,9300) elem, now_fraction * 100.0                               
+          no_print = .false.                                                        
+        end if                                                    
+c                                                                                                                                                             
 c            modify incrmental load vector for structure for this               
 c            step by the incremental force release for the                      
-c            this element. also update the total load on structure.             
-c                                                                               
-        call get_single_edest_terms( edest, elem )                              
-        do dof = 1, num_dof                                                     
-          sdof        = edest(dof)                                              
-          ldincr      = fraction * dam_ifv(dof,elem_ptr)                        
-          load(sdof)  = load(sdof) + ldincr                                     
-        end do                                                                  
+c            this element. also update the total load on structure.   
+c            this is a classic scatter operation from element to
+c            structure level. The big loop here is serial. The dof
+c            loop below *cannot* run parallel since overwrites into
+c            load(sdof) could occur. would need to protect with ATOMIC
+c            UPDATE if algorithm changes.        
+c
+        if( fraction > zero ) then 
+          rcount = rcount + 1
+          num_dof = iprops(2,elem) * iprops(4,elem)                               
+          call get_single_edest_terms( edest, elem )                              
+          do dof = 1, num_dof                                                     
+            sdof        = edest(dof)                                              
+            ldincr      = fraction * dam_ifv(dof,elem_ptr)  
+            load(sdof)  = load(sdof) + ldincr  
+          end do 
+        end if                                                                 
 c                                                                               
       end do ! on elem                                                                   
 c                                                                               
@@ -213,18 +230,19 @@ c
          if( rcount .gt. 0 ) write(out,9500) rcount     
       end if
       if( use_mesh_regularization ) then
-         if( no_print ) write(out,9401)                                          
-          if( rcount .gt. 0 ) write(out,9501) rcount     
+         write(out,9501) rcount     
       end if                      
       num_elements_in_force_release = rcount          
-      if( debug )  write(out,9010)
+      if( debug ) write(out,9010)
 c                                                                               
       return     
  9000 format(10x, '>> entered killed_elem_loads')                                                               
  9010 format(10x, '>> leaving killed_elem_loads')                                                               
  9200 format(/1x,'  >> force release information for killed elements:')         
  9201 format(/1x,'>> mesh regularization information for',
-     & ' killed elements:')         
+     & ' elements in removal process:',
+     & /,5x,"element",5x, "prior damage (d)",5x,"updated damage (d)",
+     & 5x,"change",5x,"Max Oddy ratio")         
  9300 format(1x,'       element: ',i7,'. forces released (%): ',f5.1)           
  9400 format(1x,'        *no forces are currently being released*')    
  9401 format(1x,'      *no killed elements in regularization',
@@ -232,9 +250,8 @@ c
  9500 format(1x,'       total elements in active release: ',i6)      
  9501 format(1x,'   total elements in active',
      &  ' regularization: ',i6)      
- 9600 format(1x,'   element: ',i7,', damage parameter (d): ',f5.3,
-     &     2x,'max Oddy ratio:',f7.2)             
- 9610 format(1x,'   element: ',i7,', damage parameter (d): ',f5.3)
+ 9600 format(4x,i7,8x,f6.3,16x,f6.3,13x,f6.3,10x,f7.2)
+ 9610 format(4x,i7,8x,f6.3,16x,f6.3,13x,f6.3)
 c                                                                                
       end  subroutine killed_elem_loads                                                                     
 c                                                                               

@@ -42,7 +42,6 @@ c
       integer, allocatable :: k_ptrs(:)
       integer, allocatable, save :: dof_eqn_map(:), eqn_node_map(:),
      &                              save_k_indexes(:), save_k_ptrs(:)
-
       logical :: new_size
       logical, save :: cpu_stats, save_solver
       logical, parameter :: local_debug = .false.,
@@ -193,7 +192,7 @@ c
      &                          solver_out_of_core, solver_memory,
      &                          solver_scr_dir, solver_mkl_iterative )
         if( local_debug ) write(*,*) '... drive_assem_solve @ 5b'
-
+c
       case( 8 ) ! asymmetric pardiso
 c
         if( .not. asymmetric_assembly ) then

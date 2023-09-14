@@ -1172,9 +1172,11 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine extract_D_symmetric( gpn, local_work )                         
-c                                                                               
-      use elem_block_data, only : gbl_cep_blocks => cep_blocks                  
-      implicit none                                                             
+c 
+      use global_data, only: out                                                                              
+      use elem_block_data, only : gbl_cep_blocks => cep_blocks   
+      use constants
+c      implicit none                                                             
       include 'param_def'                                                       
       include 'include_tan_ek'                                                  
 c                                                                               
@@ -1184,8 +1186,9 @@ c
 c                                                                               
 c                     local variables                                           
 c                                                                               
-      double precision :: weight, symm_part_cep(mxvl,21), f                     
-      integer :: span, now_blk, ielem, sloc, k, felem                           
+      double precision :: weight, symm_part_cep(mxvl,21), f,
+     &                    cep_linear_elastic(6,6)                     
+      integer :: span, now_blk, ielem, sloc, k, felem
 c                                                                               
       span    = local_work%span                                                 
       weight  = local_work%weights(gpn)                                         
@@ -1261,9 +1264,12 @@ c      end do
         local_work%cep(ielem,4,6) = symm_part_cep(ielem,19)                     
         local_work%cep(ielem,5,6) = symm_part_cep(ielem,20)                     
       end do                                                                    
-c                                                                               
-      return                                                                    
-      end                                                                       
+c                                                                    
+      return  
+c
+      end 
+        
+                                                                          
                                                                                 
 c     ****************************************************************          
 c     *                                                              *          

@@ -1941,9 +1941,8 @@ c
  1990 continue
       num_error = num_error + 1
       write(out,9209)
- 9209 format(/1x,'>>>>> error: porosity value must be greater than ',
-     &     'zero.',/,14x,'defaulting to zero for critical porosity',
-     &     ' value.')
+ 9209 format(/1x,'>>>>> error: critical porosity value must be ',
+     &     'greater than zero.')
       goto 9999
 c
 c
@@ -2621,19 +2620,17 @@ c
  2750 continue
       num_error = num_error + 1
       write(out,9293)
- 9293 format(/1x,'>>>>> Error: the maximum percent allowed change in ',
+ 9293 format(/1x,'>>>>> Error: the maximum allowed change in ',
      &           'porosity between steps',/,
-     &           '               must be greater than zero. Turning',
-     &           ' off automatic load reduction.',/)
+     &           '               must be greater than zero.',/)
       goto 9999
 c
  2760 continue
       num_error = num_error + 1
       write(out,9294)
- 9294 format(/1x,'>>>>> Error: the maximum percent allowed change in ',
+ 9294 format(/1x,'>>>>> Error: the maximum allowed change in ',
      &           'plastic strain between steps',/,
-     &           '               must be greater than zero. Turning',
-     &           ' off automatic load reduction.',/)
+     &           '               must be greater than zero.'/)
       goto 9999
 c
  2770 continue

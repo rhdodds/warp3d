@@ -194,9 +194,9 @@ c
      &              cp_elems_present, J_cutoff_active, 
      &              J_cutoff_restart_file, J_ratio_adaptive_steps,
      &              J_compute_step_2_automatic, last_step_adapted,
-     &              J_diff_at_2_set, use_weighted     
+     &              J_diff_at_2_set, use_weighted, gt_list_file_flag     
       write(fileno) sparse_stiff_file_name, packet_file_name,
-     &              initial_stresses_file
+     &              initial_stresses_file, gt_list_file_name
       write (fileno) check_data_key
 c
 c
@@ -504,8 +504,8 @@ c
      &              smcs_adapt_alpha_min, smcs_adapt_alpha_max,
      &              regular_length, regular_up_max,
      &              tolerance_mesh_regularization, Oddy_critical_ratio,
-     &              regular_alpha, regular_GF, regular_m_power,
-     &              regular_points,  ! (10x2)
+     &              regular_alpha, regular_beta, regular_GF,
+     &              regular_m_power, regular_points,  ! (10x2)
      &              distortion_plastic_limit 
 c
       write(fileno) smcs_deleted_list_file_name, 
@@ -523,8 +523,7 @@ c
          if( use_mesh_regularization ) standard_kill_method = .false. 
 c
          call wrtbk( fileno, dam_state, num_kill_elem )
-         if( standard_kill_method )
-     &        call wrt2d( fileno, dam_ifv, prec_fact*mxedof,
+         call wrt2d( fileno, dam_ifv, prec_fact*mxedof,
      &                    prec_fact*mxedof, num_kill_elem )
 c
          write(fileno) check_data_key
@@ -557,7 +556,6 @@ c
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, smcs_start_kill_step, 
      &                     num_kill_elem )
-               call store_killed_estiffs( fileno, num_kill_elem )
                write(out,9250)
          end if
          write(fileno) check_data_key
@@ -572,8 +570,6 @@ c
 c
          if( print_status ) then
             call wrtbk( fileno, dam_print_list, num_print_list )
-            call wrtbk( fileno, gt_old_mises, num_print_list*prec_fact )
-            call wrtbk( fileno, gt_old_mean, num_print_list*prec_fact )
          end if
          write (fileno) check_data_key
 c
@@ -1128,45 +1124,6 @@ c
         write(fileno) simple_angles
         write(fileno) mc_array
       end if
-c
-      return
-      end
-c
-c     ****************************************************************
-c     *                                                              *
-c     *               subroutine store_killed_estiffs                *
-c     *                                                              *
-c     *                    written by : rhd                          *
-c     *                                                              *
-c     *                last modified : 3/31/21 rhd                   *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine store_killed_estiffs( fileno, num_kill_elem )
-c
-      use elem_extinct_data, only : killed_estiffs
-
-      implicit none
-      integer, intent(in) :: fileno, num_kill_elem
-c
-      integer :: count, i, nrow_ek
-c
-c              count number of killed element stiffnesses actually
-c              stored
-c
-      count = 0
-      do i = 1, num_kill_elem
-        if( killed_estiffs(i)%num_terms > 0 ) count = count + 1
-      end do
-      write(fileno) count
-      if( count == 0 ) return
-c
-      do i = 1, num_kill_elem
-        nrow_ek = killed_estiffs(i)%num_terms
-        if( nrow_ek == 0 ) cycle
-        write(fileno) i, nrow_ek
-        write(fileno) killed_estiffs(i)%estiff(1:nrow_ek)
-      end do
 c
       return
       end

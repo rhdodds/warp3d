@@ -105,7 +105,7 @@ c
       use elem_extinct_data, only :
      &    dam_state, smcs_start_kill_step, kill_order_list, 
      &    dam_print_list, smcs_d_values, smcs_eps_plas_at_death,
-     &    smcs_stress_at_death, Oddy_metrics
+     &    smcs_stress_at_death, Oddy_metrics, smcs_d_values_old   
       use main_data, only : output_packets, packet_file_no
       use damage_data, only : no_killed_elems, dam_ptr, max_dam_state,
      &     crack_growth_type, num_user_kill_elems, release_type, 
@@ -117,7 +117,8 @@ c
      &     use_mesh_regularization,
      &     tol_regular =>
      &     tolerance_mesh_regularization, use_distortion_metric, 
-     &     Oddy_critical_ratio, use_weighted    
+     &     Oddy_critical_ratio, use_weighted,
+     &     gt_list_file_flag, gt_list_file_name
       use constants                   
 c                                                         
       implicit none
@@ -199,6 +200,8 @@ c
          if( dam_state(elem_ptr) > 0 ) then ! already being killed
             if( use_mesh_regularization ) then
                call chk_elem_kill_upmr
+               if( dam_state(elem_ptr) <=  max_dam_state )                        
+     &             dam_state(elem_ptr) = dam_state(elem_ptr) + 1                  
                cycle 
             end if
             if( standard_kill ) then
@@ -315,15 +318,13 @@ c
            smcs_eps_plas_at_death(elem_ptr) = smcs_elem_values%eps_plas
            smcs_stress_at_death(elem_ptr) = sig_1_at_death
            smcs_start_kill_step(elem_ptr) = current_load_time_step
-           dam_state(elem_ptr) = 1
+           d_old = zero
+           smcs_d_values_old(elem_ptr) = d_old 
            call chk_get_d( elem, local_zero, sig_1_at_death, 
-     &                     d_new, out )
-           d_old = smcs_d_values(elem_ptr)
-           if( d_new < d_old .and. iter > 1) then
-             write(out,9020) elem, d_old, d_new
-             num_error = num_error + 1 ! stop at next compute cmd
-           end if
+     &                     d_new, out ) ! should = 0.0
            smcs_d_values(elem_ptr) = d_new
+           call chk_store_ifv( elem, elem_ptr, debug )! sets dam_state = 1
+           call chk_update_node_elecnt( elem, debug ) 
          end if
 c
 c                 the user may have provided a list if elements.
@@ -403,7 +404,7 @@ c
           call store( ' ','kill_limit_restart.db', ldummy1, ldummy2 )
           call warp3d_normal_stop
       end if
-c      
+c      	
       return    
 c
  9000 format(/,1x,">>>>> Number of currently killed (deleted)",
@@ -424,6 +425,11 @@ c
  9100 format('>> FATAL ERROR: routine ',
      & 'chk_elem_kill. @ 1',
      & 10x,'inconsistent condition. for element:',i8,
+     & ' job terminated.'//)
+ 9110 format('>> FATAL ERROR: routine ',
+     & 'chk_elem_kill. @ 2',
+     & 10x,'inconsistent condition. for element:',i8,
+     & 10x,'d_new: ',f10.3,/,
      & ' job terminated.'//)
 c                                                                               
 c
@@ -571,7 +577,11 @@ c
       local_debug = .false.
       if( local_debug ) write(out,9000) elem
 c
-      if( smcs_d_values(elem_ptr) > tol_regular ) return ! already fully killed
+      if( dam_state(elem_ptr) == 100 ) then ! element previously removed
+          smcs_d_values(elem_ptr) = one
+          smcs_d_values_old(elem_ptr) = one
+          return
+      end if    
 c
 c              current plastic strain and mises stress averages
 c              for element. avg_sig_1 is *max* principal stress
@@ -590,9 +600,12 @@ c               fully delete element. could also delete by distortion
 c               limit or plastic strain limit.
 c
       stress_at_death = smcs_stress_at_death(elem_ptr)
+c      
+      smcs_d_values_old(elem_ptr) = smcs_d_values(elem_ptr)    
+      d_old = smcs_d_values_old(elem_ptr)
+c
       call chk_get_d( elem, deps_plas, stress_at_death, d_now, out )
-      d_old = smcs_d_values(elem_ptr)
-      if( d_now < d_old .and. iter > 1 ) then
+      if( d_now < d_old ) then
          write(out,9040) elem, d_old, d_now
          num_error = num_error + 1 ! stop at next compute cmd
       end if
@@ -604,34 +617,35 @@ c
          total_plastic_strain = max_eps_plas
       else
          max_Oddy = zero
-         total_plastic_strain = -one ! actual value ust be larger
+         total_plastic_strain = -one ! actual value must be larger
       end if 
 c
+c               decision to immediately remove element
+c
       kill_by_Oddy = max_Oddy >= Oddy_critical_ratio 
-      kill_by_d_value = d_now > tol_regular
+      kill_by_d_value = d_now >= tol_regular
       kill_by_plastic_limit = total_plastic_strain >= 
      &                        distortion_plastic_limit
 c      
       kill_immediately = kill_by_Oddy  .or. kill_by_d_value .or. 
      &                   kill_by_plastic_limit
       if( .not. kill_immediately ) return
-      smcs_d_values(elem_ptr) = hundred
 c
-c               fully kill the element. 
+c               complete fully killing the element. the element stiffness
+c               has been zero since the critical condition.
 c               data structures like a standard (immediate) deletion
 c               process.
 c                   - energy ??
 c                   - zero properties, stresses, history
-c                   - decreases by 1 the count of elements attached to
-c                     the now fully deleted element
-c                   - if a node now has no elements attached, add
-c                     constraints to prevent rbm
+c               since [e] was  zeroed previously we can't update
+c               the node connectivity (element to the nodes it connects).
+c
 c
       if( local_debug )  write(out,9030)
+      dam_state(elem_ptr) = 100
+      smcs_d_values(elem_ptr) = one
       call chk_update_killed_energy( elem )     
       call chk_kill_element_now( elem, debug )                                    
-      call chk_update_node_elecnt( elem, debug )  
-      call chk_free_nodes( .false. ) ! debug flag  
       if( use_distortion_metric ) then
         distortion_msg = ' '
         if( kill_by_Oddy ) distortion_msg = '** Oddy exceeds limit'
@@ -659,7 +673,11 @@ c
      &       /,1x,"      Execution will stop at next Compute cmd",
      &       /)
  9100 format('>> FATAL ERROR: routine ',
-     & 'chk_elem_kill_update_mesh_regularization.',
+     & 'chk_elem_kill_upmr.',
+     & 10x,'inconsistent condition @ 1. for element:',i8,
+     & ' job terminated.'//)
+ 9110 format('>> FATAL ERROR: routine ',
+     & 'chk_elem_kill_upmr @ 2.',
      & 10x,'inconsistent condition. for element:',i8,
      & ' job terminated.'//)
  9200 format(/,' >> element removed by regularization: ',i7,
@@ -795,12 +813,12 @@ c              use same file name for list of deleted elements
 c              as used for scs since both cannot be used in
 c              same model 
 c
-      if( .not. smcs_deleted_list_file_flag ) return ! delete elements file
+      if( .not. gt_list_file_flag ) return ! delete elements file
 c      
       associate( v => gt_elem_values )
       
-      inquire( file=smcs_deleted_list_file_name, exist=fexists )
-      open( newunit=device,file=smcs_deleted_list_file_name,
+      inquire( file=gt_list_file_name, exist=fexists )
+      open( newunit=device,file=gt_list_file_name,
      &      form='formatted', status='unknown', 
      &      access='sequential', position='append' )   
       if( .not. fexists ) then
@@ -823,7 +841,7 @@ c
 c
  9000 format(/,' >> element death invoked for element: ',i7,                  
      & '.   f: ',f6.3)                                                          
- 9010 format(/,' @1  >> element death invoked for element: ',i7,                  
+ 9010 format(/,' >> element death invoked for element: ',i7,                  
      & '.   f: ',f6.3,2x,'Oddy metric: ',f8.3)                                                          
  9018 format('!',/,'!   Gurson quantities when elements deleted',/,
      & '!   (element deletion begins at listed step number)',
@@ -835,7 +853,7 @@ c
      & /,'!',/,
      & 6x,'step     elem   porosity     mean stress    mises stress',
      & '  plastic strain  Oddy metric')
- 9020 format(2x,i8,i9,3x,f8.5,2x,e14.6,2x,e14.6,2x,e14.6,2x,f7.2)    
+ 9020 format(2x,i8,i9,3x,f8.5,2x,g14.6,2x,g14.6,2x,f14.6,2x,f7.2)    
  9200 format(/,' >> element death by distortion metrics: ',i7,
      & /,      '       f: ', f5.3,' max Oddy ratio: ',f7.2,2x,
      &  'plastic strain: ',f8.5,2x,a)
@@ -932,7 +950,7 @@ c
      &       'eps-plastic: ',f8.5)
  9018 format('!',/,'!  SMCS quantities when critical damage D = 1 ',
      & 'or Oddy limit reached for elements', /,
-     & '!   (element deletion begins at listed step number)' )
+     & '!   (element deletion ** begins ** at listed step number)' )
  9118 format('!',/,'!  T, xi, hat_theta are *plastic-weighted* values')
  9119 format('!',/,'!  T, xi, hat_theta are *current* values')
  9120 format('!',/,
@@ -1080,7 +1098,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *        internal subroutine chk_elem_kill_in_order            *
 c     *                                                              *
-c     *                   last modified : 4/15/23 rhd                *
+c     *                   last modified : 8/25/23 rhd                *
 c     *                                                              *
 c     *     after starting deletion of new element, see if other     *
 c     *     elements must also be killed to satisfy the user input   *
@@ -1098,7 +1116,8 @@ c
       logical :: killed_found_in_order_list
       logical, parameter :: ldebug = .false.
       double precision :: eps_plas_at_death, mises_at_death_local,
-     &                    sig_1_at_death_local, max_eps_plas, ddum
+     &                    sig_1_at_death_local, max_eps_plas, ddum,
+     &                    d_now 
 c
       if( ldebug ) write (out,*) '>>> chk_elem_kill_in_order....'       
 c
@@ -1139,16 +1158,24 @@ c
           if ( release_type .eq. 2 )                                         
      &       call growth_set_dbar( elem, elem_ptr, -1, ddum ) 
         elseif( use_mesh_regularization ) then
-          call chk_get_ele_vals( elem, eps_plas_at_death,
-     &                           mises_at_death_local, 
-     &                           sig_1_at_death_local, ! max prin value
-     &                           max_eps_plas )
-          smcs_eps_plas_at_death(elem_ptr) = eps_plas_at_death
-          smcs_stress_at_death(elem_ptr) = sig_1_at_death_local
-          dam_state(elem_ptr) = 1
-          call chk_get_d( elem, zero, sig_1_at_death_local, 
-     &                    smcs_d_values(elem_ptr), out )
-        else
+          get_princ_values = .true.
+          do_what = 1 ! no update, just current values
+          call dam_param_smcs_get_values( elem, do_what, 
+     &            smcs_elem_values, get_princ_values )
+          mises_at_death = smcs_elem_values%sig_mises
+          sig_1_at_death = smcs_elem_values%max_princ_stress
+          smcs_eps_plas_at_death(elem_ptr) = smcs_elem_values%eps_plas
+          smcs_stress_at_death(elem_ptr) = sig_1_at_death
+          smcs_start_kill_step(elem_ptr) = current_load_time_step
+          d_old = zero
+          smcs_d_values_old(elem_ptr) = d_old 
+          call chk_get_d( elem, local_zero, sig_1_at_death, 
+     &                    d_new, out ) 
+          smcs_d_values(elem_ptr) = d_new
+          call chk_output_kill_messages_3 ! option write to delete
+          call chk_update_node_elecnt( elem, debug ) 
+          call chk_store_ifv( elem, elem_ptr, debug )   
+         else
           write(out,9200) elem
           call die_abort
         end if                                                                  
@@ -1158,6 +1185,12 @@ c
 c
  9100 format(/,' >> element death: ',i7,' per user request',               
      &       ' via kill in order input command')    
+ 9110 format('>> FATAL ERROR: routine ',
+     & 'chk_elem_kill_in_order. @ 2',
+     & 10x,'inconsistent condition. for element:',i8,
+     & 10x,'d_new: ',f10.3,/,
+     & ' job terminated.'//)
+    
  9200 format('>>>> FATAL ERROR: chk_elem_kill_in_order. elem',i8,
      &     /,10x,'Job terminated...',//)             
                                          
@@ -1688,7 +1721,111 @@ c
       t_chk_killed = dam_state( elem_ptr) > 0
 c                                                                               
       return                                                                    
-      end                                                                       
+      end     
+c     ****************************************************************
+c     *                                                              *
+c     *                    subroutine chk_killed_blk                 *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *                   last modified : 8/20/2023 RHD              *
+c     *                                                              *
+c     *     for the specified block of elements, return a logical    *
+c     *     vector indicating if each element is killed or active.   *
+c     *     "killed" can have two meanings based on type             *
+c     *     also a flag if the whole block is killed                 *
+c     *                                                              *
+c     *     service routine for tanstf and do_nleps_block            *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine chk_killed_blk( span, felem, step, block_no, 
+     &                           status_vec, block_killed )
+c
+      use global_data, only : out, mxvl 
+      use elem_extinct_data, only : dam_state, smcs_d_values
+      use damage_data, only : growth_by_kill, dam_ptr, 
+     &                        use_mesh_regularization
+      use constants
+c
+      implicit none
+c
+c              parameters
+c
+      integer, intent(in)  :: span, block_no, felem, step
+      logical, intent(out) :: status_vec(mxvl), block_killed
+c      
+c              locals
+c
+      integer :: elem, elem_ptr, i
+      logical :: standard_kill_method
+      logical, parameter :: ldebug = .false.
+      double precision :: chk_value
+c
+      block_killed = .false.
+      status_vec   = .false. ! all entries
+c
+      if( .not. growth_by_kill ) return
+c
+      if( dam_ptr(felem) == 0 ) return ! no killable elems in blk
+c
+c               standard_kill_method = no mesh regularization
+c               for standard, element is killed [Ke]=0 immediately.
+c               state > 0
+c
+c               for mesh regularization, element has been fully 
+c               removed if dam_state = 100
+c
+c               run sanity check. every element in blk must be 
+c               killable. only need to do this once for arun.
+c
+      if( step <= 2 ) then  
+         do  i = 1, span  
+           elem = felem + i - 1
+           elem_ptr = dam_ptr(elem)
+           if( elem_ptr == 0 ) then ! bad data structures
+             write(out,9100) 3                                                         
+             call die_abort                                                          
+           end if 
+         end do 
+      end if 
+c
+      standard_kill_method = .not. use_mesh_regularization
+c
+      if( standard_kill_method ) then
+        do i = 1, span  
+          elem = felem + i -1
+          elem_ptr = dam_ptr(elem)
+          status_vec(i) = dam_state(elem_ptr) > 0
+        end do
+        if( all( status_vec(1:span) ) ) block_killed = .true.
+        return
+      end if
+c
+      if( .not. use_mesh_regularization ) then
+          write(out,9100) 4
+          call die_abort
+      end if
+c
+      if( .not. allocated( smcs_d_values ) ) then ! sanity check
+          write(out,9100) 5
+          call die_abort
+      end if
+c 
+      do i = 1, span  
+        elem = felem + i - 1
+        elem_ptr = dam_ptr(elem)
+        status_vec(i) = dam_state(elem_ptr) == 100
+      end do
+c
+      if( all( status_vec(1:span) ) ) block_killed = .true.
+c
+      return       
+c      
+ 9100 format(/,'FATAL ERROR: chk_killed_blk. Contact WARP3D group',             
+     &       /,'             Job terminated at ',i1,//)                         
+c
+      end                                                                  
 c
 c     ****************************************************************
 c     *                                                              *
@@ -1707,7 +1844,8 @@ c     *     service routine for tanstf and do_nleps_block            *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine chk_killed_blk( span, felem, step, block_no, 
+      subroutine chk_killed_blk_deprecated( span, felem, 
+     &                            step, block_no, 
      &                           status_vec, block_killed, type )
 c
       use global_data, only : out, mxvl 
@@ -1747,26 +1885,28 @@ c
       if( dam_ptr(felem) == 0 ) return ! no killable elems in blk
 c
 c               standard_kill_method = no mesh regularization
-c               for standard, element is killed immediately. state > 0
+c               for standard, element is killed [Ke]=0 immediately. state > 0
 c
 c               for mesh regularization, have to check current value
 c               of the damage parameter 'd'. if > 0, element is 
-c               being killed (and d<1.0) or has been 
-c               fully killed (d>=1.0)
+c               being killed
 c
 c               type = 1 used in tanstf. mark element killed if
-c                      d > 0.0. tanstf will use either the [Ke] saved
-c                      at death degraded by 1.0 - d or set [Ke] =0
-c                      if d >= 1.0
+c                      d > 0.0. tanstf will use [Ke] saved
+c                      at death degraded by a factor
+c                        (1.0 - d) if d <= tol_regularization
+c                      Current scheme limits reduction to
+c                         (1.0 - tol_regulation) * Ke
+c
 c               type = 2 used in drive_eps_sig_internal_forces.
-c                      mark element killed only if d > 1.0.
-c                      for d < 1.0, the element strains, stresses
-c                      and internal forces are computed as usual.
+c                      mark element killed only if d > tol_regular.
+c                      for d > tol_regular we do not compute element
+c                      strains, stresses and and internal forces.
+c                      for d <= tol_regular, compute strains, stresses,
+c                      internal forces assuming undamaged element.
+c
 c                      routine addifv will degrade them by 1 - d before
-c                      assembly into structure. if d >= 1.0 we don't
-c                      want to process strains, stresses, internal 
-c                      forces for the element.
-c 
+c                      assembly into structure.  
 c
 c               run sanity check. every element in blk must be 
 c               killable. 
@@ -1819,6 +1959,7 @@ c
       end do
 c
       if( all( status_vec(1:span) ) ) block_killed = .true.
+      block_killed = .false.   
 c
       return       
 c      
@@ -1850,8 +1991,9 @@ c
 c
       integer :: now_step, now_iter
 c                                       
-      integer :: elem, elem_ptr, dowhat
-      logical :: local_debug, process                                                 
+      integer :: elem, elem_ptr, dowhat, nthreads
+      logical :: local_debug, process   
+      integer, external ::  omp_get_num_threads                                             
 c        
       local_debug = .false.
       if( local_debug ) write(out,*) '... entered damage_update ...'                                                    
@@ -1868,8 +2010,10 @@ c
       if( .not. process ) return 
 c
 c              Loop for all elements. process killable elements.
-c                                                                               
-c$OMP PARALLEL DO PRIVATE( elem, elem_ptr )
+c     
+      nthreads = omp_get_num_threads()
+      if( noelem < 10000 ) nthreads = 1                                                                           
+c$OMP PARALLEL DO PRIVATE( elem, elem_ptr ) NUM_THREADS( nthreads )
       do elem = 1, noelem
          elem_ptr = dam_ptr(elem)                                               
          if( elem_ptr .eq. 0 ) cycle     ! element not killable                                      
@@ -1958,8 +2102,6 @@ c
 c                                                                          
       if( ldebug ) write (*,*) '>>>>> Entering chk_store_ifv'      
 c
-      if( use_mesh_regularization ) return                 
-c                                                                               
 c            initialize state of release for element                            
 c                                                                               
       dam_state(elem_ptr) = 1                                                   
@@ -1989,7 +2131,7 @@ c
       rel_elem    = elems_to_blocks(elem,2)                                     
       edest       => edest_blocks(blk)%ptr                                      
       do i = 1, num_edof                                                        
-        load(edest(i,rel_elem)) = load(edest(i,rel_elem)) -                     
+        load(edest(i,rel_elem)) = load(edest(i,rel_elem)) -
      &                            dam_ifv(i,elem_ptr)                           
       end do                                                                    
 c                                                                               
@@ -2167,10 +2309,10 @@ c
       se = current_load_time_step
       ss = smcs_start_kill_step(elem_ptr)
       if( use_distortion_metric ) then
-         write(device,9020) ielem, ss, se, se-ss, 
+         write(device,9020) ielem, ss, se, se-ss+1, 
      &    Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)
       else
-         write(device,9020) ielem, ss, se, se-ss
+         write(device,9020) ielem, ss, se, se-ss+1
       end if   
       close(unit=device)    
 c                                                                          
@@ -2271,7 +2413,7 @@ c     *                   subroutine chk_update_node_elecnt          *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 03/9/21 rhd                *          
+c     *                   last modified : 08/24/23 rhd               *          
 c     *                                                              *          
 c     *        Updates the vector that holds the number of           *          
 c     *        elements connected to each node after a node is       *          
@@ -2291,7 +2433,7 @@ c
       integer, intent(in) :: ielem
       logical, intent(in) :: debug                                                             
 c 
-      integer :: nnode, i, node, elem, ndof                                                                              
+      integer :: nnode, i, node                                                                              
 c
       if( debug ) write (out,*) '>>>> in update_node_elecnt '                    
 c                                                                               
@@ -2302,9 +2444,8 @@ c
       nnode = iprops(2,ielem)                                                   
       do i = 1, nnode                                                           
          node = incid(incmap(ielem)+(i-1))                                      
-         elem = inverse_incidences(node)%element_list(1)                        
-         ndof = iprops(4,elem)                                                  
-         dam_node_elecnt(node)= dam_node_elecnt(node) - 1                       
+         dam_node_elecnt(node)= dam_node_elecnt(node) - 1   
+         if( dam_node_elecnt(node) < 0 ) dam_node_elecnt(node) = 0                 
       end do                                                                    
       if( debug ) write (out,*) '>>>> leaving update_node_elecnt'                  
 c                                                                               
@@ -2319,7 +2460,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *                    subroutine chk_get_d                      *
 c     *                                                              *
-c     *                   last modified : 4/30/21 rhd                *
+c     *                   last modified : 8/30/23 rhd                *
 c     *                                                              *
 c     *     get current value of damage parameter "d" for mesh       *
 c     *     regularization                                           *
@@ -2333,8 +2474,8 @@ c
      &                        tolerance_mesh_regularization,
      &                        regular_npoints, regular_length,
      &                        regular_up_max, regular_points, ! 10x2
-     &                        regular_type, regular_alpha,
-     &                        regular_Gf, regular_m_power
+     &                        regular_type, regular_alpha, 
+     &                        regular_Gf, regular_m_power, regular_beta
       use constants
 c
       implicit none
@@ -2345,10 +2486,11 @@ c
       double precision, external :: chklint
 c
       double precision :: u_plastic, u_normed, Gf, m, up, uf, T0,
-     &                    T1, T2, Gtilde, Gratio, alpha
+     &                    T1, T2, Gtilde, Gratio, alpha, beta,
+     &                    numer, denom
       logical :: local_debug
 c
-      local_debug = elem == -1
+      local_debug = elem == -31
       u_plastic = regular_length * deps_plas
 c
       select case( regular_type )
@@ -2378,28 +2520,43 @@ c
           write(out,9300) elem, stress_at_death
           call die_abort
         end if 
-        Gf     = regular_Gf
-        m      = regular_m_power
         alpha  = regular_alpha
-        T0     = stress_at_death
+        beta   = regular_beta
         up     = u_plastic
-        uf     = Gf * (m+one) / m / T0
-        T1     = one - (up/uf)**m / (m + one)
-        Gtilde = T0 * up * T1
-        Gratio = Gtilde / Gf
-        T2     = one - exp( -alpha * Gratio )
-        d_now  = T2 / ( one - exp(-alpha))
+        uf     = regular_up_max
+        numer = beta - exp( -beta * up/uf)
+        denom = beta - exp(-beta)
+        d_now  = numer / denom
         if( up >= uf ) d_now = one ! happens w/ power law + large jumps
         if( local_debug ) write(out,9200) elem, deps_plas, u_plastic,
      &        regular_Gf, m, alpha, uf, Gtilde, Gratio, 
      &        stress_at_death, d_now
+      
+!        if( stress_at_death < zero ) then
+!          write(out,9300) elem, stress_at_death
+!          call die_abort
+!        end if 
+!        Gf     = regular_Gf         
+!        m      = regular_m_power
+!        alpha  = regular_alpha
+!        T0     = stress_at_death
+!        up     = u_plastic
+!        uf     = Gf * (m+one) / m / T0
+!        T1     = one - (up/uf)**m / (m + one)
+!        Gtilde = T0 * up * T1
+!        Gratio = Gtilde / Gf
+!        T2     = one - exp( -alpha * Gratio )
+!        d_now  = T2 / ( one - exp(-alpha))
+!        if( up >= uf ) d_now = one ! happens w/ power law + large jumps
+!        if( local_debug ) write(out,9200) elem, deps_plas, u_plastic,
+!     &        regular_Gf, m, alpha, uf, Gtilde, Gratio, 
+!     &        stress_at_death, d_now
       case default
          write(out,9000)
          call die_abort
       end select
 c
-      if( d_now < zero ) d_now = zero
-      if( d_now > tol_regular ) d_now = one 
+      if( d_now < 0.001d0  ) d_now = 0.001d0 ! TODAY
       if( local_debug ) write(out,9020) d_now
 c
       return
@@ -2698,6 +2855,7 @@ c
       logical, parameter :: ldebug1 = .false., ldebug2 = .false.,
      &                      ldebug3 = .false., print = .false.
       logical, save :: header = .true.
+      logical :: print_o
       double precision :: Oddy_value, Oddy_prior_value, Oddy_new
       real :: ymod, old_value, new_value, old_min, new_min, old_max,
      &        new_max
@@ -2756,15 +2914,17 @@ c
         ymod = props(7,elem)  ! has been zeroed for fully killed element
         if( ymod <= 0.0 ) cycle  ! props is single precision
         elem_ptr = dam_ptr(elem) 
+        if( elem_ptr == 0 ) cycle
         call chkcrack_Oddy_compute( i, Oddy_value )
         Oddy_prior_value = dble( Oddy_metrics(elem_ptr,2) )
         if( Oddy_value <= zero ) Oddy_value = one
         Oddy_new = max( Oddy_prior_value, Oddy_value )
         Oddy_metrics(elem_ptr,2) = sngl(Oddy_new) 
-        if( step <4 .and. ldebug3 .and. elem == 1 ) then
+        print_o = elem == -45 
+        if( print_o ) then
             write(out,9200) elem, gpn, Oddy_prior_value, Oddy_value, 
      &                      Oddy_new
-            write(out,9012) jac(i,1:3,1:3)
+!            write(out,9012) jac(i,1:3,1:3)
         end if    
       end do
 c

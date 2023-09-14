@@ -4,7 +4,7 @@ c     *                      subroutine dupstr                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 03/12/21 rhd               *          
+c     *                   last modified : 08/25/23 rhd               *          
 c     *                                                              *          
 c     *     creates a local(block) copy of element                   *          
 c     *     data necessary for global stress vector recovery for     *          
@@ -22,15 +22,14 @@ c
      &                   trne,                                                  
      &                   trnmte,                                                
      &                   ue,                                                    
-     &                   due, trn )                                             
+     &                   due, trn,
+     &                   killed_status  )                                             
 c
       use global_data, only : out, mxvl, mxedof, sdispl=>u,
      &                        sdu => du   
-      use elem_extinct_data, only : dam_state, smcs_d_values                                     
+      use elem_extinct_data, only : dam_state                                 
       use damage_data, only : dam_ptr, growth_by_kill, 
-     &                        use_mesh_regularization,
-     &                        tol_regular =>
-     &                        tolerance_mesh_regularization      
+     &                        use_mesh_regularization
       use constants  
 c                                                                               
       implicit none                                                    
@@ -39,7 +38,8 @@ c           parameter declarations
 c                  
       integer, intent(in) :: span, felem, nnode, ndof, totdof                                                              
       integer, intent(in) :: bedst(totdof,*), belinc(nnode,*)                                
-      logical :: trn_e_flags(*), trn_e_block, trne(mxvl,*), trn(*)                                 
+      logical :: trn_e_flags(*), trn_e_block, trne(mxvl,*), trn(*),
+     &           killed_status(*)                                  
       double precision :: trnmte(mxvl,mxedof,*)
       double precision, intent(out) :: ue(mxvl,*), due(mxvl,*)                           
 c                                                                               
@@ -77,17 +77,18 @@ c
 c                                                                               
 c            gather element displacements at state n and                        
 c            the total displacement increment from n ->                         
-c            n+1. zero displacements for killed elements. if iter=0             
-c            and displacement increments are all zero, just leave.              
-c            there is nothing to do.                                            
+c            n+1.                                      
 c                                                                               
       do  j = 1, totdof                                                         
+!DIR$ IVDEP
          do i = 1, span                                                         
             ue(i,j)  = sdispl(bedst(j,i))                                            
             due(i,j) = sdu(bedst(j,i))                                           
          end do                                                                 
       end do                                                                    
-c                                                                               
+c          
+c            set up for killable elements.
+c                                                                     
 c            zero total and incremental displacements                           
 c            for (totally) killed elements. use staged checks since lower        
 c            data exists only if we use crack growth by killing elements             
@@ -97,14 +98,19 @@ c            killable elements (all elements in a block must be
 c            killable or non-killable).                                         
 c                                                                                                                                                              
       if( .not. growth_by_kill )  go to 200                                     
-      if( dam_ptr(felem) .eq. 0 ) go to 200  ! no killable elements this block                                  
+      if( dam_ptr(felem) .eq. 0 ) go to 200  ! no killable elements in blk
       standard_kill = .not. use_mesh_regularization
+c
+c            setup so computed strains, stress, internal forces = 0.
+c            the internal forces were grabbed and saved prior to this
+c            at the moment the code killed the element.
 c
       if( standard_kill ) then
         do i = 1, span                                                            
           element = felem + i - 1
           elem_ptr = dam_ptr(element)                                                        
-          if( dam_state(elem_ptr) == 0 ) cycle ! not yet killed
+          if( dam_state(elem_ptr) == 0 ) cycle ! not killable or not yet killed
+!DIR$ IVDEP
           do j = 1, totdof                                                     
             ue(i,j)  = zero                                                    
             due(i,j) = zero                                                    
@@ -112,23 +118,31 @@ c
         end do  
         go to 200
       end if
-c                                                                  
+c             
+c            compute strains, stresses, internal forces assuming
+c            no damage.  internal forces will be reduced later for 
+c            damage. if damage exceeds limit (element fully removed),
+c            setup so zero strains, stresses will be computed.
+c            computed internal forces will be zeroed for fully 
+c            damaged element
+c                                                    
       if( use_mesh_regularization ) then
          do i = 1, span                                                            
             element = felem + i - 1   
-            elem_ptr = dam_ptr(element)                                              
-            if( smcs_d_values(elem_ptr) > tol_regular ) then ! fully killed
+            elem_ptr = dam_ptr(element) 
+            if( dam_state(elem_ptr) == 0 ) cycle ! not killable                                           
+            if( killed_status(i) ) then ! been fully removed
+!DIR$ IVDEP
               do j = 1, totdof                                                     
                 ue(i,j)  = zero                                                    
                 due(i,j) = zero  
               end do                                                  
-            end if                                                                  
-         end do 
+            end if   
+         end do
          go to 200
-      end if
-c
-      write(out,9000)
-      call die_abort                                                                   
+      end if    
+      write(out,9000) ! sanity check
+      call die_gracefully
       return 
 c                                                                               
 c           if required, rotate total and incremental                           
@@ -157,6 +171,7 @@ c
  9150 format(8x,'>> leaving dupstr...' )                                        
  9200 format(12x,'>> gather element transformation flags, matrices...' )        
  9400 format(12x,'>> gather element nodal displacement increments...' )         
- 9500 format(12x,'>> transform element displ. to global coord. sys...' )        
+ 9500 format(12x,'>> transform element displ. to global coord. sys...' ) 
+ 9600 format(1x,"@0.1 routine dupstr. fully removed elem: ",i6)       
 c                                                                               
       end                                                                       

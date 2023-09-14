@@ -4,7 +4,7 @@ c     *              f-90 module crack_growth_data                   *
 c     *                                                              *          
 c     *                       written by : asg                       *          
 c     *                                                              *          
-c     *                   last modified : 5/18/23 rhd                *          
+c     *                   last modified : 8/30/23 rhd                *          
 c     *                                                              *          
 c     *     define the data structures for crack growth              *          
 c     *                                                              *          
@@ -29,27 +29,16 @@ c
       double precision, allocatable       :: gt_old_porosity(:)                    
       double precision, allocatable       :: cohes_old_deff(:)                   
       double precision, allocatable       :: old_plast_strain(:)                
-      double precision, allocatable       :: gt_old_mises(:)                       
-      double precision, allocatable       :: gt_old_mean(:)    
       double precision, allocatable       :: smcs_old_epsplas(:),
      &                                       smcs_tear_param(:),
      &                                       smcs_d_values(:),
+     &                                       smcs_d_values_old(:),
      &                                       smcs_eps_plas_at_death(:),
      &                                       smcs_stress_at_death(:)    
       double precision, allocatable       :: smcs_weighted_T(:),
      &                                       smcs_weighted_zeta(:),
      &                                       smcs_weighted_bar_theta(:)
 c
-c                     stiffness matrices for element in process of
-c                     being killed. used as option for SMCS based
-c                     growth.                             
-c      
-      type :: killed_element_stiffness
-        integer :: num_terms
-        double precision, allocatable, dimension(:) :: estiff
-      end type
-      type(killed_element_stiffness), save, allocatable,
-     &                            dimension(:) :: killed_estiffs
 c
 c                     for killable elements, track the Oddy distortion
 c                     metric. col 1 has minimum value over element

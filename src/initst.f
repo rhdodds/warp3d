@@ -505,7 +505,7 @@ c
       regular_up_max = minus_one
       regular_alpha  = minus_one
       regular_Gf     = minus_one
-      tolerance_mesh_regularization = 0.97d0
+      tolerance_mesh_regularization = 0.99d0 
       use_distortion_metric = .false.
       Oddy_critical_ratio = 25.d0 
       distortion_plastic_limit = hundred
