@@ -10,7 +10,7 @@ c     *                      subroutine dam_print_smcs               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 7/11/23 rhd                *          
+c     *                   last modified : 9/18/23 rhd                *          
 c     *                                                              *          
 c     *     Prints out the status of SMCS elements                   *          
 c     *     marked as killable at the beginning of a load step       *  
@@ -23,7 +23,7 @@ c
 c
       use global_data, only : out, noelem, nonode, ltmstp, stname
       use elem_extinct_data, only : dam_state, dam_print_list,                  
-     &                              old_plast_strain
+     &                              old_plast_strain, Oddy_metrics
       use main_data, only :   output_packets, packet_file_no                      
       use damage_data, only : dam_ptr, load_size_control_crk_grth,
      &                        num_print_list, num_elements_killed,
@@ -31,7 +31,7 @@ c
      &                        print_top_list, num_top_list, 
      &                        smcs_states, smcs_stream, smcs_text,
      &                        smcs_states_intlst, smcs_type,
-     &                        use_weighted
+     &                        use_weighted, use_distortion_metric
       use constants
 c                                                        
       implicit none                                                    
@@ -50,7 +50,8 @@ c
       double precision, parameter :: damage_tol = 0.05d00
       logical :: debug, skip_element, get_princ, write_packets
       logical, save :: print_info = .true.
-      character(len=1) :: cflag      
+      character(len=1) :: cflag  
+      character(len=5) :: Oddy_char    
 c
       include 'include_damage_values'
       type(values_T) :: values
@@ -111,18 +112,22 @@ c
 c
       do elem_loop = 1, list_length
 c
-         if( print_top_list ) element = 
-     &              element_list(sort_index_vec(elem_loop))
-         if( print_status ) then
-            element = dam_print_list(elem_loop)
-            elem_ptr = dam_ptr(element)    
-            if( elem_ptr == 0 ) cycle   ! not killable 
-            if( dam_state(elem_ptr) .ne. 0 ) cycle ! already killed
-         end if                                
+         if( print_top_list ) 
+     &         element = element_list(sort_index_vec(elem_loop))
+         if( print_status ) element = dam_print_list(elem_loop)
+         elem_ptr = dam_ptr(element)    
+         if( elem_ptr == 0 ) cycle   ! not killable 
+         if( dam_state(elem_ptr) .ne. 0 ) cycle ! already killed
 c
 c              get current smcs parameters for element and print.
 c              skip printing elements with very small damage. dowhat = 1
 c              means don't update anything. just return values.
+c
+         Oddy_char = " N/A "
+         if( use_distortion_metric ) then
+            write(Oddy_char,9620)
+     &       Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1) 
+         end if  
 c      
          dowhat = 1 
          get_princ = .false.  ! no sig1,.. needed     
@@ -138,12 +143,13 @@ c
             write(out,9110) element, eps_plas, v%eps_critical, 
      &              v%damage_factor, v%sig_mean, v%sig_mises, 
      &              d_eps_plas, v%triaxiality, v%zeta,
-     &              v%omega, v%bar_theta, v%tearing_param, cflag                                       
+     &              v%omega, v%bar_theta, v%tearing_param, 
+     &              cflag, Oddy_char                                          
          else 
             write(out,9100) element, eps_plas, v%eps_critical, 
      &              v%damage_factor, v%sig_mean, v%sig_mises,
      &              v%triaxiality, v%zeta, v%omega, v%bar_theta,
-     &              v%tearing_param, cflag    
+     &              v%tearing_param, cflag, Oddy_char   
          end if                                                 
          local_count = local_count + 1                                       
 c
@@ -186,10 +192,10 @@ c
      &  '(listed elements):',f10.7)                                                             
  9020 format(2x,'element   eps-pls    eps-crit  damage  ',                      
      & 'sig-mean  sig-mises  d(eps-pls)     T       xi',
-     & '       omega      theta    tear_param',/,2x, 
+     & '       omega      theta    tear_param     Oddy ratio',/,2x, 
      &          '-------   -------    --------  ------  ',                        
      & '--------  ---------  ----------   -----   ------',
-     & '   ---------  ---------  ----------')                                        
+     & '   ---------  ---------  ----------      ---------')                                        
  9030 format(2x,'element   eps-pls    eps-crit   damage  ',                      
      & 'sig-mean  sig-mises    T       xi',
      & '       omega       theta   tear_param',/,2x,                                   
@@ -197,9 +203,9 @@ c
      & '--------  ---------  -----   ------   ---------  ',
      & '  -------  ----------')
  9100 format(1x,i8,2(2x,f9.6),4x,f5.3,1x,f9.3,2x,f9.3,1x,f6.3,3x,
-     &       f6.3,6x,f6.3,5x,f6.3,5x,f7.3,2x,a1) 
+     &       f6.3,6x,f6.3,5x,f6.3,5x,f7.3,2x,a1,4x,a5) 
  9110 format(1x,i8,2(2x,f9.6),2x,f5.3,1x,f9.3,2x,f9.3,3x,f9.7,
-     &  3x,f6.3,3x,f6.3,6x,f6.3,5x,f6.3,5x,f7.3,2x,a1) 
+     &  3x,f6.3,3x,f6.3,6x,f6.3,5x,f6.3,5x,f7.3,2x,a1,4x,a5) 
  9200 format(8x,"* -- T (sig_mean/sig_mises) < 1.0")                                                
  9202 format(10x,"** See earlier messages w/ first element values ",
      & "about T, xi, ... definitions")                                                
@@ -220,7 +226,8 @@ c
      & ' to large value for printing purposes. not used',
      &   ' in computations',/)
  9220 format(/,10x,"Total elements now killed: ",i7,/)       
- 9300 format(10x,"-- Packet data written for element count: ",i7)                                         
+ 9300 format(10x,"-- Packet data written for element count: ",i7) 
+ 9620 format(f5.2)                                        
 c  
       contains
 c

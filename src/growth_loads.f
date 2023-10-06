@@ -81,12 +81,13 @@ c
 c              locals
 c
       integer :: rcount, elem, num_dof, sdof, elem_ptr, dof, numpts
-      logical :: no_print, std_kill, header_regular, header_Oddy
+      logical :: no_print, std_kill, header_regular
       logical, parameter :: debug = .false.                                                
       integer :: edest(mxedof)                                                     
       double precision :: dbar_now, refer_deform, now_fraction, d_now, 
      &                    last_fraction, fraction, dbar_zero, ldincr,
      &                    d_old, d_incr
+      character(len=5) :: Oddy_char
 c
 c              standard element death (Gurson, SMCS): 
 c                 immediate reduction of [Ke] to zero, zeroing of
@@ -116,7 +117,6 @@ c
       std_kill = .not. use_mesh_regularization
       if( std_kill ) write(out,9200)   
       header_regular = .true.   
-      header_Oddy = .true.                                                    
       no_print = .true.                                                         
       rcount   = 0                                                              
 c                                                                               
@@ -124,7 +124,10 @@ c
 c                                                          
         elem_ptr = dam_ptr(elem)                                                
         if( elem_ptr .eq. 0 ) cycle  ! element not killable                                          
-        if( dam_state(elem_ptr) .eq. 0 ) cycle ! not yet killed       
+        if( dam_state(elem_ptr) .eq. 0 ) cycle ! not yet killed  
+        Oddy_char = " N/A "
+        if( use_distortion_metric ) write(Oddy_char,9620)
+     &       Oddy_metrics(elem_ptr,2) /  Oddy_metrics(elem_ptr,1)   
         if( use_mesh_regularization ) then
             d_old = smcs_d_values_old(elem_ptr)   ! patch
             d_now = smcs_d_values(elem_ptr)
@@ -134,17 +137,15 @@ c
             fraction = d_incr
             if( use_distortion_metric ) then
               if( fraction > zero ) then
-               if( header_Oddy ) write(out,9201) 
-               header_Oddy = .false.
-               write(out,9600) elem, d_now, d_old, d_incr,
-     &                        Oddy_metrics(elem_ptr,2) /
-     &                        Oddy_metrics(elem_ptr,1)
+               if( header_regular ) write(out,9201) 
+               header_regular = .false.
+               write(out,9600) elem, d_old, d_now, d_incr, Oddy_char
               end if 
             else
               if( fraction > zero ) then
                 if( header_regular ) write(out,9201) 
                 header_regular = .false.
-                write(out,9610) elem, d_old, d_now, d_incr
+                write(out,9600) elem, d_old, d_now, d_incr, Oddy_char
               end if  
             end if
             no_print = .false.
@@ -250,8 +251,8 @@ c
  9500 format(1x,'       total elements in active release: ',i6)      
  9501 format(1x,'   total elements in active',
      &  ' regularization: ',i6)      
- 9600 format(4x,i7,8x,f6.3,16x,f6.3,13x,f6.3,10x,f7.2)
- 9610 format(4x,i7,8x,f6.3,16x,f6.3,13x,f6.3)
+ 9600 format(4x,i7,8x,f6.3,16x,f6.3,13x,f6.3,10x,a5)
+ 9620 format(f5.2)
 c                                                                                
       end  subroutine killed_elem_loads                                                                     
 c                                                                               

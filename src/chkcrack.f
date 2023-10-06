@@ -138,7 +138,7 @@ c
       logical :: blk_killed, killed_this_time, distortion_killed,           
      &           kill_the_elem, ldummy1, ldummy2,
      &           local_debug, stop_solution, standard_kill, 
-     &           elements_have_been_killed,  
+     &           elements_have_been_killed, porosity_is_critical,
      &           fgm_cohes, ext_gurson, option_exponential,                        
      &           option_ppr, local_write_packets, do_kill_in_order,                
      &           found_exponential, found_ppr, found_cavit,                        
@@ -232,6 +232,7 @@ c
             call dam_param_gt( elem, gt_elem_values )
             distortion_killed = .false.
             kill_the_elem = gt_elem_values%kill_now
+            porosity_is_critical = kill_the_elem
             if( .not. kill_the_elem ) then ! distortion may kill it
                if( use_distortion_metric ) call chk_gt_kill_distortion
             end if  
@@ -761,7 +762,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *        internal subroutine chk_output_kill_messages_1        *
 c     *                                                              *
-c     *                   last modified : 4/21/23 rhd                *
+c     *                   last modified : 9/14/23 rhd                *
 c     *                                                              *
 c     *                     Gurson crack growth                      *
 c     *                                                              *
@@ -775,7 +776,7 @@ c
       logical :: fexists, kill_by_Oddy, kill_by_plastic_limit,
      &           kill_by_porosity 
       double precision ::  plastic_strain, max_Oddy
-      character(len=50) :: distortion_msg      
+      character(len=50) :: distortion_msg, reason      
 c
       associate( v => gt_elem_values )
 c
@@ -816,24 +817,39 @@ c
       if( .not. gt_list_file_flag ) return ! delete elements file
 c      
       associate( v => gt_elem_values )
-      
+c      
       inquire( file=gt_list_file_name, exist=fexists )
       open( newunit=device,file=gt_list_file_name,
      &      form='formatted', status='unknown', 
-     &      access='sequential', position='append' )   
+     &      access='sequential', position='append' )  
+c      
       if( .not. fexists ) then
         if( .not. use_distortion_metric ) write(device,9018)
         if( use_distortion_metric ) write(device,9019)
       end if   
-      if( .not. use_distortion_metric )
-     &  write(device,9020) current_load_time_step,
-     &      elem, v%porosity, v%sig_mean, v%sig_mises, v%eps_plas
+c      
+      if( .not. use_distortion_metric ) then
+          reason = "** porosity exceeds critical"
+          write(device,9020) current_load_time_step, elem,
+     &        v%porosity, v%sig_mean, v%sig_mises, v%eps_plas,
+     &        trim(reason(1:))
+      end if
+c     
       if( use_distortion_metric ) then
          max_Oddy = Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)
-         write(device,9020) current_load_time_step,
-     &    elem, v%porosity, v%sig_mean, v%sig_mises, v%eps_plas,
-     &    max_Oddy
-      end if         
+         reason = " "
+         if( kill_by_Oddy ) reason = '** Oddy exceeds limit'
+         if( kill_by_plastic_limit ) reason =
+     &                '** eps plastic exceeds limit'
+         if( kill_by_Oddy .and. kill_by_plastic_limit )
+     &     reason = '** Oddy & eps plastic exceed limits'
+         if( porosity_is_critical )
+     &          reason = "** porosity exceeds critical"
+         write(device,9022) current_load_time_step,
+     &      elem, v%porosity, v%sig_mean, v%sig_mises, v%eps_plas,
+     &      max_Oddy, trim(reason(1:))
+      end if   
+c            
       close(unit=device) 
 c
       end associate        
@@ -853,7 +869,9 @@ c
      & /,'!',/,
      & 6x,'step     elem   porosity     mean stress    mises stress',
      & '  plastic strain  Oddy metric')
- 9020 format(2x,i8,i9,3x,f8.5,2x,g14.6,2x,g14.6,2x,f14.6,2x,f7.2)    
+ 9020 format(2x,i8,i9,3x,f8.5,2x,g14.6,2x,g14.6,2x,f14.6,2x,a)    
+ 9022 format(2x,i8,i9,3x,f8.5,2x,g14.6,2x,g14.6,2x,f14.6,
+     &       2x,f7.2,2x,a)    
  9200 format(/,' >> element death by distortion metrics: ',i7,
      & /,      '       f: ', f5.3,' max Oddy ratio: ',f7.2,2x,
      &  'plastic strain: ',f8.5,2x,a)
@@ -878,14 +896,21 @@ c
       integer :: device
       logical :: fexists, kill_by_Oddy, kill_by_plastic_limit
       double precision ::  plastic_strain, max_Oddy
-      character(len=50) :: distortion_msg      
+      character(len=50) :: distortion_msg 
+      character(len=5) :: Oddy_char    
 c
       associate( v => smcs_elem_values )
 c
+      Oddy_char(1:) = " N/A "
+      if( use_distortion_metric ) then
+         max_Oddy = Oddy_metrics(elem_ptr,2) / 
+     &              Oddy_metrics(elem_ptr,1)
+         write(Oddy_char,9210) max_Oddy
+      end if 
+c       
       if( distortion_killed ) then
         plastic_strain = v%eps_plas
         if( plastic_strain < zero ) plastic_strain = zero ! roundoff
-        max_Oddy = Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)
         kill_by_Oddy = max_Oddy >= Oddy_critical_ratio 
         kill_by_plastic_limit = plastic_strain >= 
      &                          distortion_plastic_limit
@@ -899,15 +924,16 @@ c
      &                  distortion_msg(1:len(distortion_msg))
       end if
 c
-      if( .not. distortion_killed ) then      
+      if( .not. distortion_killed ) then 
         if( smcs_type <= 4 ) then  ! plastic strain
-          write(out,9010) elem, v%eps_plas
+          write(out,9010) elem, v%eps_plas, Oddy_char
         end if
         if( smcs_type == 5 ) then  ! tearing parameter
           if(  v%tearing_param >= smcs_type_5_tp_critical ) then
-             write(out,9025) elem, v%tearing_param
+             write(out,9025) elem, v%tearing_param, Oddy_char
           else ! plastic strain killed before TP limit
-             write(out,9030) elem, v%eps_plas, v%tearing_param
+             write(out,9030) elem, v%eps_plas,
+     &                       v%tearing_param, Oddy_char
          end if
         end if
       end if 
@@ -939,7 +965,7 @@ c
      &      write(device,9020) current_load_time_step,
      &                   elem, v%eps_plas, v%eps_critical,
      &                   v%triaxiality, v%zeta, v%bar_theta,
-     &                   v%tearing_param
+     &                   v%tearing_param, Oddy_char
       close(unit=device)    
 c      
       end associate
@@ -947,7 +973,8 @@ c
       return
 c
  9010 format(/," >> element death:",i7," before next step. ",             
-     &       'eps-plastic: ',f8.5)
+     &       'eps-plastic: ',f8.5,1x,
+     &        "exceeds limit.  Oddy ratio: ",a5)
  9018 format('!',/,'!  SMCS quantities when critical damage D = 1 ',
      & 'or Oddy limit reached for elements', /,
      & '!   (element deletion ** begins ** at listed step number)' )
@@ -956,14 +983,17 @@ c
  9120 format('!',/,
      & 6x,'step    elem      ebarp  ebarp_crit    T       xi',
      &  '   hat theta   tear_param    Oddy metric')  
- 9020 format(2x,2i8,3x,f8.5,4x,f8.5,1x,f6.3,2x,f6.3,2x,f6.3,4x,f8.3)      
+ 9020 format(2x,2i8,3x,f8.5,4x,f8.5,1x,f6.3,2x,f6.3,2x,f6.3,4x,f8.3,
+     &       9x,a5)      
  9022 format(2x,2i8,3x,f8.5,4x,f8.5,1x,f6.3,2x,f6.3,2x,f6.3,4x,f8.3,
      &       8x,f8.3)      
- 9025 format(/,' >> element death: ',i7,' by tearing parameter: ',f6.3)
+ 9025 format(/,' >> element death: ',i7,
+     &      ' by tearing parameter: ',f6.3," Oddy ratio: ",a5)
  9030 format(/,' >> element death: ',i7,' by eps plastic: ',f8.5,
-     &  ' tearing parameter: ',f6.3)
+     &  ' tearing parameter: ',f6.3," Oddy ratio: ",a5)
  9200 format(/,' >> element death: ',i7,' by distortion metrics. ',
      &  'Oddy ratio: ',f7.2,' plastic strain: ',f8.5,2x,a)
+ 9210 format(f5.2)      
 c 
       end subroutine chk_output_kill_messages_3
 c
@@ -2197,6 +2227,7 @@ c
       logical :: gurson, regular_material, cohesive_elem, 
      &           output_fully_killed_msg, fexists
       character(len=80) :: file_name
+      character(len=5) :: Oddy_char
 c                                                                               
       if( debug ) write (out,*) '>>>> in chk_kill_element'                           
 c                                                                               
@@ -2308,11 +2339,13 @@ c
       if( .not. fexists ) write(device,9018)
       se = current_load_time_step
       ss = smcs_start_kill_step(elem_ptr)
+      Oddy_char = " N/A "
       if( use_distortion_metric ) then
-         write(device,9020) ielem, ss, se, se-ss+1, 
-     &    Oddy_metrics(elem_ptr,2) / Oddy_metrics(elem_ptr,1)
+         write(Oddy_char,9110) Oddy_metrics(elem_ptr,2) /
+     &                         Oddy_metrics(elem_ptr,1)
+         write(device,9020) ielem, ss, se, se-ss+1, Oddy_char
       else
-         write(device,9020) ielem, ss, se, se-ss+1
+         write(device,9020) ielem, ss, se, se-ss+1, Oddy_char
       end if   
       close(unit=device)    
 c                                                                          
@@ -2328,8 +2361,9 @@ c
      & '!  SMCS steps numbers for element removal', /,
      & 6x,'elem  start step   end step # steps release',
      & '  max Oddy ratio')  
- 9020 format(2x,i8,4x,i6,5x,i6,8x,i6,4x,f9.2)
+ 9020 format(2x,i8,4x,i6,5x,i6,8x,i6,4x,4x,a5)
  9100 format(10x,8f5.2)
+ 9110 format(f5.2)
 c
       end                                                                       
 c     ****************************************************************          
@@ -2920,7 +2954,7 @@ c
         if( Oddy_value <= zero ) Oddy_value = one
         Oddy_new = max( Oddy_prior_value, Oddy_value )
         Oddy_metrics(elem_ptr,2) = sngl(Oddy_new) 
-        print_o = elem == -45 
+        print_o = elem == -11 
         if( print_o ) then
             write(out,9200) elem, gpn, Oddy_prior_value, Oddy_value, 
      &                      Oddy_new
