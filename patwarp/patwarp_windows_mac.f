@@ -830,7 +830,7 @@ c
       implicit integer (a-z)
       real   dvals, angle1, angle2, angle3
       logical  status
-      dimension   nodlst(10), dvals(5)
+      dimension   nodlst(10), dvals(5), tmp_20_list(20)
       data  nnpc, nadvpc / 10, 5 /
 c
 c
@@ -937,7 +937,17 @@ c                  later in patwarp.
 c
          nnode_elem = nodes
          if ( nnode_elem .eq. 20 ) then
-            call order1215( eleinc(eleipt(elemid)), nnode_elem, 1 )
+            kk = eleipt(elemid)
+            do i = 1, 20
+             tmp_20_list(i) = eleinc(kk)
+             kk = kk + 1
+            end do 
+            call order1215( tmp_20_list, nnode_elem, 1 )
+            kk = eleipt(elemid)
+            do i = 1, 20
+             eleinc(kk) = tmp_20_list(i)
+             kk = kk + 1
+            end do   
             if ( nnode_elem .eq. 8 ) elennd(elemid) = 8
          end if
          if ( nnode_elem .eq.  8 ) then
@@ -4980,7 +4990,7 @@ c
       dimension ivals(5), rvals(5)
       equivalence ( rvals, ivals )
 c
-      data face_map / 6,   5,   3,   4,   1,   2 /
+      data face_map / 6,   5,   3,   4,   1,   2 / ! Patran -> WARP3D
 c
       local_debug = .false.
       allocate( elnewo(numele) )
