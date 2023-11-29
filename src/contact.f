@@ -23,15 +23,15 @@ c
 c                                                                               
       implicit integer (a-z)                                                    
 c                                                                               
-c                                                                               
       double precision ::                                                     
      &     pen_dist(maxcontact), zero, force, normal(3,maxcontact),             
      &     transmat(3,3), dumd, new_pen_sign   
       double precision :: pen_sign(maxcontact)                                         
-      real dumr                                                                 
+      real :: dumr                                                                 
       character(len=1) :: dums                                                  
-      logical debug, penetrated, allow_trn, referenced, owned                   
-      data debug, zero / .false., 0.0 /                                         
+      logical :: debug, penetrated, allow_trn, referenced, owned,
+     &           found_contact                  
+      data debug, zero / .false., 0.0d0 /                                         
 c                                                                               
 c         tell slaves we are about to assess contact                            
 c                                                                               
@@ -40,15 +40,15 @@ c
 c          zero out all the contact forces.                                     
 c                                                                               
       do dof = 1, nodof                                                         
-         contact_force (dof) = zero                                             
+         contact_force(dof) = zero                                             
       enddo                                                                     
 c                                                                               
 c          skip this routine if we dont have any contact.                       
 c                                                                               
-      if ( .not. use_contact ) then                                             
-         if (debug) write (*,*) '>>>>> Skipping contact check.'                 
+      if( .not. use_contact ) then                                             
+         if( debug ) write (*,*) '>>>>> Skipping contact check.'                 
          return                                                                 
-      endif                                                                     
+      end if                                                                     
 c                                                                               
 c          if we have supplied any transformation matrices for nodes            
 c          undergoing contact, un-transform those nodes so that                 
@@ -58,33 +58,37 @@ c
 c                                                                               
 c          loop over all nodes and check for contact                            
 c                                                                               
-      if (debug) then                                                           
+      if( debug ) then                                                           
          write (*,*) '>>>> checking for Contact!'                               
          write (*,*) '>>     dt is:', dt                                        
          write (*,*) '>>     I think coords of shape 1 is:'                     
          write (*,*) '    ',(cshape_pnt(i,1)+cshape_rate(i,1)*dt,i=1,3)         
          write (*,*) '>>     penetrating nodes, pen dist, force'                
-      endif                                                                     
-c                                                                               
+      end if                                                                     
+c
+      count_nodes_active_contact = 0
+c                                                                                     
       do node = 1, nonode !  big outside loop                                                      
 c                                                                               
 c             skip node if not referenced by this processor                     
+c                                                                                                                                                              
+         call wmpi_chknode ( node, referenced, owned )            
 c                                                                               
-c                                                                               
-         call wmpi_chknode ( node, referenced, owned )                          
-c                                                                               
-         if ( .not. referenced ) cycle                                          
+         if( .not. referenced ) cycle                                          
 c                                                                               
 c             check if node contacts with one or more of the contact shapes.    
 c             if it does, list the contacting surfaces ranked by decreasing     
 c             penetration in contact_cause(xxx,node). Return the penetration    
 c             and direction of contact for all shapes contacting this node.     
 c                                                                               
-         call contact_find_node ( node, pen_dist, pen_sign, normal )                       
+         call contact_find_node ( node, pen_dist, pen_sign, normal,
+     &                            found_contact)                       
 c                                                                               
 c             if no contact was found, cycle to next node.                      
 c                                                                               
-         if ( contact_cause(1,node).eq. 0 ) cycle                               
+         if( .not. found_contact ) cycle       
+c
+         count_nodes_active_contact = count_nodes_active_contact + 1
 c                                                                               
 c             contact has been found. We now must deal with the                 
 c             transformation of the node.  In order to improve the              
@@ -109,16 +113,16 @@ c
 c                  assess whether or not we can apply the nodal coordinate      
 c                  transformation.                                              
 c                                                                               
-         if ( trn(node) ) then                                                  
-            call errmsg (306, node, dums, dumr, dumd)                           
+         if( trn(node) ) then                                                  
+            call errmsg(306, node, dums, dumr, dumd)                           
             call die_abort                                                      
             stop                                                                
-         endif                                                                  
+         end if                                                                  
 c                                                                               
 c                  compute a transformation matrix for the node,                
 c                  if possible.                                                 
 c                                                                               
-         call contact_trnmat ( node, normal(1,contact_cause(1,node)),           
+         call contact_trnmat( node, normal(1,contact_cause(1,node)),           
      &        transmat, allow_trn )                                             
 c                                                                               
 c                  if transformation was found, then                            
@@ -126,12 +130,12 @@ c                  put transformation matrix for contacting
 c                  node into the general data structure for                     
 c                  all transformation matricies (trnmat).                       
 c                                                                               
-         if ( allow_trn ) then                                                  
+         if( allow_trn ) then                                                  
 c                                                                               
             trn(node) = .true.                                                  
             call allo_trnmat(node,1, dum)                                       
-            do i=1, 3                                                           
-               do j = 1,3                                                       
+            do i = 1, 3                                                           
+               do j = 1, 3                                                       
                   trnmat(node)%mat(i,j) = transmat(i,j)                         
                enddo                                                            
             enddo                                                               
@@ -139,9 +143,9 @@ c                  Modify all vectors that are
 c                  effected by a change in the transformation                   
 c                  matricies; u, du, idu, v, a, forces, etc.                    
 c                                                                               
-            call trn2all (node, 1)                                              
+            call trn2all( node, 1)                                              
 c                                                                               
-         endif                                                                  
+         end if                                                                  
 c                                                                               
 c             Now we need to compute the contact force contribution             
 c             from each valid contact shape. If we have more than one           
@@ -152,18 +156,18 @@ c
 c                 If this processor does not own the node, then                 
 c                 don't calculate the contact force.                            
 c                                                                               
-         if ( .not. owned ) then                                                
-            if (debug) write (*,*) myid,': ---->',node,                         
+         if( .not. owned ) then                                                
+            if( debug ) write (*,*) myid,': ---->',node,                         
      &           ' but I dont own it.'                                          
             cycle                                                               
-         endif                                                                  
+         end if                                                                  
 c                                                                               
 c                 Loop over the contact shapes.                                 
 c                                                                               
          do loop = 1, num_contact                                               
 c                                                                               
             cause = contact_cause(loop,node)                                    
-            if ( cause .eq. 0 ) exit                                            
+            if( cause .eq. 0 ) exit                                            
 c                                                                               
 c                    calculate the contact force normal to contact shape.       
 c                                                                               
@@ -173,7 +177,7 @@ c
 c                   if transformation is allowed, then rotate                   
 c                   force contribution to transformed coordinates.              
 c                                                                               
-            if ( allow_trn ) then                                               
+            if( allow_trn ) then                                               
 c                                                                               
                do i = 1, 3                                                      
                   do j = 1, 3                                                   
@@ -188,23 +192,25 @@ c                   is applied in global coordinates.
 c                                                                               
             else                                                                
 c                                                                               
-               do i=1, 3                                                        
+               do i = 1, 3                                                        
                   contact_force( dstmap(node)+i-1 ) =                           
      &                 contact_force( dstmap(node)+i-1 ) +                      
      &                 force * normal(i,cause)                                  
                enddo                                                            
 c                                                                               
-            endif                                                               
+            end if                                                               
 c                                                                               
          enddo                                                                  
 c                                                                               
 c               if debug, output calculated contact force.                      
 c                                                                               
-         if (debug) write (*,'(i2,": ---->",i7,4e13.6)')myid,node,              
+         if( debug ) write (*,'(i2,": ---->",i7,4e13.6)')myid,node,              
      &        pen_dist ( contact_cause (1,node)),                               
      &        (contact_force (dstmap(node)+i-1),i=1,3)                          
 c                                                                               
-      end do   ! over nonode                                                                
+      end do   ! over nonode 
+c
+      write(out,9100) count_nodes_active_contact                                                                  
 c                                                                               
 c               now reduce the contact_force vector and the nodal               
 c               transformation matrices caused by contact back to the           
@@ -212,18 +218,20 @@ c               root processor
 c                                                                               
       call wmpi_contact_gthr                                                    
 c                                                                               
-      if ( debug ) then                                                         
-         if ( root_processor) then                                              
-            write (*,*) '>> NONZERO CONTACT FORCE TERMS'                        
-            do i=1, nodof                                                       
-               if ( contact_force(i) .ne. zero ) then                           
-                  write (*,'(6x,i7,3x,e13.6)')i,contact_force(i)                
-               endif                                                            
+      if( debug ) then                                                         
+         if( root_processor) then                                              
+            write(*,*) '>> NONZERO CONTACT FORCE TERMS'                        
+            do i = 1, nodof                                                       
+               if( contact_force(i) .ne. zero ) then                           
+                  write(*,'(6x,i7,3x,e13.6)')i,contact_force(i)                
+               end if                                                            
             enddo                                                               
-         endif                                                                  
-      endif                                                                     
+         end if                                                                  
+      end if                                                                     
 c                                                                               
-      return                                                                    
+      return      
+c
+ 9100 format("       >> nodes in active contact: ",i7)                                                                    
       end                                                                       
 c                                                                               
 c                                                                               
@@ -300,7 +308,7 @@ c     *                      subroutine contact_find_node            *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 07/17/98                   *          
+c     *                   last modified : 10/23/23 rhd               *          
 c     *                                                              *          
 c     *        This routine checks a node against all contact        *          
 c     *        shapes to see if contact has occurred.  If more than  *          
@@ -311,44 +319,44 @@ c     *        penetration order in contact_cause.                   *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine contact_find_node ( node, pen_dist, pen_sign, 
-     &                               normal )                   
+      subroutine contact_find_node( node, pen_dist, pen_sign, 
+     &                              normal, found_contact )                   
       use global_data ! old common.main
 c                                                                               
       use main_data, only : crdmap, trn, trnmat                                 
       use contact                                                               
 c                                                                               
       implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
+c                                                                                                                                                              
       double precision :: pen_sign(*), new_pen_sign,                                                         
      &     pen_dist(*), zero, curr_coord(3),                                    
      &     normal(3,*), tmp_coord(3),                                           
      &     dumvec(3), new_dist, curr_normal(3), curr_dist,                      
      &     tmp_coord2(3)                                                        
-      logical debug, penetrated, found_entry, rebuild_norm, first,              
-     &     new_coords                                                           
-      dimension pen_list(maxcontact)                                            
-      integer i, node, j                                                        
-      data debug, zero /.false., 0.0/                                           
+      logical ::  debug, penetrated, found_entry, rebuild_norm, first,              
+     &            new_coords, found_contact                                                           
+      dimension :: pen_list(maxcontact)                                            
+      integer :: i, node, j                                                        
+      data debug, zero /.false., 0.0d0/                                           
 c                                                                               
 c             get coords of node, initialize vars for this node                 
 c                                                                               
-      call get_coords ( node, curr_coord )                                      
+      call get_coords( node, curr_coord )                                      
 c                                                                               
-      if ( debug) then                                                          
+      if( debug ) then                                                          
          write (*,*) '               >> check node ',node                       
          write (*,'(40x," init, u, du, coords:")')                              
-         do i=1,3                                                               
+         do i = 1, 3                                                               
             write (*,'(40x,4e13.6)') c(crdmap(node)+i-1),                       
      &           u(dstmap(node)+i-1),du(dstmap(node)+i-1),                      
      &           curr_coord(i)                                                  
          enddo                                                                  
-      endif                                                                     
+      end if                                                                     
 c                                                                               
-      num_pen = 0                                                               
+      num_pen = 0     
+      found_contact = .false.                                                          
 c                                                                               
-      do i=1, maxcontact                                                        
+      do i = 1, maxcontact                                                        
          pen_list(i) = 0                                                        
       enddo                                                                     
 c                                                                               
@@ -360,38 +368,41 @@ c                find penetration for this contact shape.
 c                if no penetration is found, then go to next shape.             
 c                                                                               
          call find_shape_contact( curr_coord, shape, pen_dist(shape),           
-     &        pen_sign(shape), penetrated, normal(1,shape), node )                               
-         if (.not. penetrated) cycle                                            
+     &        pen_sign(shape), penetrated, normal(1,shape), node )
+c                                    
+         if( .not. penetrated ) cycle                                            
 c                                                                               
 c                penetration has been found. Insert this shape into list of     
 c                penetrated shapes.  Sort the list so that smallest             
 c                penetration distance is first.                                 
 c                                                                               
          num_pen = num_pen + 1                                                  
-         if ( num_pen .eq. 1) then                                              
+         if( num_pen .eq. 1 ) then                                              
             pen_list(num_pen) = shape                                           
          else                                                                   
             found_entry = .false.                                               
-            do i=1, num_pen - 1                                                 
-               if ( pen_dist(pen_list(i)) .gt. pen_dist(shape)) then            
+            do i = 1, num_pen - 1                                                 
+               if( pen_dist(pen_list(i)) .gt. pen_dist(shape) ) then            
                   do j = num_pen, i+1 , -1                                      
                      pen_list(j) = pen_list(j-1)                                
                   enddo                                                         
                   pen_list(i) = shape                                           
                   found_entry = .true.                                          
                   exit                                                          
-               endif                                                            
+               end if                                                            
             enddo                                                               
-            if ( .not. found_entry ) pen_list(num_pen) = shape                  
-         endif                                                                  
+            if( .not. found_entry ) pen_list(num_pen) = shape                  
+         end if                                                                  
 c                                                                               
-      enddo                                                                     
+      enddo ! over do shape  for this node      
+      
+      
+      if( num_pen > 0 ) stop                                                       
 c                                                                               
 c             If no contact was found, return                                   
-c                                                                               
-      if ( num_pen .eq. 0) then                                                 
-         goto 9999                                                              
-      endif                                                                     
+c    
+      found_contact = num_pen > 0                                                                                  
+      if( num_pen .eq. 0 ) go to 9999                                                              
 c                                                                               
 c             print order of penetration shapes for debugging                   
 c                                                                               
@@ -715,7 +726,7 @@ c     *                      subroutine find_plane_contact           *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 07/17/98                   *          
+c     *                   last modified :10/23/23 rhd                *          
 c     *                                                              *          
 c     *         This routine determines if contact has occurred      *          
 c     *         on a subplane region.                                *          
@@ -723,18 +734,20 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine find_plane_contact( curr_coord, shape, pen_dist,               
-     &     penetrated, normal, node, debug )                                    
-      use global_data ! old common.main
+     &                               penetrated, normal, node, debug ) 
+c                                        
+      use global_data                                                                               
+      use contact     
+      use constants
+c                                                                
+      implicit none
+c       
+      integer :: shape, node                                                                        
+      double precision :: pen_dist, curr_coord(3), normal(3)
+      logical :: debug, penetrated                                              
 c                                                                               
-      use contact                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     pen_dist, zero, curr_coord(3), vprime(3), dot1, dot2,                
-     &     normal(3), mag1, mag2                                                
-      logical debug, penetrated                                                 
-      data zero /0.0/                                                           
+      integer :: i, j
+      double precision :: vprime(3), dot1, dot2, mag1, mag2                                                
 c                                                                               
 c                check if node is penetrating contact plane. Do this by the     
 c                following method:                                              
@@ -762,17 +775,17 @@ c
       pen_dist = zero                                                           
       do i = 1, 3                                                               
          vprime(i) = curr_coord(i) - ( cshape_pnt(i,shape) +                    
-     &        cshape_rate(i,shape)*dt )                                         
+     &               cshape_rate(i,shape)*dt )                                         
          pen_dist = pen_dist - cshape_norm(i,shape) * vprime(i)                 
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
 c                      if we haven't penetrated, exit                           
 c                                                                               
-      if (pen_dist .le. zero) goto 9999                                         
+      if( pen_dist .le. zero ) goto 9999                                         
 c                                                                               
 c                      check depth                                              
 c                                                                               
-      if (pen_dist .gt. contact_depth(shape)) goto 9999                         
+      if( pen_dist .gt. contact_depth(shape) ) goto 9999                         
 c                                                                               
 c                      we have penetrated plane. find dot1 and dot2 to          
 c                      see if we are in subplane.                               
@@ -786,18 +799,18 @@ c
          dot2 = dot2 + cplane_vec(i,2,shape) * vprime(i)                        
          mag1 = mag1 + cplane_vec(i,1,shape) ** 2                               
          mag2 = mag2 + cplane_vec(i,2,shape) ** 2                               
-      enddo                                                                     
+      end do                                                                     
       if ( dot1 .ge. zero .and. dot2 .ge. zero .and.                            
      &     dot1 .le. mag1  .and. dot2 .le. mag2 ) then                          
          penetrated = .true.                                                    
-         do i=1, 3                                                              
+         do i  =1, 3                                                              
             normal(i) = cshape_norm(i,shape)                                    
-         enddo                                                                  
-      endif                                                                     
+         end do                                                                  
+      end if                                                                     
 c                                                                               
  9999 continue                                                                  
 c                                                                               
-      if ( penetrated .and. debug) then                                         
+      if( penetrated .and. debug ) then                                         
          write (*,*) '           -> penetrating node: ',node                    
          write (*,*) '                dist,dot ratios:',                        
      &        pen_dist,dot1/mag1,dot2/mag2                                      
@@ -807,7 +820,7 @@ c
      &        (cshape_pnt(j,shape),j=1,3)                                       
          write (*,*) '                normal:',                                 
      &        (normal(j),j=1,3)                                                 
-      endif                                                                     
+      end if                                                                     
 c                                                                               
 c                                                                               
       return                                                                    
@@ -1675,17 +1688,15 @@ c     *        to a vector which ranges over the dofs in the model.  *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine trnnvec (trans, vec, node, nod_dof)                            
-      use global_data ! old common.main
-c                                                                               
+      subroutine trnnvec( trans, vec, node, nod_dof )                            
+      use global_data
+      use constants
       use main_data, only : trn, trnmat                                         
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     trans(mxndof,mxndof), vec(*), newvec(mxndof), zero                   
-      data zero /0.0/                                                           
+      implicit none
+c
+      integer :: node, i, j, nod_dof
+      double precision :: trans(mxndof,mxndof), vec(*), newvec(mxndof)                  
 c                                                                               
       do i = 1, nod_dof                                                         
          newvec(i) = zero                                                       
@@ -1716,17 +1727,16 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine dot_prod (vec1, vec2, dot)                                     
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     vec1(3), vec2(3), dot, zero                                          
-      integer i, j                                                              
-      data zero /0.0/                                                           
+c
+      use constants                                                                               
+c   
+      integer :: i                                                                            
+      double precision :: vec1(3), vec2(3), dot
 c                                                                               
       dot = zero                                                                
       do i = 1, 3                                                               
          dot = dot + vec1(i) * vec2(i)                                          
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
       return                                                                    
       end                                                                       
@@ -1744,19 +1754,15 @@ c     *        input vectors.                                        *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine cross_prod (vec1, vec2, vec_out)                               
+      subroutine cross_prod (vec1, vec2, vec_out)  
+c
+      implicit none                                   
+c                                                                                                                                                             
+      double precision :: vec1(3), vec2(3), vec_out(3)                                         
 c                                                                               
-c                                                                               
-      double precision                                                          
-     &     vec1(3), vec2(3), vec_out(3)                                         
-      data zero /0.0/                                                           
-c                                                                               
-      vec_out(1) = vec1(2)*vec2(3) -                                            
-     &     vec2(2)*vec1(3)                                                      
-      vec_out(2) = vec2(1)*vec1(3) -                                            
-     &     vec1(1)*vec2(3)                                                      
-      vec_out(3) = vec1(1)*vec2(2) -                                            
-     &     vec2(1)*vec1(2)                                                      
+      vec_out(1) = vec1(2)*vec2(3) - vec2(2)*vec1(3)                                                      
+      vec_out(2) = vec2(1)*vec1(3) - vec1(1)*vec2(3)                                                      
+      vec_out(3) = vec1(1)*vec2(2) - vec2(1)*vec1(2)                                                      
 c                                                                               
       return                                                                    
       end                                                                       
@@ -1773,19 +1779,19 @@ c     *        This routine normalizes an input vector.              *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine normalize (vec, mag)                                           
+      subroutine normalize( vec, mag )                                           
+c  
+      use constants
+c
+      implicit none                                                                                   
 c                                                                               
-c                                                                               
-      double precision                                                          
-     &     vec(3), zero, mag                                                    
-      integer i, j                                                              
-      data zero /0.0/                                                           
+      double precision :: vec(3), mag                                                    
 c                                                                               
       mag = sqrt ( vec(1)**2 + vec(2)**2 + vec(3)**2 )                          
 c                                                                               
-      do i=1, 3                                                                 
-         vec(i) = vec(i) / mag                                                  
-      enddo                                                                     
+      vec(1) = vec(1) / mag 
+      vec(2) = vec(2) / mag 
+      vec(3) = vec(3) / mag 
 c                                                                               
       return                                                                    
       end                                                                       
@@ -1796,57 +1802,61 @@ c     *                      subroutine get_coords                   *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 07/22/98                   *          
+c     *                   last modified : 10/23/2023 rhd             *          
 c     *                                                              *          
 c     *        This routine computes the current location of the     *          
 c     *        specified node in global coordinates.                 *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine get_coords ( node, curr_coord )                                
-      use global_data ! old common.main
+      subroutine get_coords ( node, curr_coord )   
+c                                   
+      use global_data                                                                               
+      use main_data, only : crdmap, trn, trnmat  
+      use constants                               
 c                                                                               
-      use main_data, only : crdmap, trn, trnmat                                 
-c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     curr_coord(3), u_new(3), du_new(3), zero                             
-      data zero /0.0/                                                           
+      implicit none
+c       
+      integer :: node
+      double precision :: curr_coord(3)
+c
+c              locals
+c      
+      integer :: j, i 
+      double precision :: u_new(3), du_new(3)
 c                                                                               
 c               if the node is currently using nodal transformation             
 c               coordinates, then rotate the current displacements and          
 c               increase in displacements back to global coordinates.           
 c                                                                               
-      if ( trn(node) ) then                                                     
+      if( trn(node) ) then                                                     
 c                                                                               
-         do i=1, 3                                                              
-            u_new(i) = zero                                                     
+         do i =1, 3                                                              
+            u_new(i)  = zero                                                     
             du_new(i) = zero                                                    
-            do j=1,3                                                            
+            do j = 1, 3                                                            
                u_new(i) = u_new(i) + trnmat(node)%mat(j,i) *                    
      &              u(dstmap(node)+j-1)                                         
                du_new(i) = du_new(i) + trnmat(node)%mat(j,i) *                  
      &              du(dstmap(node)+j-1)                                        
-            enddo                                                               
-         enddo                                                                  
+            end do                                                               
+         end do ! on i                                                                 
 c                                                                               
-      else                                                                      
+      else      
 c                                                                               
-         do i=1,3                                                               
-            u_new(i) = u(dstmap(node)+i-1)                                      
-            du_new(i) = du(dstmap(node)+i-1)                                    
-         enddo                                                                  
+         do i = 1, 3                                                               
+            u_new(i)  = u(dstmap(node)+i-1)                                      
+            du_new(i) = du(dstmap(node)+i-1)         
+         end do  ! on i                                                                 
 c                                                                               
-      endif                                                                     
+      end if                                                                     
 c                                                                               
 c               calculate current coordinates                                   
 c                                                                               
       do i = 1, 3                                                               
-         curr_coord (i) = c(crdmap(node)+i-1) +                                 
-     &        u_new(i) + du_new(i)                                              
-      enddo                                                                     
+         curr_coord(i) = c(crdmap(node)+i-1) +                                 
+     &                   u_new(i) + du_new(i)                                              
+      end do                                                                     
 c                                                                               
       return                                                                    
       end                                                                       

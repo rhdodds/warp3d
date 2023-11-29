@@ -146,7 +146,8 @@ c
       logical :: debug                                         
       double precision :: ave_del_poros, ratio, tfactor                                                         
       double precision, parameter ::  max_factor = 1.05d0,
-     &                                min_factor = 0.8d0            
+     &                                min_factor = 0.8d0, 
+     &                                max_tfactor = 2.0d0              
 c       
       debug = .false.                                                                       
       if( debug ) write (out,*) '   >>>>>> in gurson_load_factor'            
@@ -193,7 +194,9 @@ c         previous two steps has also been less than min_factor, then
 c         increase the loading.  Use the average of the ratios for the          
 c         last three steps to approximate what the new loading should be.       
 c         Only increase the loading if it hasn't been increased during the      
-c         last three steps. The max load increase is a factor of 2.             
+c         last three steps. The max load increase is a factor 
+c         of max_tfactor = <parameter>.   was 2.0 for a long time, maybe too
+c         large. run with 1.5 for a while.
 c                                                                               
 c         note: These expressions currently assume that the gurson model        
 c         does not have overshoot control. If it does, then that needs to       
@@ -215,11 +218,11 @@ c
 c               compute load factor                                             
 c                                                                               
             if( abs(ave_del_poros) .le. 1.0e-10 ) then                         
-              tfactor = two                                                     
+              tfactor = max_tfactor
             else                                                                
               tfactor = one / ( ave_del_poros / max_porosity_change )           
             end if                                                              
-            if( tfactor .gt. two ) tfactor = two                               
+            if( tfactor .gt. max_tfactor ) tfactor = max_tfactor
             write(out,9339) ave_del_poros,                                      
      &                      max_factor * max_porosity_change,                   
      &                      tfactor, perm_load_fact,                            
