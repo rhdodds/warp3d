@@ -199,7 +199,8 @@ c     *                subroutine oumodel_flat_patran                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/1/2017 rhd              *
+c     *                   last modified : 11/28/23 rhd               *
+c     *     fixed corner node mapping for warp3d -> patran 20-node   *
 c     *                                                              *
 c     *    output element information to flat file using the Patran  *
 c     *    convention for element type, node ordering.               *
@@ -222,8 +223,8 @@ c
       logical :: hex, tet, wedge, bar_elem, link_elem,
      &           interface_hex,  interface_tri,
      &           interface_elem, ldum1, ldum2, ldum3, ldum4, ldum5
-      data warp_to_pat_20 / 5,1,4,8,6,2,3,7,13,12,16,20,14,10,15,
-     &                     18,17,9,11,19 /
+      data warp_to_pat_20 / 1,2,3,4,5,6,7,8,9,10,11,12,
+     &                      17,18,19,20,13,14,15,16 / 
       data warp_to_wed15  / 1,2,3,4,5,6,7,8,9,13,14,15,10,11,12/
       data inter_tri12_to_wedge15 / 1,2,3,7,8,9,4,5,6,13,14,15 /
 c
@@ -379,7 +380,7 @@ c     *                      subroutine oumodel_flat_warp3d          *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/1/2017 rhd              *
+c     *                   last modified : 11/28/23 rhd               *
 c     *                                                              *
 c     *    output element information to flat file using the WARP3D  *
 c     *    convention for element type, node ordering.               *
@@ -485,7 +486,8 @@ c     *                      subroutine ouneut                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/1/2017 rhd              *
+c     *                   last modified : 11/28/23 rhd               *
+c     *     fixed corner node mapping for warp3d -> patran 20-node   *
 c     *                                                              *
 c     *    outputs a patran neutral file of the model including      *
 c     *    coordinates, incidences, element types, constraints       *
@@ -495,7 +497,7 @@ c
 c
 c
       subroutine ouneut( file_name )
-      use global_data ! old common.main
+      use global_data
       use main_data, only : incmap, incid, cnstrn_in
       implicit integer (a-z)
 c
@@ -517,8 +519,8 @@ c
      &           bar_elem, link_elem
       external :: warp3d_get_device_number
 c
-      data warp_to_pat_20 / 5,1,4,8,6,2,3,7,13,12,16,20,14,10,15,
-     &                     18,17,9,11,19 /
+      data warp_to_pat_20 / 1,2,3,4,5,6,7,8,9,10,11,12,
+     &                      17,18,19,20,13,14,15,16 / 
       data warp_to_wed15  / 1,2,3,4,5,6,7,8,9,13,14,15,10,11,12/
       data inter_tri12_to_wedge15 / 1,2,3,7,8,9,4,5,6,13,14,15 /
       data initialized_value /  32460.0 /
@@ -764,6 +766,3 @@ c
  9400 format('>> FATAL: could not find a unit number to write',
      & /     '          patran file. job aborted...',/)
       end
-
-
-
