@@ -992,6 +992,6 @@ c
       return
  9000 format(1x,a,' total applied load pattern factors through step: ',
      & i7 )
- 9010 format(6x,'> ',3(a12,' ',f12.7,2x))
+ 9010 format(6x,'> ',3(a12,' ',g12.5,2x))
  9020 format(//,"....  entered eqiv_out_patterns. now_step: ",i8)
       end
