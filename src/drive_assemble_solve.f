@@ -133,6 +133,11 @@ c
 c             => distributed assembly across MPI ranks followed by
 c                hypre or CPardiso solve.
 c
+c          Return if there is nothing to solve for
+      if (neqns .eq. 0) then
+        return
+      end if
+c
       call t_start_assembly( start_assembly_step )
       ntimes_assembly = ntimes_assembly + 1
       if( .not. parallel_assembly_used ) then
