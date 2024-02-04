@@ -35,7 +35,7 @@ c
 c                                                                               
 c         tell slaves we are about to assess contact                            
 c                                                                               
-      call wmpi_alert_slaves ( 29 )                                             
+      call wmpi_alert_slaves ( 29 ) 
 c                                                                               
 c          zero out all the contact forces.                                     
 c                                                                               
@@ -54,7 +54,8 @@ c          if we have supplied any transformation matrices for nodes
 c          undergoing contact, un-transform those nodes so that                 
 c          all references are in global coordinates.                            
 c                                                                               
-      call contact_remove(.false.)                                              
+      call contact_remove(.false.)
+c                                              
 c                                                                               
 c          loop over all nodes and check for contact                            
 c                                                                               
@@ -352,7 +353,7 @@ c
      &           curr_coord(i)                                                  
          enddo                                                                  
       end if                                                                     
-c                                                                               
+c        
       num_pen = 0     
       found_contact = .false.                                                          
 c                                                                               
@@ -361,12 +362,12 @@ c
       enddo                                                                     
 c                                                                               
 c             loop over all contact planes                                      
-c                                                                               
+c 
       do shape = 1, num_contact                                                 
 c                                                                               
 c                find penetration for this contact shape.                       
 c                if no penetration is found, then go to next shape.             
-c                                                                               
+c              
          call find_shape_contact( curr_coord, shape, pen_dist(shape),           
      &        pen_sign(shape), penetrated, normal(1,shape), node )
 c                                    
@@ -395,9 +396,7 @@ c
          end if                                                                  
 c                                                                               
       enddo ! over do shape  for this node      
-      
-      
-      if( num_pen > 0 ) stop                                                       
+!      if( num_pen > 0 ) stop                                                       
 c                                                                               
 c             If no contact was found, return                                   
 c    
