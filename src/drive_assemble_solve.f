@@ -4,7 +4,7 @@ c     *                                                              *
 c     *  assemble & solve linear equations for a Newton iteration    *
 c     *                                                              *
 c     *                       written by  : rhd                      *
-c     *                   last modified : 11/19/2019 rhd             *
+c     *                   last modified : 2/4/24 rhd                 *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -35,7 +35,7 @@ c                    locals
 c
       integer :: i, k, error_code, nnz, mkl_threads, num_enode_dof,
      &           num_struct_dof, iresult, itype, num_terms, i_offset,
-     &    eqn_num
+     &           eqn_num
       integer, save :: neqns, old_neqns, old_ncoeff
       integer, external :: curr_neqns
       integer :: code_vec(mxedof,mxvl), edest(mxedof,mxconn)
@@ -44,8 +44,9 @@ c
      &                              save_k_indexes(:), save_k_ptrs(:)
       logical :: new_size
       logical, save :: cpu_stats, save_solver
-      logical, parameter :: local_debug = .false.,
-     &     local_debug2 = .false., local_debug3 = .false.
+      logical, parameter :: local_debug =  .false.,
+     &                      local_debug2 = .false., 
+     &                      local_debug3 = .false.
 c
       real, external :: wcputime
       double precision, parameter :: zero = 0.0d00
@@ -133,6 +134,14 @@ c
 c             => distributed assembly across MPI ranks followed by
 c                hypre or CPardiso solve.
 c
+c                neqns == 0. user has fully constrained model. did not
+c                set minimum iters = 1.
+c
+      if( neqns == 0 ) then  
+         idu(1:nodof) = zero
+         return
+      end if   
+c      
       call t_start_assembly( start_assembly_step )
       ntimes_assembly = ntimes_assembly + 1
       if( .not. parallel_assembly_used ) then
