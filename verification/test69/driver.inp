@@ -110,7 +110,8 @@ test_69_PPR_particle
 *        check results problem 2   test_69ab_out
 *
 2                                 
-'> unit_axi        5.0000000  constraints    10.0000000'
+'> unit_axi       5.0000      constraints    10.000'
+
 '    63  '
 0
 0.473451E+01
@@ -128,7 +129,7 @@ test_69_PPR_particle
 *        check results problem 4   test_69ac_out
 *
 2  
-'> unit_axi        5.0000000  constraints    10.0000000'
+'> unit_axi       5.0000      constraints    10.000'
 '    62   '
 -1
 0.471995E+01
@@ -146,7 +147,7 @@ test_69_PPR_particle
 *        check results problem 6     test_69sa_out
 *
 2 
-'> unit_axi        5.0000000  constraints    10.0000000'
+'> unit_axi       5.0000      constraints    10.000'
 '    149  '
 -1
 0.412147E+01
@@ -164,7 +165,7 @@ test_69_PPR_particle
 *        check results problem 8    test_69ta_out
 *
 2    
-'> unit_axi        5.0000000  constraints    10.0000000'
+'> unit_axi       5.0000      constraints    10.000'
 '    107  '
 -1
 0.444265E+01
@@ -173,7 +174,7 @@ test_69_PPR_particle
 *        check results problem 9    test_69tb_out
 *
 2                                 
-'> unit_axi        5.0000000  constraints    10.0000000'
+'> unit_axi       5.0000      constraints    10.000'
 '    107  '
 -1
 0.442322E+01
@@ -233,8 +234,7 @@ test_69_PPR_particle
 *        check results problem 16    test_69_PPR_patch_shear
 *
 2  
-'> unit_ten        0.0000000  constraints    -0.0018209'
-
+'> unit_ten       0.0000      constraints  -0.18209E-02'
 'element    T-normal '
 2
 0.281979E+00
