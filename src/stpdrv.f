@@ -740,7 +740,7 @@ c     *                 subroutine stpdrv_J_cutoff_Kr                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/16/22 rhd               *
+c     *                   last modified : 4/11/24 rhd                *
 c     *                                                              *
 c     *       Adaptive load factors based on increments of Kr        *
 c     *       over load steps to capture early part of FADs          *
@@ -761,6 +761,22 @@ c
       Kr_diff = - ( Kr_now - Kr_last_step ) ! so we can use + values
       write(out,9100) Kr_last_step, -Kr_diff,
      &                -Kr_target_diff
+c
+c              if last Kr > 1.0 + tol, decrease the step size. This is
+c              likely a localized unloading situation on the crack front.
+c              when Kr > 1, J_el > J_total, where J_el is the scaled value
+c              from linear-elastic solution in load step 1. J_el > J_total
+c              (from the domain integral) is not realistic. It means
+c              J_total (domain) is decreasing due to near tip (elastic)
+c              unloading.
+c              Current scheme reduces next load steps size a small amount.
+c
+      if( Kr_now >= 1.005d0 ) then
+        Kr_load_factor = 0.9d0 ! small decrease in load step size
+        write(out,9120) Kr_load_factor
+        call stpdrv_J_adapt_scale_loads( now_step, Kr_load_factor  )
+        return
+      end if         
 c
 c              may want to increase load step sizes a bit. max increase
 c              factor 1.1 for now
