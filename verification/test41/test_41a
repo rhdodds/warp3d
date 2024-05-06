@@ -743,7 +743,7 @@ c
  nonlinear analysis parameters
    solution technique direct sparse
    maximum iterations 20
-   minimum iterations 1
+   minimum iterations 2
    convergence test norm res tol 0.01
    extrapolate on
    line search on details
