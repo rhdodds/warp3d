@@ -2002,7 +2002,7 @@ c
    convergence test norm res tol 0.5
    time step 0.001  $ converges really fast....
 c   time step 0.1 $ converges but much more slowly
-   trace solution on
+       trace solution on
 c
 c
    compute displacements for loading dead_live step 500
