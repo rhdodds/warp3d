@@ -1410,9 +1410,9 @@ c
 c****************************************************************
 c                                                               *
 c      subroutine to write j and i-integral data to             *
-c      standard output                                          *
+c      standard output: for a single crack front position       *
 c                    written by: mcw                            *
-c                 last modified: 1/2/23 rhd                     *
+c                 last modified: 5/7/24 rhd                     *
 c                                                               *
 c****************************************************************
 c
@@ -1452,7 +1452,9 @@ c
 c
       write(out,9000 )
 c
-c             write j-integral results to standard output
+c             write j-integral results to standard output for this
+c             crack front position.
+c             ====================================================
 c
       if( comput_j ) then
          write(out,9010)
@@ -1502,6 +1504,7 @@ c
       end if ! comput_j
 c
 c             write I-integral data to standard output
+c             ========================================
 c
       if( comput_i ) then
          write(out,9050)
@@ -1700,7 +1703,8 @@ c
          write(out,9125)
          if ( symmetric_domain ) write(out,9130)
          if ( rings_given ) write(out,9040)
-      end if
+c         
+      end if   !    compute interaction integrals
 c
       return
 c
@@ -1843,6 +1847,8 @@ c
 c
 c              during step 1, count the number of front positions
 c              at which J is computed. initialize other data.
+c              can't know the number of positions until J-calcs for step 1
+c              are completed.
 c
       if( now_step == 1 ) then
         if( J_cutoff_num_frnt_positions == 0 ) J_max_step_1 = -one
@@ -1851,8 +1857,11 @@ c
 c
 c              process J values at this front position. 
 c              J_now is average of domains at this front position for
-c              current step. J_cutoff_now_frnt_position set = 0
-c              for step in didriv.f
+c              current step based on the those domains (rings) used
+c              to get J . J_cutoff_now_frnt_position set = 0
+c              for step in didriv.f Tracks which front position being
+c              processed. The number of front positions to compute J 
+c              must always be the same at step 1.
 c     
       J_cutoff_now_frnt_position = J_cutoff_now_frnt_position + 1
 c
@@ -1915,7 +1924,7 @@ c
       J_max_now_step = -one
       local_count_exceeded = 0
 c
-      do i = 1, ifp   
+      do i = 1, ifp   !   number of front positions
         J_now = front_J_values(i)
         if( J_now > J_max_now_step ) then
              J_max_now_step = J_now
@@ -1927,7 +1936,7 @@ c
 c
 c               set globals used in stpdrv to decide about
 c               stopping solution or adaptive loading based on
-c               J increments at max location on front.
+c               J increments at ** max location on front **
 c
 c               J/Je > user-specified value .true. if that happens
 c               at location of max J on front. We then include count

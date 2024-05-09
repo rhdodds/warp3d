@@ -279,8 +279,8 @@ c          this and future load steps.
 c
 c          features:
 c
-c             - J_cutoff_active: monitor the maximum front value of 
-c                   J/J_elastic in each step. if value exceeds
+c             - J_cutoff_active: monitor the value of J/J_elastic at 
+c                   the local of maximum J in each step. if value exceeds
 c                   user limit, end job before starting this step.
 c                   optionally write a restart file.
 c
@@ -319,6 +319,11 @@ c
 c             The Kr-J adaptive step loading works only for load
 c             control simulations. All displacement constraints
 c             must = 0.
+c
+c             Solutions should *not* use the nlgeom formulation. After some
+c             amount of displacements, the equivalent force vector entries
+c             will no longer be proportional to those in load step 1. This
+c             invalidates scaling of KI in step 1 to step n.
 c  
 c          now_step is the step number we are about to compute
 c          displacements
@@ -553,8 +558,9 @@ c                we first examine the step change in J/J_elastic
 c                values once step 3 is completed, i.e., the first
 c                difference is ratio @ 3 - ratio @ 2.
 c
-c                J_cutoff_max_value: max J/Je value on front
-c                  the front location at which this value occurs
+c                J_cutoff_max_value: J/Je value at location on front
+c                  where J max occurs. Th
+c                  front location at which this value occurs
 c                  often moves during early loading as plastic
 c                  deformation evolves
 c                J_cutoff_exceeded (logical) set by di_process_J_cutoff
