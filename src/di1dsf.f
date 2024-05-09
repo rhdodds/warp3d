@@ -1958,7 +1958,7 @@ c
      &                      sqrt(one/front_J_ratios(i))
          end do
          write(out,9320) J_max_now_step, local_max_j_pos
-      end if
+      end if  
 c
       deallocate( front_J_values, front_J_ratios ) 
 c

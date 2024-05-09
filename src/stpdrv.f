@@ -544,7 +544,7 @@ c
 c
       integer :: now_step
 c
-      integer :: step_just_completed
+      integer :: step_just_completed  
       logical :: ldummy1, ldummy2, ratio_set,
      &           convergence_caused_reduction
       logical, parameter :: here_debug = .false. 
