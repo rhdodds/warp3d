@@ -15,16 +15,17 @@ cls
 ::   up the time to re-compile WARP3D.
 ::   See comments in Makefile_jom.bat to obtain jom.
 ::
-::   the same *.nmake file is used with the namek and jom programs.
+::   The same *.nmake file is used with the Makewarp.bat and Makewarp_jom.bat
+::   scripts.
 ::
 ::   This script builds a 64-bit version of WARP3D.
 ::   It must be executed from within a command shell that has environment
-::   variables initialed to use the 64-bit version of the Intel F-90
+::   variables initialed to use the 64-bit version of the Intel ifort
 ::   compiler suite which now inclues the MKL math library.
 ::
 ::   usage:     Makewarp.bat
 ::
-::   This set up works for Intel ifort compiler.
+::   This set up works *only* for Intel ifort compiler.
 ::
 :: ****************************************************************************
 ::

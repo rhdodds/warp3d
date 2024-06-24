@@ -6,7 +6,7 @@ cls
 ::
 ::                             Makewarp_jom.bat cmd file
 ::   
-::   Usage:   Makewarp_jom.bat exectured in a Command shell
+::   Usage:   Makewarp_jom.bat executed in a Command shell
 ::
 ::
 ::   This version requires jom.exe to support concurrent compiles using
@@ -17,20 +17,20 @@ cls
 ::   The WARP3D src/Makefile.windows.nmake works with both the usual 
 ::   "nmake" command and the "jom" replacement for nmake.
 :: 
-::   http://wiki.qt.io/Jom
+::   http://wiki.qt.io/Jom    where to find Jom
 ::
 ::   This script builds a 64-bit version of WARP3D.
 ::   It must be executed from within a command shell that has environment
-::   variables initialed to use the 64-bit version of the Intel F-90
+::   variables initialed to use the 64-bit version of the Intel ifort
 ::   compiler suite which now inclues the MKL math library.
 ::
-::   This set up works for Intel ifort compiler.
+::   This set up works ** only ** for Intel ifort compiler.
 ::
 :: ****************************************************************************
 ::
 ::
 ::       Location of the "jom" tool must be set here.
-::       Number of conccurrent compiles to be allowed
+::       Number of concurrent compiles to be allowed
 ::
 set jom_exe="c:\Users\rdodds\bin\jom_1_1_2\jom.exe"
 set jobs="7"
