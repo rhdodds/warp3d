@@ -1,27 +1,26 @@
 #!/bin/bash
 #
-#     Makewarp.bash (5th version)
+#     Makewarp.bash (6th version)
 #
-#     modified: July 2021
+#     modified: June 2024
 #
 #     Description:
 #
-#           Bash script to interactively drive compilation of Linux and Mac
+#           Bash script to interactively drive compilation of Linux and macOS
 #           versions of WARP3D.  For Windows, we print message and quit.
 #           Run in a Bash shell:  Makewarp.bash
 #
-#           Mac: only user selectable option is to use gfortran or Intel Fortran.
-#                script hunts down the MKL files, checks for versions
-#                of gfortran or Intel compilers, and runs the makefile
+#           Mac: no user selectable options.
+#                script hunts down the MKL files, checks for Intel compiler, 
+#                and runs the makefile
 #                to build the threads (OpenMP) executable.
 #
 #           Linux: .....  For
 #           Linux can either do that (simple mode) or prompt interactively for
 #           the libraries, compiler, etc.
 #
-#           Jan 2019. Now supports gfortran and Intel Fortran.
-#                     Uses (free) MKL library from Intel
-#
+#           June 2024. Remove support for gfortran. Intel comoiler stack isnow
+#                      available for free.
 #
 #      Main program (function) at bottom of this script
 #
@@ -33,25 +32,27 @@
 
 function select_Fortran_compiler
 {
-printf "\nSelect build compiler to use:\n"
-PS3="Select choice: "
-select opt in 'gfortran' 'Intel Fortran' 'Exit'
-do
-      case $REPLY in
-            1 )   printf "\n"
-                  GFORTRAN=yes
-                  INTEL_FORTRAN=no
-                  break
-                  ;;
-            2 )   printf "\n"
-                  GFORTRAN=no
-                  INTEL_FORTRAN=yes
-                  break
-                  ;;
-            3 )   exit 0
-                  ;;
-      esac
-done
+GFORTRAN=no
+INTEL_FORTRAN=yes
+#printf "\nSelect build compiler to use:\n"
+#PS3="Select choice: "
+#select opt in 'gfortran' 'Intel Fortran' 'Exit'
+#do
+#      case $REPLY in
+#            1 )   printf "\n"
+#                  GFORTRAN=yes
+#                  INTEL_FORTRAN=no
+#                  break
+#                  ;;
+#            2 )   printf "\n"
+#                  GFORTRAN=no
+#                  INTEL_FORTRAN=yes
+#                  break
+#                  ;;
+#            3 )   exit 0
+#                  ;;
+#      esac
+#done
 #
 return
 }
@@ -78,9 +79,9 @@ printf "Quitting...\n\n"
 exit 1
 }
 /bin/rm zqq03 >& /dev/null
-ifort --version >zqq03
+ifort --version -diag-disable=10448  >zqq03
 sed -i -e '2,10d' zqq03
-echo -e "\n ... Intel Fortran detected:" `cat zqq03`
+echo -e "\n ... Intel Fortran (ifort) detected:" `cat zqq03`
 count2=`grep "2021." zqq03 |wc -l`
 count3=`grep "2022." zqq03 |wc -l`
 /bin/rm zqq03*
@@ -100,39 +101,6 @@ if [ $ok -eq "0" ]; then
 fi
 #
 return
-}
-
-# ****************************************************************************
-#
-#   Function: Check gfortran exists and version 
-#
-# ****************************************************************************
-#
-function check_gfortran_setup
-{
-if [ "$GFORTRAN" = "no" ]; then
-    return
-fi
-#
-hash gfortran 2>&- || {
-  printf "[ERROR]\n"
-  printf "... Cannot find the gfortran compiler in your PATH.\n"
-  printf "Quitting...\n\n"
-  exit 1
-}
-#
-version=$(echo `gfortran --version` | cut -c 18-20)
-#
-if [ "$version" -lt "10" ]; then
-      printf "\n... ERROR: gfortran must be version 10 or newer"
-      echo -e  "\n...        you have version: " $version
-      printf "...        from:  gfortran --version"
-      printf "\n... Quitting...\n\n"
-      exit 1
-fi
-#
-return
-#
 }
 # ****************************************************************************
 #
@@ -275,7 +243,7 @@ do
                   printf "\n"
                   COMPILER=mpiifort
                   ALTCOMPILER=mpiifort
-                  MAKEFILE=Makefile.linux_Intel.mpi_omp
+                  MAKEFILE=Makefile.linux.mpi_omp
                   INTEL_FORTRAN=yes
                   MPIQ=yes
                   break
@@ -284,7 +252,7 @@ do
                   printf "\n"
                   COMPILER=ifort    # default
                   ALTCOMPILER=ifort
-                  MAKEFILE=Makefile.linux_Intel.omp
+                  MAKEFILE=Makefile.linux.omp
                   MPIQ=no
                   break
                   ;;
@@ -295,23 +263,7 @@ do
           esac
 done
 #
-if [ $OPT = "OpenMP" ]; then
-  select_Fortran_compiler
-  if [ $GFORTRAN = "yes" ]; then
-     COMPILER=gfortran
-     ALTCOMPILER=gfortran
-     MAKEFILE=Makefile.linux_gfortran.omp
-  fi
-fi      
 check_Intel_Fortran_setup
-check_gfortran_setup
-#
-# handle gfortran separately since only OpenMP available.
-#
-if [ $GFORTRAN = "yes" ]; then
-    compile_linux_gfortran_OpenMP
-    return
-fi      
 #
 # Intel Fortran for build OpenMP or MPI + OpenMP.
 #
@@ -391,10 +343,9 @@ function linux_simple
 ##
 # Just make hypre by default
 #
+      HYPQ=no
       if [ "$MPIQ" = "yes" ]; then
             HYPQ=yes
-      else
-            HYPQ=no
       fi
 #
 # Test existence of mpi compiler if required
@@ -460,53 +411,6 @@ function linux_advanced
 
 # ****************************************************************************
 #
-#     Function:   Compile WARP3D for linux using gfortran (OpenMP)
-#
-# ****************************************************************************
-
-function compile_linux_gfortran_OpenMP
-{
-#
-# Start by going through the packages and installing them if required
-#
-printf "... Building OpenMP Linux w/ gfortran ...\n"
-uninstall_mpi
-uninstall_hypre
-#
-# Setup the directory structure if required
-#
-if [ ! -d ../run_linux ]; then
-    mkdir ../run_linux
-    printf ">> Making run_linux directory...\n"
-fi
-if [ ! -d ../obj_linux_gfortran_omp ]; then
-    mkdir ../obj_linux_gfortran_omp
-    printf ">> Making obj_linux_gfortran_omp directory...\n"
-fi
-#
-#   prompt the user for the number of concurrent compile processes to use
-#
-printf " \n"
-read -p " > Number of concurrent compile processes allowed? (default 1): " JCOMP
-   [ -z "$JCOMP" ] && JCOMP=1
-#
-#   touch main program so it will always be re-compiled (will include compile
-#   date & time in warp3d hearder block)
-#
-touch main_program.f  
-#
-#   run the makefile for Linux. we now pass more parameters to the makefile
-#
-printf "... Starting make program for Linux  OpenMP w/ gfortran.... \n\n"
-echo "makefile: " $MAKEFILE
-make -j $JCOMP -f $MAKEFILE 
-#
-return
-}
-
-
-# ****************************************************************************
-#
 #     Function:   Compile WARP3D for linux
 #
 # ****************************************************************************
@@ -523,7 +427,7 @@ function compile_linux_Intel {
       else
             uninstall_mpi
       fi
-
+#
       if [ $HYPQ = "yes" ] ; then
             install_hypre
       else
@@ -537,13 +441,13 @@ function compile_linux_Intel {
             mkdir ../run_linux
             printf ">> Making run_linux directory...\n"
       fi
-      if [ ! -d ../obj_linux_Intel_omp ]; then
-            mkdir ../obj_linux_Intel_omp
-            printf ">> Making obj_linux_Intel_omp directory...\n"
+      if [ ! -d ../obj_linux_omp ]; then
+            mkdir ../obj_linux_omp
+            printf ">> Making obj_linux_omp directory...\n"
       fi
-      if [ ! -d ../obj_linux_Intel_mpi ]; then
-            mkdir ../obj_linux_Intel_mpi
-            printf ">> Making obj_linux_Intel_mpi directory...\n"
+      if [ ! -d ../obj_linux_mpi ]; then
+            mkdir ../obj_linux_mpi
+            printf ">> Making obj_linux_mpi directory...\n"
       fi
 #
 #   prompt the user for the number of concurrent compile processes to use
@@ -566,7 +470,7 @@ touch main_program.f
 
 #****************************************************************************
 #
-#     Function:   Global defaults and tests for MacOS  - OpenMP only
+#     Function:   Global defaults and tests for macOS - OpenMP only
 #
 # ****************************************************************************
 function mac_main
@@ -577,27 +481,7 @@ MKLQ=yes
 MPIQ=no
 HYPQ=no
 GFORTRAN=no
-INTEL_FORTRAN=no
-#
-printf "\nSelect build compiler to use:\n"
-PS3="Select choice: "
-select opt in 'gfortran' 'Intel Fortran' 'Exit'
-do
-      case $REPLY in
-            1 )   printf "\n"
-                  GFORTRAN=yes
-                  INTEL_FORTRAN=no
-                  break
-                  ;;
-            2 )   printf "\n"
-                  GFORTRAN=no
-                  INTEL_FORTRAN=yes
-                  break
-                  ;;
-            3 )   exit 0
-                  ;;
-      esac
-done
+INTEL_FORTRAN=yes
 #
 printf ".... Running a series of tests to ensure\n"
 printf ".... your system is correctly configured to build WARP3D.\n"
@@ -610,10 +494,8 @@ printf "[ERROR]\n"
 printf "This is not a Mac OS X system.\n Quitting...\n\n"
 exit 1
 fi
-
+#
 check_Intel_Fortran_setup
-check_gfortran_setup
-
 #
 # The MKL libraries must be present in WARP3D distribution directory
 #
@@ -628,10 +510,10 @@ fi
 #
 # Done with all checks. Looks good for a build process.
 }
-
+#
 # ****************************************************************************
 #
-# Function: Compile WARP3D for MAC OS X
+# Function: Compile WARP3D for macOS
 #
 # ****************************************************************************
 function compile_mac
@@ -639,8 +521,8 @@ function compile_mac
 #
 printf " \n"
 printf ".... This Mac appears configured properly to build WARP3D\n"
-printf ".... Compiling WARP3D for MacOS\n"
-printf ".... Installing WARP3D packages for MacOS..\n"
+printf ".... Compiling WARP3D for macOS\n"
+printf ".... Installing WARP3D packages for macOS..\n"
 #
 # modify source code to install or unistall WARP3D packages for Mac OS X.
 #
@@ -649,16 +531,10 @@ uninstall_mpi
 uninstall_hypre
 printf " \n"
 #
-#
 # setup the directory structure object and executable if required
 #
 mkdir ../run_mac_os_x 2> /dev/null
-if [ "$INTEL_FORTRAN" = "yes" ]; then
-   mkdir ../obj_mac_os_x_intel 2> /dev/null
-fi
-if [ "$GFORTRAN" = "yes" ]; then
-   mkdir ../obj_mac_os_x_gfortran 2> /dev/null
-fi
+mkdir ../obj_mac_os_x_intel 2> /dev/null
 #
 # prompt the user for the number of concurrent compile processes to use
 #
@@ -671,17 +547,11 @@ touch main_program.f   # so the compile date is always current
 #
 # run the makefile for Mac OS
 #
-printf "... Starting make program for MacOS.... \n"
+printf "... Starting make program for macOS.... \n"
 #
-if [ "$INTEL_FORTRAN" = "yes" ]; then
-  printf "... Note: ignore Linker messages: ipo: warning #11109: unable to ..."
-  printf "\n\n"
-  make  BUILD_SYS=Intel -j $JCOMP -f Makefile.osx
-fi
-if [ "$GFORTRAN" = "yes" ]; then
-  printf "\n\n"
-  make  BUILD_SYS=gfortran -j $JCOMP -f Makefile.osx
-fi
+printf "... Note: ignore Linker messages: ipo: warning #11109: unable to ..."
+printf "\n\n"
+make  BUILD_SYS=Intel -j $JCOMP -f Makefile.osx
 #
 }
 # ****************************************************************************
@@ -715,14 +585,12 @@ osx_mkl_dir=$WARP3D_HOME/OSX_MKL_files
 #
 printf "\nSelect supported platform:\n"
 PS3="Select choice: "
-select opt in 'Linux (64-bit)' 'Mac OS' 'Windows (7-10)' 'Exit'
+select opt in 'Linux (64-bit)' 'macOS (Intel)' 'Windows (10,11)' 'Exit'
 do
       case $REPLY in
             1 )   printf "\n"
                   linux_main
-                  if [ "$INTEL_FORTRAN" = "yes" ]; then
-                     compile_linux_Intel
-                  fi 
+                  compile_linux_Intel
                   break
                   ;;
             2 )   printf "\n"
