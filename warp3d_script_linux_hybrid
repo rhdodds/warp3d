@@ -1,0 +1,158 @@
+#!/bin/bash
+#
+#
+#    Run hybrid WARP3D on Linux (MPI + OpenMP) 
+#    Built with Intel Fortran (ifort) + MPI system
+#    ==============================================
+#
+#    Last updated: June 25, 2024 rhd
+#
+#    This bash script runs the "hybrid" version of WARP3D that
+#    includes MPI, OpenMP. The Intel MKL libraries
+#    are used by hypre, Pardiso, and Cluster Pardiso solvers.
+#
+echo " "
+echo ">> Running MPI + OpenMP (hybrid) version of WARP3D on Linux (64)..."
+echo " "
+#
+if [ $# != "2" ]; then
+echo ">> Usage:"; echo " "
+echo "  warp3d_script_linux_hybrid  <parms> ( < input ) ( > output )"; echo " "
+echo "      Requirements:"
+echo " "
+echo "        - model must have domain decomposition w/ domains assigned in blocking"
+echo "        - or automatic domain assignment in the blocking command"
+echo " "
+echo "      There are 2 parameters:"
+echo " "
+echo "      (1) number of MPI processes (ranks) = # domains defined in blocking"
+echo " "
+echo "      (2) number of OpenMP & MKL threads per rank (these will be set equal)"
+echo " "
+echo "      Guidelines:"
+echo "      -----------"
+echo "  "
+echo "       1. number of MPI ranks (NP) must = number of domains defined in model input"
+echo "          We recommend using NP = number of physical processors available"
+echo "          unless runs for testing purposes"
+echo " "
+echo "       2. number of OpenMP/MKL threads = number of cores to use on each rank"
+echo " "
+exit 1
+fi
+#
+if [ -z "$WARP3D_HOME" ]; then
+   printf "[ERROR]\n"
+   printf "... The environment variable WARP3D_HOME is not set.\n"
+   printf "... use Bash shell command: export WARP3D_HOME=... install directory...\n"
+   printf "Quitting...\n"
+   exit 1
+fi
+#
+#           set executable file for MPI + OpenMP. must exist and
+#           be executable
+#
+warp3d_exe="$WARP3D_HOME/run_linux/warp3d.mpi_omp"
+#
+if [[ ! -f "$WARP3D_HOME/run_linux/warp3d.mpi_omp" ]]
+then
+    echo " "; echo " "
+    echo ">>>> WARP3D executable does not exist:'$warp3d_exe'"
+    echo "     No execution possible"
+    echo " "; echo " "
+    exit
+fi
+if [[ ! -x "$WARP3D_HOME/run_linux/warp3d.mpi_omp" ]]
+then
+    echo " "; echo " "
+    echo ">>>> WARP3D executable must have execute permissions:'$warp3d_exe'"
+    echo "     No execution possible"
+    echo " "; echo " "
+    exit
+fi
+#
+#
+#           set LD_LIBRARY_PATH. Examine the ordering...
+#
+#           Note: at runtime, WARP3D will use the MKL library
+#                 files located in linux_packages/lib included in the
+#                 WARP3D distribution.
+#                 ** This applies even if you have the
+#                 ** Intel compiler system installed on your machine.
+#                 We distribute the most current versions of the
+#                 the required MKL libraries. These are backwards
+#                 compatible with older Intel processors.
+#
+#                 Intel makes this library freely available
+#
+#                 The Intel MPI system must be installed
+#
+export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH
+#
+export NUM_WARP3D_RANKS=$1
+export OMP_NUM_THREADS=$2
+export MKL_NUM_THREADS=$2
+#
+if [ $1 = "0" -o $2 = "0"  ]; then
+ echo " "
+ echo "[ERROR]"
+ echo " "
+ echo "... values for 2 parameters must be > 0 ..."
+ echo " "
+ echo "Quitting..."; echo " "
+ exit 1
+fi
+#
+mpirun --version > ./ztempx
+sed -i -e '2d' ./ztempx
+mpi2021=`grep "2021" ./ztempx | wc --lines`
+/bin/rm ./ztempx
+#
+#           increase the allowable size of the runtime stack. needed
+#           for MPI jobs that also use threads
+#
+ulimit -s 100000
+#
+#            set up for Intel MPI 2019 
+#
+if [ $mpi2021 -eq "1" ]; then
+  export MPI_TYPE_MAX=4096
+  export I_MPI_PIN_DOMAIN=omp
+  export I_MPI_FABRICS=shm:ofi
+  export I_MPI_DEBUG=1
+else
+  echo " "
+  echo ">>>  Must have Intel MPI 2021.x or newer"
+  echo ">>>  Execution not started "
+  exit 1
+fi  
+#
+#       touch core file and make it non-writable in case we dump
+#
+touch core &> /dev/null
+chmod ugo-rwx core
+#
+#       start WARP3D on each of the MPI processes using message
+#       passing based on shared memory
+#
+echo " Starting WARP3D with MPI + OpenMP hybrid execution..."
+echo "    o Number MPI processes:             " $NUM_WARP3D_RANKS
+echo "    o Number OpenMP threads each rank:  " $OMP_NUM_THREADS
+#
+# Let the OS sort out getting MPI daemons started
+#
+#
+mpirun -np $NUM_WARP3D_RANKS $WARP3D_HOME/run_linux/warp3d.mpi_omp
+#
+# Cleanup the core file (if it was created)
+#
+/bin/rm -f core
+exit
+
+
+
+
+
+
+
+
