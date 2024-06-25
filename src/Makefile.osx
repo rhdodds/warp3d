@@ -5,42 +5,35 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 7/11/23 rhd
+#   Last modifications: June 2024 rhd  (removed gfortran support)
 #
 #   How to run:
 #
-#       make BUILD_SYS=gfortran  -f Makefile.osx
+#       make -f Makefile.osx
 #
-#       make BUILD_SYS=Intel_Composer -f Makefile.osx
 #
 #   Description:
 #
 #     Build OMP version of WARP3D (64-bit) running on
-#     MacOS, Intel processors.
+#     macOS Ventura, Intel processors.
 #
-#     Build with either gfortran or Intel (Classic) Fortran.
+#     Build with Intel (Classic) Fortran: ifort
 #     Links with the (free) Intel MKL library to access the PARDISO
 #     solver and LAPACK/BLAS routines
 #
-#     Build tested with gfortran version 10+ and MKL 2021.3
-#     on MacOS 11.6.2 (Big Sur)
+#     Build tested with: macOS Ventura 13.4.1
+#     Intel ifort 2021.9.0 20230302
+#     Intel MKL 2023.1 20230303 (included with WARP3D distribution)
 #
 #     How we handle MKL libraries. The few required libraries are
 #     included in the WARP3D directory OSX_MKL_files.
 #     The build instructions below explicitly link these static
-#     libraries for both Intel and GNU Fortran. Uses of WARP3D
-#     on Mac (Intel) computers can thus run w/o the Intel compiler
-#     system installed.
-#
-#
+#     libraries. Users of WARP3D on Mac (Intel) computers can thus 
+#     run w/o the Intel compiler system installed.
 #
 #     Notes
 #
 #       1. Key compiler options:
-#           gfortran: we specify here -march=ivybridge
-#                     switch to -native if you want best performance
-#                     on your specific hardware
-#
 #           Intel: by default we use the compiler feature to
 #                  build instructions in the executable for all
 #                  processor types from ivybridge to current.
@@ -78,19 +71,12 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 4280
+BUILDNUM := 4300
 #
-ifeq  ($(BUILD_SYS), gfortran)
-  ODIR = ././../obj_mac_os_x_gfortran
-  EXE_NAME = warp3d_gfortran.omp
-  BUILD_FLAG := -Dgfortran
-  KMP_ERROR := KMP_ERROR    # temp fix for MKL 
-else
-  ODIR = ././../obj_mac_os_x_intel
-  EXE_NAME = warp3d.omp
-  BUILD_FLAG :=  
-  KMP_ERROR  := KMP_ERROR  # temp fix for MKL 
-endif
+ODIR = ././../obj_mac_os_x_intel
+EXE_NAME = warp3d.omp
+BUILD_FLAG :=  
+KMP_ERROR  := KMP_ERROR  # temp fix for MKL 
 #
 #                Define extension for relocatable object code files,
 #                macros for the remove command and the move command.
@@ -101,65 +87,37 @@ RMC      = rm -f
 MVC      = mv -f
 #
 #
-ifeq  ($(BUILD_SYS), gfortran) #   gfortran options
-  COMPILER = gfortran
-  OPENMP   =  
-  FTRAP    = 
-  FTRAP    = -ffpe-trap=zero,overflow -ffpe-summary=none
-  OPT_REPORT = 
-  OPT_REPORT =
-  INLINE   = 
-  INLINE   = -finline-small-functions  #   might be able to remove this restriction
-  PROFILE  = -pg
-  PROFILE  =
-  CHECKFLOAT =  
-  MINIMUM_MACHINE_TYPE = -march=ivybridge
-  HARDWARE_SPECIFIC = -march=native
-  MACHINE_TYPE = $(MINIMUM_MACHINE_TYPE)
-  FCOPTS   =  -O3 $(MACHINE_TYPE) -m64 -fbacktrace -ffixed-form  \
-              -fcray-pointer -fopenmp  \
-              -fdec -cpp $(FTRAP) $(INLINE)  $(CHECKFLOAT) -J$(ODIR) \
-              -w -fallow-argument-mismatch
-  OSX_LIBDIR = ../OSX_MKL_files
-  LINKOPS1  = -static-libgfortran ${OSX_LIBDIR}/libiomp5.a \
-              ${OSX_LIBDIR}/libmkl_intel_lp64.a \
-              ${OSX_LIBDIR}/libmkl_intel_thread.a \
-              ${OSX_LIBDIR}/libmkl_core.a 
-  LINKOPS   = $(LINKOPS1)
-else  #  Intel Fortran options
-  COMPILER = ifort 
-  OPENMP   = -qopenmp -reentrancy 
-  FTRAP    =
-  OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
-  OPT_REPORT =
-  INLINE   = -inline-level=0
-  INLINE   = -no-inline-factor
-  PROFILE  = -pg
-  PROFILE  = 
-  CHECKFLOAT = -init=snan,arrays -fp-speculation=safe 
-  CHECKFLOAT = -fp-speculation=safe
+COMPILER = ifort 
+OPENMP   = -qopenmp -reentrancy 
+FTRAP    =
+OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
+OPT_REPORT =
+INLINE   = -inline-level=0
+INLINE   = -no-inline-factor
+PROFILE  = -pg
+PROFILE  = 
+CHECKFLOAT = -init=snan,arrays -fp-speculation=safe 
+CHECKFLOAT = -fp-speculation=safe
 #
-  OSX_LIBDIR = ../OSX_MKL_files
-  LINKOPS2  = -static-intel -qopenmp-link=static \
-              ${OSX_LIBDIR}/libiomp5.a \
-              ${OSX_LIBDIR}/libmkl_intel_lp64.a \
-              ${OSX_LIBDIR}/libmkl_intel_thread.a \
-              ${OSX_LIBDIR}/libmkl_core.a \
-              -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib   
-#                ^^^ may not be needed on some MacOS versions
-  LINKOPS   = $(LINKOPS2) 
-  ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
-                         -align array64byte  -qopt-zmm-usage=high
-  ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
-                         -align array64byte  -qopt-zmm-usage=high
-  HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-  MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC)
+OSX_LIBDIR = ../OSX_MKL_files
+LINKOPS2  = -static-intel -qopenmp-link=static \
+            ${OSX_LIBDIR}/libiomp5.a \
+            ${OSX_LIBDIR}/libmkl_intel_lp64.a \
+            ${OSX_LIBDIR}/libmkl_intel_thread.a \
+            ${OSX_LIBDIR}/libmkl_core.a \
+            -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib   
+#                ^^^ may not be needed on some macOS versions
+LINKOPS   = $(LINKOPS2) 
+ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
+                       -align array64byte  -qopt-zmm-usage=high
+ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
+                       -align array64byte  -qopt-zmm-usage=high
+HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
+MACHINE_TYPE =  $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) #$(ALL_PROCESSORS)
 #
-  FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
-              $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
-              $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT)
-endif
-#
+FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
+            $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
+            $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT)
 #
 FOR      = $(COMPILER) $(FCOPTS) -D$(KMP_ERROR) -D$(OSNAME) 
 LINK     = $(COMPILER) $(FCOPTS)
@@ -458,39 +416,13 @@ $(OD)/main_program$O : main_program.f $(MODS) $(INCLUDES)
 #       ---  any .f files that require non-std compile options ------
 #            =================================================
 #
-ifneq  ($(BUILD_SYS), gfortran)
-    $(OD)/mm10_b$O : mm10_b.f  $(MODS) $(INCLUDES) 
+ $(OD)/mm10_b$O : mm10_b.f  $(MODS) $(INCLUDES) 
 	$(RMC)  $@
 	$(FOR) -inline-level=1  $< -c -o $@  # ifort has inline bug - ugh!
-endif
 #
 #       ---  Abaqus compatible user routines. Listed explicitly for clarity ------
 #            ==============================================================
 #
-ifeq ($(BUILD_SYS), gfortran) # gfortran
-  $(ODIR)/user_routines_module$O : user_routines_module.f
-	$(RMC)  $@
-	$(FOR)  $< -c -o $@
-
-  $(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O
-	$(RMC)  $@
-	$(FOR)  -fno-inline  $< -c -o $@
-
-  $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
-                                     $(OD)/user_routines_module$O
-	$(RMC)  $@
-	$(FOR)  $< -c -o $@
-
-  $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
-                               $(OD)/user_routines_module$O
-	$(RMC)  $@
-	$(FOR)  $< -c -o $@
-
-  $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
-                                $(OD)/user_routines_module$O
-	$(RMC)  $@
-	$(FOR)  $< -c -o $@
-else  # Intel Fortranr
   $(ODIR)/user_routines_module$O : user_routines_module.f
 	$(RMC)  $@
 	$(FOR)  $< -c -o $@
@@ -513,7 +445,6 @@ else  # Intel Fortranr
                                 $(OD)/user_routines_module$O
 	$(RMC)  $@
 	$(FOR)  $< -c -o $@
-endif
 #
 #
 #
