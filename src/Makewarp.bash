@@ -130,8 +130,6 @@ function install_mpi
         printf " > MPI source code already installed...\n"
      fi
 }
-
-
 # ****************************************************************************
 #
 #   Function: Uninstall MPI code
@@ -140,7 +138,7 @@ function install_mpi
 
 function uninstall_mpi
 {
-
+#
 #    Check to see if serial (dummy MPI) code is installed.
 #    If not, copy dummy versions of MPI code to current
 #    directory for serial execution.
@@ -533,8 +531,8 @@ printf " \n"
 #
 # setup the directory structure object and executable if required
 #
-mkdir ../run_mac_os_x 2> /dev/null
-mkdir ../obj_mac_os_x_intel 2> /dev/null
+mkdir ../run_macOS 2> /dev/null
+mkdir ../obj_macOS 2> /dev/null
 #
 # prompt the user for the number of concurrent compile processes to use
 #
@@ -551,7 +549,7 @@ printf "... Starting make program for macOS.... \n"
 #
 printf "... Note: ignore Linker messages: ipo: warning #11109: unable to ..."
 printf "\n\n"
-make  BUILD_SYS=Intel -j $JCOMP -f Makefile.osx
+make -j $JCOMP -f Makefile.osx
 #
 }
 # ****************************************************************************

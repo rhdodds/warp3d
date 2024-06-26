@@ -73,7 +73,7 @@
 OSNAME   := OSX
 BUILDNUM := 4300
 #
-ODIR = ././../obj_mac_os_x_intel
+ODIR = ././../obj_macOS
 EXE_NAME = warp3d.omp
 BUILD_FLAG :=  
 KMP_ERROR  := KMP_ERROR  # temp fix for MKL 
@@ -115,7 +115,7 @@ ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
 HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
 MACHINE_TYPE =  $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) #$(ALL_PROCESSORS)
 #
-FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
+FCOPTS   =  -O0 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
             $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
             $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT)
 #
@@ -391,8 +391,8 @@ OBJ =	 \
 #
 $(EXE_NAME) : $(OBJ)           # target is warp3d executable
 	$(LINK) $(OBJ) -o $@  $(LINKOPS)
-	$(MVC) $@ ./../run_mac_os_x/$@
-	chmod ugo+rx  ./../run_mac_os_x/$@
+	$(MVC) $@ ./../run_macOS/$@
+	chmod ugo+rx  ./../run_macOS/$@
 #
 #       ---  default rule to make .o from .f ------
 #            ===============================
