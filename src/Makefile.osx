@@ -115,7 +115,7 @@ ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
 HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
 MACHINE_TYPE =  $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) #$(ALL_PROCESSORS)
 #
-FCOPTS   =  -O0 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
+FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
             $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
             $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT)
 #
