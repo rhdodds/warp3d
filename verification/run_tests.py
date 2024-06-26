@@ -597,21 +597,13 @@ def initialize():
  if linux :
    continuation = ';'
    print(">>> Platform: Linux\n" )
-   choice = input(">>> Intel Fortran version (=0), GFortran version(=1):") 
-   if choice == "0" :
-    warp_name = '$WARP3D_HOME"/run_linux/warp3d_Intel.omp" '
-   if choice == "1" :
-    warp_name = '$WARP3D_HOME"/run_linux/warp3d_gfortran.omp" '
+   warp_name = '$WARP3D_HOME"/run_linux/warp3d.omp" '
    export_lib = 'export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH;'
 #
  if osx :
    continuation = ';'
-   print(">>> Platform: Mac OSX\n" )
-   choice = input(">>> Intel Fortran version (=0), GFortran version(=1):")
-   if choice == "0" :
-      warp_name ='$WARP3D_HOME"/run_mac_os_x/warp3d.omp" '
-   if choice == "1" :
-      warp_name ='$WARP3D_HOME"/run_mac_os_x/warp3d_gfortran.omp" '
+   print(">>> Platform: macOS\n" )
+   warp_name ='$WARP3D_HOME"/run_macOS/warp3d.omp" '
    export_lib = ""
       
  if cygwin :
