@@ -3,13 +3,14 @@
            Highest Level README File for WARP3D
            ====================================
 
-             Last Update: September 17, 2023
+             Last Update: June 26, 2024
 
-            Version 18.3.7 Build 4290 on all platforms
+            Version 18.4.0 Build 4300 on all platforms
 
-            Provides fixes/new features (again!)
-            and manual updates for Section 5.2 crack growth by
-            deletion of solid elements.
+            Provides minor fixes/new features (again!)
+            Removes all support for gfortran
+            Updates all build tools to use last version of
+            ifort on macOS (Intel) and 2021.13.0 on Linux and Windows
 
             See details in Revision History
 
@@ -34,38 +35,42 @@
               - usual bug fixes/code refactoring.
             See Revision History in manual.
 
-** See QuickStart documents on home page of: www.warp3d.net
+** The best place to start with WARP3D is the series of QuickStart documents
+** on home page of: www.warp3d.net
 
 The remaining information below provides a summary of the various
 directories in the WARP3D distribution for this interested in such details.
 
 This version of WARP3D is built with these compilers:
 
-  - Windows.  1 version ifort (IFORT) 2021.5.0 20211109
-
+  - Windows.  1 version ifort (IFORT) 2021.13.0
+  
   - Linux. 2 versions available
-           (1) ifort (IFORT) 2021.9.0 20230302 ** will not work with 19.1.3  
-           (2) GNU Fortran 11.4.0. should be fine on newer versions
+           (1) ifort (IFORT) 2021.13.0 for threads only parallel
+           (2) ifort (IFORT) 2021.13.0 and INtel MPI 2021.13.0  for
+               MPI + threads execution
 
-  - Mac OSX 2 versions available
-           (1) ifort (IFORT) 2021.9.0 20211109 ** will not work with 19.1.3  
-           (2) GNU Fortran (GCC) 10.2.0
+  - macOS. 1 version available. Requires Ventura
+          ifort (IFORT) 2021.9.0 20211109 ** will not work with 19.1.3  
+ 
 
    Python 3.5 and later for supporting codes (e.g. warp3d2exii)
 
 ** Late Breaking News **
 
- MacOS version runs *only* in Intel processor systems. Will *not* work
- at all on Apple Silicon machines.
+ macOS version runs *only* in Intel processor systems. Will *not* work
+ at all on Apple Silicon machines (the AVX512 instructions breaks Rosetta)
 
- WARP3D on MacOS will be deprecated likely in late 2024  or 2025.
+ Intel has removed all macOS tools from their download web site.
+ 
+ WARP3D on macOS will be deprecated likely in late 2024  or 2025.
  Intel has no plans to make their ifort compiler and MKL available 
  for Apple Silicon.
 
  Existing versions of WARP3D for Apple Intel should continue to run as
  before.
 
- Note the compiler updates for all platforms.
+ Note the compiler updates listed above for all platforms.
 
  Executables in the distribution and the default build process
  use the processor dependent dispatch feature of the Intel
@@ -76,7 +81,7 @@ This version of WARP3D is built with these compilers:
  the old ivybridge CPUs dating to 2011-2012.
  
  All test cases in the verification directory run correctly to completion
- on Windows, Linux, Mac OSX.
+ on Windows, Linux, macOS.
  
  Tied contact:
    An issue is now occurring occasionally when the "master" surface is tet
@@ -89,41 +94,22 @@ This version of WARP3D is built with these compilers:
   src  (a directory)
   ===
 
-  Fortran source code and processes to re-build the executables on each hardware
+  All Fortran source code and processes to re-build the executables on each hardware
   platform.
 
-  Linux and Mac OS users:
-     We provide a general building script, Makewarp.bash
-     which interactively guides you through the
-     building process for both threaded (OpenMP) and MPI+threaded versions.
-     use this for both Intel Fortran and gfortran builds. The script
-     asks you to select the compiler system.
-     **** This is the ONLY method you should use to build the code ****
-
-  Windows users:
-     We provide a general building script, Makewarp.bat
-     The is a bat file executed in a command shell and uses nmake
-     supplied as part of windows. Source files are compiled sequentially.
-     It compiles and binds a new executable using the Windows nmake program.
-     **** This is the ONLY method you should use to build the code ****
-     
-     The file Makewarp_jom.bat makes use of the Jom version of nmake which
-     compiles source files in parallel (much faster!). Install this tool
-     from https://wiki.qt.io/Jom.
-
-  Refer to the README file for each specific platform for full details on
-  re-building the code.
+  Refer to the QuickStart guide for WIndows, Linux, macOS for details to re-build the
+  executables.
 
 
   run_<platform>  (multiple directories)
   ==============
 
   Location for executable files. Our build scripts put them
-  in this directory. We distribute ready-to-run executables for Linux, Mac OS
+  in this directory. We distribute ready-to-run executables for Linux, macOS
   and Windows. The Makewarp.bash and Makewarp.bat scripts create the
   object and run directories as needed during the build process. Examples:
-  run_linux, run_mac_os_x,..
-  The Windows, Linux and MacOS executables support parallel execution using
+  run_linux, run_macOS,..
+  The Windows, Linux and macOS executables support parallel execution using
   threads (OpenMP) and shared-memory.
   Linux also supports parallel execution using a hybrid MPI + OpenMP framework.
   This executable is named warp3d.mpi_omp while the
@@ -140,14 +126,14 @@ This version of WARP3D is built with these compilers:
 
   The MPI version of WARP3D is not supported on Windows.
 
-  The Intel sparse solver (Pardiso) is included in these executables - both
+  The Intel sparse solver (Pardiso) is incorporated in these executables - both
   the direct and iterative options in Pardiso. Pardiso runs in parallel
   using threads if multiple cores are available.
 
   The Windows version of WARP3D uses OpenMP (threads) to achieve very efficient
   parallel execution.
 
-  Note: we continue to have issues on some Windows 7/8/10 machines with the
+  Note: we continue to have issues on some Windows machines with the
         system dll:  libiomp5md.dll
         We include a current version of this DLL in the run_windows_64
         directory.
@@ -163,35 +149,34 @@ This version of WARP3D is built with these compilers:
 
   Pre-compiled executables for WARP3D, patwarp, combine_mpi_results.
   Both threaded (OpenMP) and MPI + OpenMP versions are provided for WARP3D.
-  These have been built using Intel Fortran. The threads only executable
-  built with gfortran is included.
+  These have been built using Intel Fortran ifort and Intel MKL. 
 
-    a) To use the threads only version, no Intel compiler/MPI
+    a) To use the threads only version, *no* Intel compiler/MKL/MPI
        software is required to be installed on your system
 
     b) To use the MPI version, you must have Intel MPI runtime
-       software installed that provides the runtime setup for MPI jobs
+       software installed (/opt/Intel/mpi) that provides the runtime setup for MPI jobs
 
   WARP3D on Linux uses a number of shared libraries, including MKL, at run time.
   These are included with the WARP3D distribution and are located in the
-  directory linux_packages of the distribution.
+  directory linux_packages of the distribution. This removes the need for the user
+  to install the (v. large) MKL library.
 
   By using the latest shared MKL libraries included in the distribution on Linux,
   the highest performance on each type of hardware is reached w/o re-compiling.
   Intel permits re-distribution of these MKL libraries.
 
   To re-build the threaded WARP3D executable, you need the Intel Fortran compiler
-  suite or gfortran. To re-build the MPI + OpenMP threaded version, 
+  suite (ifort). To re-build the MPI + OpenMP threaded version, 
   the Intel MPI system must be installed.
 
-  run_mac_os_x  (a directory)
+  run_macOS  (a directory)
   ===========================
 
-  Pre-compiled executables for WARP3D, patwarp, combine_mpi_results.
-  These are built with Intel Fortran. The gfortran built executable is 
-  also included.
+  Pre-compiled executables for WARP3D, patwarp
+  These are built with Intel Fortran ifort and MKL.
 
-  The Mac OS version of WARP3D uses OpenMP (threads) to achieve very efficient
+  The macOS version of WARP3D uses OpenMP (threads) to achieve very efficient
   parallel execution.
 
   The Intel sparse solver (Pardiso) is included in these executables - both
@@ -200,8 +185,8 @@ This version of WARP3D is built with these compilers:
   The Intel Fortran compiler system is NOT required to use the ready-to-run
   executable provided is this directory.
 
-  To re-build the WARP3D executable, you need the Intel Fortran compiler
-  system or gfortran. The building process runs
+  To re-build the WARP3D executable, you need the Intel Fortran compiler (ifort)
+  system. The building process runs
   from the Terminal window via the Makewarp.bash script -- answer the
   questions.
 
@@ -213,14 +198,14 @@ This version of WARP3D is built with these compilers:
   the platform on which to compile.
 
   Note that each platform has a different compile script. Linux and
-  Mac OS have Bash scripts. Windows has a .bat file. The executables
+  macOS have Bash scripts. Windows has a .bat file. The executables
   are placed into the warp3d_project/run_<platform> directory.
 
-  MacOS and Windows require only the Intel Fortran compiler or gfortran.
+  macOS and Windows require only the Intel Fortran compiler (ifort).
 
   Linux also requires the C-compiler (gcc) to build Metis .o files. The
-  Intel Fortran compiler or gfortran compiler may be used for the Fortran
-  parts of patwarp
+  Intel Fortran compiler (ifort) is used for the Fortran
+  parts of patwarp.
 
   The patwarp program converts Patran neutral files for finite element
   models into WARP3D input files. It also supports definition of 9, 12,
@@ -251,12 +236,8 @@ This version of WARP3D is built with these compilers:
   exceptionally powerful tool (open source) with key visualization
   capabilities usable with minimal introduction to the program.
 
-  The Cubit program can use the database to access the FE model for
-  further meshing, re-meshing, new constraints, boundary conitions etc.
-
   The Python source code for warp3d2exII runs on Windows, Linux and
-  MacOS. A Python 3 environment on your machine will be
-  needed.
+  macOS. A Python 3 environment on your machine will be needed.
 
   The Quixckstart document for each platform describes how to obtain/install
   Python 3 if necessary.
@@ -288,9 +269,8 @@ This version of WARP3D is built with these compilers:
   ===========================
 
   Contains the freely distributed Intel MKL library files needed 
-  to rebuild and run WARP3D on Mac OS using Intel Fortran or
-  gfortran. The libraries are accessed during re-build and
-  execution (gfortran) and during execution (Intel Fortran).
+  to rebuild and run WARP3D on macOS using Intel Fortran (ifort). 
+  The libraries are accessed during re-build and execution.
 
   If you are building from the GitHub source, complete loading of 
   these libraries by running the bash shell script
@@ -316,7 +296,7 @@ This version of WARP3D is built with these compilers:
   warp3d_script_linux_openmp
   warp3d_script_linux_hybrid
   warp3d_script_windows
-  warp3d_script_mac_os_x  
+  warp3d_script_macOS 
   =================================
 
   Simple Bash-shell scripts that can be customized to run WARP3D for OpenMP
@@ -334,8 +314,14 @@ This version of WARP3D is built with these compilers:
   This is our key tool to verify most all of WARP3D after making
   source code changes.
 
-  There two Python 3 programs(run_tests.py, run_J_tests.py) to test
+  There are two Python 3 programs(run_tests.py, run_J_tests.py) to test
   threads only cases on all 3 platforms. 
+  
+  These are used on Windows and macOS, e.g. python3 run_tests.py
+  
+  For Linux, some additional setup is required before run_tests.py, run_J_tests.py
+  maybe run. Use the Scripts: run_test_Linux.bash, run_J_tests_Linux.bash
+  These in-turn invoke run_tests.py, run_J_tests.py
 
   The Bash shell script run_mpi_tests.bash runs on Linux to test the
   MPI version of WARP3D.
