@@ -22,5 +22,5 @@ To create a clone of the current development (but working) WARP3D system version
 % git clone https://github.com/rhdodds/warp3d  \<name for your copy of repository\>
 
 
-See the README file in the top-level distribution directory. There is a PowerPoint file for each
-platform to get started (Windows, Linux, Macs)
+See the README file in the top-level distribution directory. On the www.warp3d.net, there is a PowerPoint file for each
+platform to get started (Windows, Linux, Macs. There is also a PowerPoint file describing steps to build executable starting with the downloaded repository from this site.
