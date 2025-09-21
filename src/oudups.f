@@ -4,7 +4,7 @@ c     *                      subroutine oudups                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 8/30/23 rhd                *          
+c     *                   last modified : 8/4/25 rhd                 *          
 c     *                                                              *          
 c     *     gathers data for a block of elements to support          *          
 c     *     generation of a patran, packet or hard copy output.      *  
@@ -14,7 +14,8 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine oudups( span, felem, ngp, geonl, stress, is_cohesive )  
+      subroutine oudups( span, felem, ngp, geonl, do_stress, 
+     &                   is_cohesive )  
 c       
       use global_data, only : mxvl, nstr, nstrs, out
       use main_data, only : elems_to_blocks                                     
@@ -31,14 +32,14 @@ c
       implicit none                                                             
 c                                                                               
       integer, intent(in) :: span, felem, ngp                                               
-      logical, intent(in) :: geonl, stress, is_cohesive                                     
+      logical, intent(in) :: geonl, do_stress, is_cohesive                                     
 c                                                                               
 c             local declarations                                                
 c                                                                               
       integer :: blk, rel_elem, hist_size, hist_offset, rot_offset,             
      &           eps_offset, sig_offset, mxhist, mxngp, relem,
      &           element, elem_ptr                          
-      logical :: is_solid, process_blk                                                       
+      logical :: is_solid, process_blk, do_strains                                                       
       logical, parameter ::  local_debug = .false.                              
 c                                                                               
       blk         = elems_to_blocks(felem,1)                                    
@@ -48,12 +49,13 @@ c
       rot_offset  = (rel_elem-1)*9*ngp + 1                                      
       eps_offset  = (rel_elem-1)*nstr*ngp + 1                                   
       sig_offset  = (rel_elem-1)*nstrs*ngp + 1                                  
-      is_solid    = .not. is_cohesive                                           
+      is_solid    = .not. is_cohesive    
+      do_strains  = .not. do_stress                                       
 c                                                                               
       if( local_debug ) then                                                    
          write(out,*) '..... oudups....'                                        
          write(out,*) '....    span, felem, ngp, geonl, stress'                 
-         write(out,*) span, felem, ngp, geonl, stress                           
+         write(out,*) span, felem, ngp, geonl, do_stress                           
          write(out,*) '.... blk, rel_elm, eps_offset: '                         
          write(out,*) blk, rel_elem, eps_offset                                 
          write(out,*) '.... is_cohesive: ', is_cohesive                         
@@ -90,13 +92,10 @@ c
      &   call tanstf_gastr( rot_blk_n1,                                         
      &      rot_n1_blocks(blk)%ptr(rot_offset), ngp, 9, span )                  
 c                                                                               
-      if( stress ) then                                                         
-        call tanstf_gastr( urcs_blk_n,                                          
+      if( do_stress ) call tanstf_gastr( urcs_blk_n,                                          
      &         urcs_n_blocks(blk)%ptr(sig_offset), ngp, nstrs, span )           
-      else                                                                      
-        call tanstf_gastr( ddtse, eps_n_blocks(blk)%ptr(eps_offset),            
-     &         ngp, nstr, span )                                                
-      end if                                                                    
+      if( do_strains ) call tanstf_gastr( ddtse, 
+     &            eps_n_blocks(blk)%ptr(eps_offset), ngp, nstr, span )                                                
 c  
 c              for killed elements in block, zero local copy of results.
 c
@@ -110,9 +109,9 @@ c
          if( dam_state(elem_ptr) == 0 ) cycle ! element not yet killing
          call oudups_1( relem, elem_hist(1,1,1), ngp, 
      &                  mxhist, mxngp, hist_size, span, mxvl    )
-         if( stress) call oudups_2( relem, urcs_blk_n, ngp, 
+         if( do_stress) call oudups_2( relem, urcs_blk_n, ngp, 
      &                              nstrs, span, mxvl )      
-         if( .not. stress ) call oudups_2( relem, ddtse, ngp, 
+         if( do_strains ) call oudups_2( relem, ddtse, ngp, 
      &                                     nstr, span, mxvl )
       end do
 c
