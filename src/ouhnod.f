@@ -18,7 +18,9 @@ c
      &                   prec, ndof, hedtyp, elem, newel,
      &                   react_sums, noheader, react_totals_only,
      &                   write_to_packet, lsttyp )
-      use global_data ! old common.main
+      use global_data, only : out, nbeta, dt, dstmap, u, v, a, ifv,
+     &                        cstmap, mxvl, mxndof, mxedof, mxndel,
+     &                        du  
 c
       use main_data, only : trn, trnmat, mdiag, pbar, rload,
      &                      packet_file_no, temper_nodes,
