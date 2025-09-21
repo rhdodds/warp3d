@@ -4,7 +4,7 @@ c     *                      subroutine oumodel_flat                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 9/15/2014 rhd              *
+c     *                   last modified : 8/8/25 rhd                 *
 c     *                                                              *
 c     *    output a flat file describing the model with minimum      *
 c     *    info for use primarily by pat2exii to decrease runtime.   *
@@ -19,9 +19,12 @@ c
       subroutine oumodel_flat( user_file_name, text, stream,
      &                         compressed, warp3d_convention,
      &                         patran_convention  )
-      use global_data ! old common.main
+c     
+      use global_data, only : nonode, noelem, iprops, out, stname, c,
+     &                        nelblk, elblks  
       use main_data, only : incmap, incid
-      implicit integer (a-z)
+c      
+      implicit none
 c
 c         parameter declarations
 c
@@ -36,8 +39,9 @@ c
      &             convention_str*40
       character :: title*80, date_str*12, time_str*8
       logical   :: there, debug, connected, got_unit, ok
-      integer   :: next_char
-      external  :: warp3d_get_device_number
+      integer   :: next_char, out_file, start_extension, length_title,
+     &             node, k
+      integer, external :: warp3d_get_device_number
 c
       debug = .false.
 c
@@ -145,7 +149,6 @@ c
            write(out_file) c(k), c(k+1), c(k+2)
         end do
       end if
-c
 c
 c        7.  output element type, warp3d material number in the input
 c            and incidences
@@ -486,7 +489,7 @@ c     *                      subroutine ouneut                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/28/23 rhd               *
+c     *                   last modified : 8/8/25 rhd                 *
 c     *     fixed corner node mapping for warp3d -> patran 20-node   *
 c     *                                                              *
 c     *    outputs a patran neutral file of the model including      *
@@ -495,11 +498,13 @@ c     *                                                              *
 c     ****************************************************************
 c
 c
-c
       subroutine ouneut( file_name )
-      use global_data
+c      
+      use global_data, only : out, nonode, noelem, stname, c, iprops, 
+     &                        mxndof, dstmap 
       use main_data, only : incmap, incid, cnstrn_in
-      implicit integer (a-z)
+c      
+      implicit none
 c
 c              parameter declarations
 c
@@ -509,15 +514,16 @@ c              local declarations
 c
       character :: sdate_time_tmp*24, title*80, date_str*12,
      &             time_str*8, tmp_name*1000
-      double precision
-     &     initialized_value, con_values(3)
+      double precision :: initialized_value, con_values(3)
       integer :: con_flag(6), warp_to_pat_20(20), pat_incid(30),
-     &           warp_to_wed15(15), inter_tri12_to_wedge15(12)
+     &           warp_to_wed15(15), inter_tri12_to_wedge15(12), node,
+     &           index, elem, incptr, etype, num_enodes, config,
+     &           pat_etype, nlines, rel_pos, dof, i, x, id, out_neut
       logical :: constrained, there, debug, hex, tet, wedge,
      &           interface_hex, connected, got_unit, interface_tri,
      &           interface_elem, ldum1, ldum2, ldum3, ldum4, ldum5,
-     &           bar_elem, link_elem
-      external :: warp3d_get_device_number
+     &           bar_elem, link_elem, ok
+      integer, external :: warp3d_get_device_number
 c
       data warp_to_pat_20 / 1,2,3,4,5,6,7,8,9,10,11,12,
      &                      17,18,19,20,13,14,15,16 / 
