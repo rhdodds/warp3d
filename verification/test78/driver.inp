@@ -54,7 +54,7 @@ test_78
 *        check results problem 1
 *
 2                                
-' eng_dens            mises '
+' eng_dens             mises '
  '  343  '
 0
 105.246482
