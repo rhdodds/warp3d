@@ -288,7 +288,7 @@ c                   and opened.
 c
 c
       do
-        write(screen,9010)
+        write(screen,9010) 
         read(key,9020) packet_file_name
         call stripf( packet_file_name )
         if ( packet_file_name(1:1) .eq. ' ' ) then
@@ -313,7 +313,7 @@ c
      &  /,   ' *                                                  *',
      &  /,   ' *   WARP3D Packet Reader (example implementation)  *',
      &  /,   ' *                                                  *',
-     &  /,   ' *             Last updated: 5-12-2019              *',
+     &  /,   ' *             Last updated: 9-17-2025              *',
      &  /,   ' *                                                  *',
      &  /,   ' *                                                  *',
      &  /,   ' ****************************************************'
@@ -2133,7 +2133,7 @@ c
      &       '    sxy           syz           sxz         Uo      ',
      &       '    svm            c1             c2           c3      ',
      & /,21x,
-     &    '    I1            I2            I3           sig-1    ',
+     &    '    mean       triaxiality     Lode(xi)      sig-1    ',
      &    '    sig-2         sig-3         L1            M1      ',
      &    '      N1            L2            M2            N2      ',
      &    '      L3            M3           N3')
@@ -2200,7 +2200,7 @@ c
                      stop
                   end if
                   write(results_file_no,1000)step,elem,node,
-     &                                     (strain(i), i=1,7)
+     &                                     (strain(i), i=1,22)
             end do
 c
 c
@@ -2208,9 +2208,7 @@ c
       return
 c
  1000 format(1x,i5,1x,i5,1x,i5,1x,
-     &                      e14.6,e14.6,e14.6,
-     &                      e14.6,e14.6,e14.6,
-     &                      e14.6 )
+     &                      22(e14.6) )
  1200 format('  step   elem node/gpt',
      &       '    ex            ey            ez            ',
      &       'gxy           gyz           gxz         eff    ')
