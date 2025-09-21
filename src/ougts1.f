@@ -4,7 +4,7 @@ c     *                      subroutine ougts1                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 1/27/2017 rhd              *          
+c     *                   last modified : 8/4/2025 rhd               *          
 c     *                                                              *          
 c     *     transfer stresses or strains to simple data structure    *          
 c     *     for direct output. Handle transformations for geometric  *          
@@ -19,7 +19,8 @@ c
      &                   nowstep )                                              
       use elblk_data, only : ddtse, elestr, rot_blk_n1, urcs_blk_n,             
      &                       elem_hist                                          
-      use main_data, only : matprp, lmtprp, dmatprp                             
+      use main_data, only : matprp, lmtprp, dmatprp   
+      use constants                          
 c                                                                               
       implicit none                                                             
       include 'param_def'                                                       
@@ -43,9 +44,7 @@ c
       double precision :: qn(mxvl,nstr,nstr),  umat_props(50),                  
      &                    time, umat_statev(500), umat_stress(6),               
      &                    mat_vals(3)                                           
-      double precision, parameter :: zero = 0.d0,                               
-     &                               small_number = 1.0d-10,                    
-     &                               root3 = dsqrt(3.0d0)                       
+      double precision, parameter :: small_number = 1.0d-10                       
 c                                                                               
       do_strains = .not. do_stresses                                            
 c                                                                               
@@ -81,7 +80,8 @@ c
 c                                                                               
 c                       small strains                                           
 c                                                                               
-           do gpn = 1, ngp                                                      
+           do gpn = 1, ngp      
+!$omp simd                                                           
              do i = 1, span                                                     
                elestr(i,1,gpn) = ddtse(i,1,gpn)                                 
                elestr(i,2,gpn) = ddtse(i,2,gpn)                                 
@@ -154,6 +154,7 @@ c
 c                       bilinear mises model                                    
 c                                                                               
            do gpn = 1, ngp                                                      
+!$omp simd
               do i = 1, span                                                    
                 elestr(i,10,gpn) = elem_hist(i,2,gpn)*root3                     
                 elestr(i,9,gpn)  = urcs_blk_n(i,9,gpn)                          
@@ -167,6 +168,7 @@ c
 c                       power-law deformation plasticity model                  
 c                                                                               
            do gpn = 1, ngp                                                      
+!$omp simd
               do i = 1, span                                                    
                 elestr(i,9,gpn) =  urcs_blk_n(i,9,gpn)                          
                end do                                                           
@@ -177,6 +179,7 @@ c
 c                       general mises and gurson-tvergaard model                
 c                                                                               
            do gpn = 1, ngp                                                      
+!$omp simd
               do i = 1, span                                                    
                 elestr(i,9,gpn)  = elem_hist(i,1,gpn) !urcs_blk_n(i,9,gpn)                          
                 elestr(i,10,gpn) = elem_hist(i,2,gpn)                           
@@ -249,6 +252,7 @@ c
       case (10 )                                                                
 c                                                                               
           do gpn = 1, ngp                                                       
+!$omp simd
               do i = 1, span                                                    
                 elestr(i,9,gpn)  = urcs_blk_n(i,7,gpn) -                        
      &                             urcs_blk_n(i,8,gpn)                          
@@ -267,6 +271,7 @@ c                 here we set the porosity to be equal to a small number
 c                 so that patran will print the non-gurson elements.            
 c                                                                               
            do gpn = 1, ngp                                                      
+!$omp simd
               do i = 1, span                                                    
                 elestr(i,11,gpn) = small_number                                 
               end do                                                            
@@ -285,7 +290,7 @@ c     *             subroutine ou_get_spatial_from_material          *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 7/30/2014 rhd              *          
+c     *                   last modified : 8/4/2025  rhd              *          
 c     *                                                              *          
 c     *     transforms deformation rate d -> spatial rate D.         *          
 c     *     can be used for increments \Delta d -> \Delta D          *          
@@ -299,7 +304,8 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine ou_get_spatial_from_material( span, spatial_strain,            
-     &                                         R, material_strain )             
+     &                                         R, material_strain )  
+      use constants           
       implicit none                                                             
       include 'param_def'                                                       
 c                                                                               
@@ -325,7 +331,6 @@ c
       integer :: i                                                              
       double precision :: rt(mxvl,3,3), t(mxvl,3,3), d(mxvl,3,3),               
      &                    Deps(mxvl,3,3)                                        
-      double precision, parameter ::  half = 0.5d0, two = 2.0d0                 
 c                                                                               
       do i = 1, span                                                            
 c                                                                               
