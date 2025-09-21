@@ -13,8 +13,9 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine outfil                                                         
-      use global_data ! old common.main
-      use file_info                                                             
+c
+      use global_data, only : out
+      use file_info, only : outing, outlun                                                              
       implicit none                                                             
 c                                                                               
       integer :: dum, filchr, ierror, iunit, istat                                            
