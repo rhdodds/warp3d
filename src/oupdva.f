@@ -15,7 +15,8 @@ c     ****************************************************************
 c                                                                               
       subroutine oupdva( dva, oubin, ouasc, flat_file, stream_file,             
      &                   text_file, compressed  )                               
-      use global_data ! old common.main
+      use global_data, only : mxvl, mxndof, mxedof, mxndel, nonode,
+     &                        iprops, u, dstmap
 c                                                                               
       use main_data, only : trn, trnmat, inverse_incidences                     
       implicit none                                                             
