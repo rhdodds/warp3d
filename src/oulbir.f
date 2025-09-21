@@ -4,24 +4,25 @@ c     *                      subroutine oulbir                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 05/05/89                   *          
+c     *                   last modified : 8/8/25 rhd                 *          
 c     *                                                              *          
-c     *     this subroutine sets the label type and corresponding    *          
+c     *     sets the label type and corresponding                    *          
 c     *     dof labels for a node for internal forces or residual    *          
 c     *     loads output if the above has not already been set, and  *          
 c     *     checks the current node against the above if not.        *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
-      subroutine oulbir( ir, hedtyp, lbltyp, type, elem, doflbl )               
-      implicit integer (a-z)                                                    
-      character(len=8) :: doflbl(*)                                             
+c                                                                                                                                                              
+      subroutine oulbir( ir, hedtyp, lbltyp, type, elem, doflbl )  
+c                   
+      implicit none
+c     
+      integer :: ir, lbltyp, type, elem 
+      character(len=8)  :: doflbl(*)                                             
       character(len=20) :: hedtyp                                               
-      real dumr                                                                 
-      double precision                                                          
-     &     dumd                                                                 
+      real :: dumr                                                                 
+      double precision :: dumd                                                                 
       character :: dums                                                         
 c                                                                               
 c                       branch on element type.                                 
