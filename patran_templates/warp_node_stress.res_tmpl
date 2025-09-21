@@ -63,22 +63,22 @@ COLUMN = 11
 PRI = Stress
 SEC = C3-Mat val (f)
 
-/* stress invariants */
+/* triaxiality and Lode */
 
 TYPE = scalar
 COLUMN = 12
 PRI = Stress
-SEC = stress invariant 1
+SEC = mean
 
 TYPE = scalar
 COLUMN = 13
 PRI = Stress
-SEC = stress invariant 2
+SEC = triaxiality
 
 TYPE = scalar
 COLUMN = 14
 PRI = Stress
-SEC = stress invariant 3
+SEC = Lode(xi)
 
 /* prinicpal stresses */
 
