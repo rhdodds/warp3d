@@ -4,8 +4,7 @@ c     *                      subroutine ouhdva                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   modified :    10/29/2012 rhd               *          
-c     *                   packet mods : 11/17/00 jp                  *          
+c     *                   modified :    8/8/25 rhd                   *          
 c     *                                                              *          
 c     *     drive hardcopy and binary packet output for the          *          
 c     *     displacements, velocities, accelerations, reactions,     *          
@@ -19,26 +18,30 @@ c
       subroutine ouhdva( lsttyp, dva, wide, eform, prec, intlst,                
      &                   lenlst, noheader, react_totals_only,                   
      &                   out_packet_now  )                                      
-      use global_data ! old common.main
+c
+      use global_data, only : nonode, iprops, ltmstp, noelem,
+     &                        mxndof, out
+      use constants
 c                                                                               
       use main_data, only : incmap, incid, output_packets,                      
      &                      packet_file_no, inverse_incidences,                 
      &                      inverse_dof_map                                     
 c                                                                               
-      implicit integer (a-z)                                                    
-      logical wide, eform, prec, noheader, react_totals_only,                   
-     &        out_packet_now                                                    
-      dimension intlst(*)                                                       
+      implicit none
+c                                                          
+      logical :: wide, eform, prec, noheader, react_totals_only,                   
+     &           out_packet_now                                                    
+      integer :: lsttyp, dva, intlst(*), lenlst, nnode                                                      
 c                                                                               
 c                        local declarations                                     
-c                                                                               
+c               
+      integer :: lnum, pgnum, lbltyp, local_count, icn, iplist, node, 
+     &           elem, elnod, type, ndof, incptr, pkttype                                                               
       character :: doflbl(mxndof)*8, dums*1                                     
       character(len=20) :: hedtyp                                               
-      logical newel, write_to_packet                                            
-      real dumr                                                                 
-      double precision                                                          
-     &     dumd, zero, react_sums(3)                                            
-      data zero / 0.0d00 /                                                      
+      logical :: newel, write_to_packet                                            
+      real ::dumr                                                                 
+      double precision :: dumd, react_sums(3)                                            
 c                                                                               
 c                       initialize parameters controlling output.               
 c                                                                               
