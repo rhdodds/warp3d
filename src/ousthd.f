@@ -4,7 +4,7 @@ c     *                      subroutine ousthd                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 03/11/13 rhd               *
+c     *                   last modified : 8/7/25 rhd                 *
 c     *                                                              *
 c     *     prints the headers on a new page of output               *
 c     *     put for output of stress or strain and their related     *
@@ -16,13 +16,18 @@ c
 c
       subroutine ousthd( pgnum, lnum, hedtyp, loctyp, strlbl, newhed,
      &                   nitm, nl, nstrou, fmtyp, noheader )
-      use global_data ! old common.main
-      implicit integer (a-z)
-      logical newhed, noheader
+      use global_data, only : out,stname, ltmstp, lsldnm
+      implicit none
+c      
+      integer :: pgnum, lnum, nitm, nl, nstrou, fmtyp
+      logical :: newhed, noheader 
       character(len=8) :: strlbl(*)
       character(len=*) :: hedtyp
       character(len=4) :: loctyp
       character(len=1) :: formfeed
+c
+      integer :: i, strt, fnsh, cl
+           
 c
       if ( noheader ) then
         newhed = .false.
