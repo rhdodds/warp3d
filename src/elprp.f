@@ -459,7 +459,7 @@ c     *                      subroutine elprp1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 7/10/01                    *
+c     *                   last modified : 9/21/2025 rhd              *
 c     *                                                              *
 c     *     this subroutine places the properties of the q3disop el- *
 c     *     ement given into global storage.                         *
@@ -468,7 +468,7 @@ c     ****************************************************************
 c
 c
       subroutine elprp1( elem, type )
-      use global_data ! old common.main
+      use global_data 
       use main_data
       use segmental_curves
       implicit integer (a-z)
@@ -499,20 +499,30 @@ c                       an interface damage material
 c
 c
 c                       store data concerning the order of integration.
-c                       the default value is 2x2x2. the other
-c                       ordering permitted is the 14 pt rule.
+c                       the default value is 2x2x2. 
+c                       see param_def, value of mxgp -- maximum number
+c                       of allowed integration points. Set the sizes for
+c                       many static and allocated arrays. usually set = 
+c                       14 for 20-node brick.
 c
       intord = elstor(3,elem)
 c
       if( intord.eq.id_defa.or.intord.eq.id_o222 ) then
-         iprops(5,elem) = 8
+         iprops(5,elem) = 8  ! integration order
          iprops(6,elem) = 8
       else if( intord.eq.id_o14p ) then
-         iprops(5,elem) = 9
+         iprops(5,elem) = 9  ! integration order
          iprops(6,elem) = 14
       else if( intord.eq.id_o09p ) then
-         iprops(5,elem) = 2
+         iprops(5,elem) = 2  ! integration order
          iprops(6,elem) = 9
+      else if( intord.eq.id_o333 ) then
+         iprops(5,elem) = 1  ! integration order
+         iprops(6,elem) = 27
+         if( mxgp < 27 ) then 
+            num_error = num_error + 1
+            write(out,9000) mxgp
+         end if
       else
          param = elem
          call errmsg(33,elem,dums,dumr,dumd)
@@ -683,6 +693,10 @@ c
       call elem_set_segmental( elem, matnum )
 c
       return
+c      
+ 9000 format(/1x,'>>>>> FATAL ERROR: max allowable integration ',
+     &   'points:',i7//)
+c      
       end
 c     ****************************************************************
 c     *                                                              *
