@@ -4,7 +4,7 @@ c     *                      subroutine ouhstr                       *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 3/22/21 rhd                *          
+c     *                   last modified : 9/17/2025 rhd              *          
 c     *                                                              *          
 c     *     drive output of element strains/stresses to printed      *          
 c     *     hardcopy and/or to packets files                         *          
@@ -33,8 +33,7 @@ c
      &           num_int_points, output_loc, additional, 
      &           cohes_pkt_offset, pkt_type, lnum, pgnum, lbltyp,
      &           span, blk, rel_elem, int_order, mat_type, totdof,
-     &           num_short_stress, num_short_strain, cohesive_type,
-     &           felem, num_enode_dof
+     &           cohesive_type, felem, num_enode_dof
       character(len=8) :: strlbl(30), hedtyp*30                                 
       real :: dumr                                                                 
       double precision :: dumd                                                                 
@@ -69,7 +68,7 @@ c
              if( at_center )  additional = 1                                    
              cohes_pkt_offset = 16                                              
           else   ! solid element                                                
-             if( at_enodes  ) additional = num_enodes                           
+             if( at_enodes ) additional = num_enodes                           
              if( at_center ) additional = 1                                     
              if( at_intpts ) additional = num_int_points                        
           end if                                                                
@@ -113,8 +112,6 @@ c
         nodpts_flg        = output_loc .eq. 2                                   
         center_output     = output_loc .eq. 3                                   
         if( out_packet_now ) long_out_flg = .true.                              
-        num_short_stress  = 11                                                  
-        num_short_strain  = 7                                                   
         cohesive_type     = iprops(27,elem)                                     
         cohesive_elem     = cohesive_ele_types(elem_type)   
         bar_elem          = bar_types(elem_type)
@@ -143,7 +140,7 @@ c
      &       int_order, num_int_points, num_enodes, center_output,              
      &       do_stress, mat_type, cohesive_type, wide, eform,                   
      &       prec, lnum, pgnum, lbltyp, strlbl, hedtyp,  noheader,             
-     &       out_packet_now, geo_non_flg )                                      
+     &       out_packet_now, geo_non_flg, long_out_flg )                                      
           cycle                                                                 
         end if
 c        
@@ -182,14 +179,12 @@ c
      &                num_int_points, num_enodes,                               
      &                geo_non_flg, long_out_flg,                                
      &                nodpts_flg, do_stress, mat_type,                          
-     &                center_output, num_short_stress,                          
-     &                num_short_strain )                                        
+     &                center_output )
 c                                                                               
        call ouhprn(  elem, elem_type, num_int_points,                          
      &                num_enodes, long_out_flg,                                 
      &                nodpts_flg, do_stress, wide, eform, prec,                 
      &                lnum, pgnum, lbltyp, strlbl, hedtyp,                      
-     &                num_short_stress, num_short_strain,                       
      &                center_output, geo_non_flg, noheader,                     
      &                out_packet_now )                                          
 c                                                                               
