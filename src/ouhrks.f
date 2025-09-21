@@ -5,25 +5,31 @@ c     *                      subroutine ouhrks                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/1/2103 rhd               *
+c     *                   last modified : 9/17/2025 rhd              *
 c     *                                                              *
-c     *     this subroutine drives the computaion of the necessary   *
-c     *     stress or strain hard copy output quantities for a block *
-c     *     of non-conflicting, similar elements.                    *
+c     *     drives the computation of stress or strain hard copy     *
+c     *     output quantities for a block  of elements               *
 c     *                                                              *
 c     ****************************************************************
 c
 c
       subroutine ouhrks( span, blk, felem, type, order,
-     &                   ngp, nnode,
-     &                   geonl, long, nodpts, do_stresses,
-     &                   mat_type, center_output, num_short_stress,
-     &                   num_short_strain )
-      use global_data ! old common.main
-      implicit integer (a-z)
-      logical do_stresses, geonl, long, nodpts, center_output
-      double precision ::  nowtime
-
+     &                   ngp, nnode, geonl, long, nodpts, do_stresses,
+     &                   mat_type, center_output )
+c     
+      use global_data, only : iprops, out, mxvl, ltmstp,
+     &                        total_model_time
+      use output_value_indexes, only : num_short_strain, 
+     &                                 num_short_stress
+c
+      implicit none
+c      
+      integer :: span, blk, felem, type, order, ngp, nnode,
+     &           mat_type
+      logical :: do_stresses, geonl, long, nodpts, center_output
+      double precision :: nowtime
+c
+      integer :: matnum, kout, nowstep, op_code      
 c
 c                       get the element stresses or strains
 c                       into a final form.
@@ -32,11 +38,10 @@ c                       from the unrotated cauchy stresses; the
 c                       strains are accumulated spatial deformation
 c                       increments.
 c
-
-      matnum = iprops(38,felem)  ! common.main
-      kout = out                 !   "
-      nowtime = total_model_time !   "
-      nowstep = ltmstp           !   "
+      matnum = iprops(38,felem)  
+      kout = out                 
+      nowtime = total_model_time 
+      nowstep = ltmstp           
 c
       call ougts1( span, blk, felem, do_stresses, ngp,
      &             geonl, mat_type, matnum, kout, nowtime, nowstep )
@@ -44,10 +49,8 @@ c
 c                       for output at element center, make
 c                       all gauss points have the average values.
 c
-      if ( center_output ) then
-        call oumkcv( span, ngp, do_stresses, num_short_stress,
-     &               num_short_strain )
-      end if
+      if( center_output ) call oumkcv( span, ngp, do_stresses, 
+     &                       num_short_stress, num_short_strain )
 c
 c                       extrapolate gauss point results to element
 c                       nodes. the 6 primary
@@ -55,22 +58,20 @@ c                       components, energy density, mises equiv.
 c                       stress and material specific output values
 c                       are extrapolated from gauss points to nodes.
 c
-      if( nodpts ) then
-         call ounds1( span, type, order, nnode, ngp,
-     &                do_stresses, num_short_stress, num_short_strain )
-      end if
+      if( nodpts ) call ounds1( span, type, order, nnode, ngp,
+     &              do_stresses, num_short_stress, num_short_strain )
 c
 c                       for strain output, compute equivalent
-c                       strain. if nodal, we are using extrapolated
-c                       components. for center-output, we are using
-c                       the averaged components. for stress output,
-c                       we get the mises equivalent stress rather than
-c                       equivalement strain.
+c                       strain. if nodal, use extrapolated
+c                       components. for center-output, use
+c                       the averaged components. 
+
+c                       for stress output, re-compute mises stress from
+c                       the extrapolated/averaged stress components
 c
       op_code = 1
       call ouext1( span, do_stresses, nnode, ngp, nodpts,
-     &             num_short_stress, num_short_strain, op_code,
-     &             mxvl )
+     &             op_code, mxvl )
 c
 c                       compute extra element quantities for long
 c                       output (invariants, principal values, directions).
@@ -78,15 +79,14 @@ c                       for nodal output, the 6 primary strain/stress
 c                       components are used. for nodal output, the
 c                       extrapolated gp values are being used.
 c
-      if ( long ) then
+      if( long ) then
+        op_code = 2
         call ouext1( span, do_stresses, nnode, ngp, nodpts,
-     &               num_short_stress, num_short_strain, 2, mxvl )
+     &               op_code, mxvl )
       end if
 c
       return
       end
-
-
 c     ****************************************************************
 c     *                                                              *
 c     *                   subroutine ouhrks_link                     *
@@ -104,7 +104,7 @@ c
      &                       do_stress, mat_type, wide, eform, prec,
      &                       lnum, pgnum, lbltyp, strlbl, hedtyp,
      &                       noheader, out_packet_now, geo_non_flg  )
-      use global_data ! old common.main
+      use global_data, only : out 
 c
       use elblk_data, only : urcs_blk_n, elestr, ddtse
 c
@@ -180,10 +180,11 @@ c
      &                       do_stress, mat_type, wide, eform, prec,
      &                       lnum, pgnum, lbltyp, strlbl, hedtyp,
      &                       noheader, out_packet_now, geo_non_flg  )
-      use global_data ! old common.main
 c
+      use global_data, only : out, c, u, props, nonode 
       use elblk_data, only : urcs_blk_n, ddtse, elestr
       use main_data, only : incmap, incid, crdmap
+      use constants
 c
       implicit none
 c
@@ -198,7 +199,6 @@ c
       integer :: nvals_to_output, pos, node1, node2, bele
       double precision :: x1, x2, y1, y2, z1, z2, len0, u1, u2, v1, v2,
      &                    w1, w2, len, area
-      double precision, parameter :: zero = 0.0d0
       logical :: newel
       logical, parameter :: local_debug = .false.
 c
@@ -270,7 +270,7 @@ c     *                subroutine ouhrks_cohesive                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/1/2013 rhd               *
+c     *                   last modified : 8/8/25 rhd                 *
 c     *                                                              *
 c     *     drive output for a single interface-cohesive element     *
 c     *                                                              *
@@ -279,24 +279,28 @@ c
 c
       subroutine ouhrks_cohesive( elem, blk, felem, elem_type,
      1    int_order, num_int_points, num_enodes, center_output,
-     2    do_stress, mat_type, cohesive_type,wide,eform,
+     2    do_stress, mat_type, cohesive_type, wide, eform,
      3    prec, lnum, pgnum, lbltyp, strlbl, hedtyp, noheader,
-     4    out_packet_now, geo_non_flg  )
-      use global_data ! old common.main
+     4    out_packet_now, geo_non_flg, long  )
 c
+      use global_data, only : out, mxoupr, props 
       use elblk_data, only : elem_hist, urcs_blk_n, ddtse, elestr
+      use constants
 
-      implicit integer (a-z)
+      implicit none
+c
+      integer :: elem, blk, felem, elem_type,int_order, num_int_points,
+     &           num_enodes, mat_type, cohesive_type, lbltyp
+     &                   
       logical :: do_stress, center_output, wide, eform, newel,
-     &        prec, noheader, out_packet_now, geo_non_flg
+     &           prec, noheader, out_packet_now, geo_non_flg, long
       character(len=8) :: strlbl(30), hedtyp*30
 c
 c             locals also visible by contains
 c
-      double precision :: zero,  avgs(mxoupr)
+      double precision :: avgs(mxoupr)
       logical :: local_debug, exp_model, ppr_model
-      integer :: kout
-      data zero / 0.0d00 /
+      integer :: kout, lnum, pgnum, nvals_to_output, bele
 c
 c             get the element tractions or displacement jumps
 c             with suplemental values in final form for output.
@@ -364,8 +368,8 @@ c
       call oulbst( do_stress, lbltyp, elem_type, elem, strlbl,
      &             long, hedtyp, geo_non_flg, cohesive_type )
 
-      bele            = 1
-      newel           = .true.
+      bele  = 1
+      newel = .true.
 c
       call ouhel( bele, elem, hedtyp, num_enodes, num_int_points,
      &            .false., nvals_to_output, wide,
@@ -397,14 +401,15 @@ c     ****************************************************************
 c
 c
       subroutine ouhrks_cavit_tractions
-      implicit integer (a-z)
+      implicit none
 c
 c             locals (see also contains main)
 c
-      double precision
+      double precision ::
      &   t1, t2, tn, ts, gamma, gamma_ur, n_bar, a_bar, b_bar,
      &   v_bar, criticality, max_Tn, max_Dn, omega, lambda_4,
      &   a_over_l_nr
+      integer :: gpn 
 c
       if( local_debug ) write(kout,9020)
 c
@@ -499,12 +504,12 @@ c     ****************************************************************
 c
 c
       subroutine ouhrks_simple_tractions
-      implicit integer (a-z)
+      implicit none
 c
 c             locals (see also contains main)
 c
-      double precision
-     &   t1, t2, tn, ts, gamma, gamma_ur
+      double precision :: t1, t2, tn, ts, gamma, gamma_ur
+      integer :: gpn
 c
       if( local_debug ) write(kout,9020)
 c
@@ -569,12 +574,12 @@ c     ****************************************************************
 c
 c
       subroutine ouhrks_simple_displ_jumps
-      implicit integer (a-z)
+      implicit none 
 c
 c             locals (see also contains main)
 c
-      double precision
-     &   d1, d2, dn, ds
+      double precision :: d1, d2, dn, ds
+      integer :: gpn
 c
       if( local_debug ) write(kout,9020)
 c
@@ -632,13 +637,13 @@ c     ****************************************************************
 c
 c
       subroutine ouhrks_ppr_displ_jumps
-      implicit integer (a-z)
+      implicit none
 c
 c             locals (see also contains main)
 c
-      double precision
-     &   d1, d2, dn, ds, dn_limit, ds_limit,
+      double precision :: d1, d2, dn, ds, dn_limit, ds_limit,
      &   ratio_normal, ratio_shear, dn_at_peak, ds_at_peak
+      integer :: gpn
 c
       if( local_debug ) write(kout,9020)
 c
@@ -713,13 +718,13 @@ c     ****************************************************************
 c
 c
       subroutine ouhrks_exp1_displ_jumps
-      implicit integer (a-z)
+      implicit none
 c
 c             locals (see also contains main)
 c
-      double precision
-     &   deff_peak, beta, d1, d2, dn, ds, deff,
-     &   normalized_deff
+      double precision :: deff_peak, beta, d1, d2, dn, ds, deff,
+     &                    normalized_deff
+      integer :: gpn
 c
       if( local_debug ) write(kout,9020)
 c
@@ -786,13 +791,13 @@ c     ****************************************************************
 c
 c
       subroutine ouhrks_exp1_tractions
-      implicit integer (a-z)
+      implicit none
 c
 c             locals (see also contains main)
 c
-      double precision
-     &   t1, t2, tn, gamma, gamma_ur,
-     &   teff, teff_peak, beta,ts, normalized_teff
+      double precision :: t1, t2, tn, gamma, gamma_ur,
+     &                    teff, teff_peak, beta,ts, normalized_teff
+      integer :: gpn
 c
       if( local_debug ) write(kout,9020)
 c
@@ -866,13 +871,13 @@ c     ****************************************************************
 c
 c
       subroutine ouhrks_ppr_tractions
-      implicit integer (a-z)
+      implicit none
 c
 c             locals (see also contains main)
 c
-      double precision
-     &   tn_peak, ts_peak, t1, t2, tn, gamma,
-     &   gamma_ur, ts
+      double precision :: tn_peak, ts_peak, t1, t2, tn, gamma,
+     &                    gamma_ur, ts
+      integer :: gpn
 c
       tn_peak = props(13,elem)
       ts_peak = props(14,elem)
