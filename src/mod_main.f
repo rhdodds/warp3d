@@ -539,7 +539,9 @@ c     *                                                              *
 c     ****************************************************************
 c
       module constants
-c
+c 
+      implicit none
+c      
       double precision, parameter ::
      &   zero  = 0.d0,
      &   one   = 1.d0,
@@ -619,5 +621,76 @@ c
 c
       end module constants
 
-
-
+c     ****************************************************************
+c     *                                                              *
+c     *                    f-90 module constants                     *
+c     *                                                              *
+c     *                       written by : rhd                       *
+c     *                                                              *
+c     *              last modified : 9/17/2025 rhd                   *
+c     *                                                              *
+c     *     Index numbers for output strain-stress values            *
+c     *                                                              *
+c     ****************************************************************
+c
+      module output_value_indexes
+c
+      implicit none 
+c      
+      integer, parameter ::
+     &   index_eps_xx  = 1,
+     &   index_eps_yy  = 2,
+     &   index_eps_zz  = 3,
+     &   index_gam_xy  = 4,
+     &   index_gam_yz  = 5,
+     &   index_gam_xz  = 6,
+     &   index_eps_eff = 7,
+     &   index_eps_I1  = 8,
+     &   index_eps_I2  = 9,
+     &   index_eps_I3  = 10,
+     &   index_eps_1   = 11,
+     &   index_eps_2   = 12,
+     &   index_eps_3   = 13,
+     &   index_eps_L1  = 14,
+     &   index_eps_M1  = 15,
+     &   index_eps_N1  = 16,
+     &   index_eps_L2  = 17,
+     &   index_eps_M2  = 18,
+     &   index_eps_N2  = 19,
+     &   index_eps_L3  = 20,
+     &   index_eps_M3  = 21,
+     &   index_eps_N3  = 22,
+     &   num_short_strain = 7,
+     &   num_long_strain = 22
+c
+      integer, parameter ::
+     &   index_sig_xx  = 1,
+     &   index_sig_yy  = 2,
+     &   index_sig_zz  = 3,
+     &   index_sig_xy  = 4,
+     &   index_sig_yz  = 5,
+     &   index_sig_xz  = 6,
+     &   index_sig_U0  = 7,
+     &   index_sig_vm  = 8,
+     &   index_c1      = 9,
+     &   index_c2      = 10,
+     &   index_c3      = 11,
+     &   index_sig_mean        = 12,
+     &   index_sig_triaxiality = 13,
+     &   index_sig_Lode_xi     = 14,
+     &   index_sig_1  = 15,
+     &   index_sig_2  = 16,
+     &   index_sig_3  = 17,
+     &   index_sig_L1 = 18,
+     &   index_sig_M1 = 19,
+     &   index_sig_N1 = 20,
+     &   index_sig_L2 = 21,
+     &   index_sig_M2 = 22,
+     &   index_sig_N2 = 23,
+     &   index_sig_L3 = 24,
+     &   index_sig_M3 = 25,
+     &   index_sig_N3 = 26,
+     &   num_short_stress = 11,
+     &   num_long_stress = 26
+c
+      end module output_value_indexes
