@@ -498,7 +498,7 @@ c     ****************************************************************
 c
 c
       subroutine oudriv_cmds
-      use global_data ! old common.main
+      use global_data, only : out, num_error
       use main_data, only: output_command_file, output_step_bitmap_list
       use allocated_integer_list
       implicit none
