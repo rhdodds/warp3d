@@ -15,7 +15,10 @@ c     ****************************************************************
 c
       subroutine ouddpa( dva, oubin, ouasc, nodmax, defmax, nwidth,
      &                 flat_file, stream_file, text_file, compressed )
-      use global_data ! old common.main
+      use global_data, only: a, cstmap, dstmap, dt, du, ifv, iprops,
+     &                       load, lsldnm, ltmstp, mxedof, mxndel,
+     &                       mxndof, mxvl, myid, nbeta, 
+     &                       noelem, nonode, stname, temperatures, u, v
 c
       use main_data, only : trn, trnmat, mdiag, pbar, rload,
      &                      inverse_incidences, temper_nodes,
@@ -232,7 +235,7 @@ c     *             subroutine ouddpa_flat_header                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/31/2019 rhd              *
+c     *                   last modified : 8/9/25 rhd                 *
 c     *                                                              *
 c     *     Write header lines for flat text files                   *
 c     *                                                              *
@@ -241,7 +244,7 @@ c     ****************************************************************
       subroutine ouddpa_flat_header( type, quantity,
      &                               flat_file_number, num_values,
      &                               format_string )
-      use global_data ! old common.main
+      use global_data, only : ltmstp, stname, nonode, noelem
       implicit none
 
       integer :: type, quantity, flat_file_number, num_values
