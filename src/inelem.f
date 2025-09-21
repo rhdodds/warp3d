@@ -4,7 +4,7 @@ c     *                      subroutine inelem                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/3/2019 rhd              *
+c     *                   last modified : 12/27/2024 rhd             *
 c     *                                                              *
 c     *     this subroutine supervises and conducts the input of     *
 c     *     element type and properties.                             *
@@ -302,6 +302,14 @@ c
       else
          call errmsg(28,dum,'ordr',dumr,dumd)
       end if
+      if( type == 1 ) then  ! 20-node brick
+       if( intord == id_o333  .and. mxgp < 27 ) then
+        num_fatal = num_fatal + 1
+        write(out,532)
+  532 format(/1x,' >>>>>  Error:  this WARP3D version does not',
+     &  ' support 3x3x3 integration',/)        
+       end if
+      end if  
       go to 520
 c
 c
