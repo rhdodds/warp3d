@@ -15,19 +15,26 @@ c
       subroutine ouhel( bele, elem, hedtyp, nnode, ngp, nodpts, nstrou,
      &                  wide, eform, prec, strlbl, pgnum, lnum, newel,
      &                  center_output, noheader, out_packet_now )
-      use global_data ! old common.main
+c
+      use global_data, only : out 
       use main_data, only : incmap, incid, packet_file_no
       use elblk_data, only : elestr
-      implicit integer (a-z)
-      logical :: wide, eform, prec, newhed, nodpts, newel,
+      use constants
+c      
+      implicit none
+c
+      integer :: bele, elem, nnode, ngp, nstrou, pgnum, lnum     
+      logical :: wide, eform, prec, nodpts, newel,
      &           center_output, noheader, out_packet_now
       character(len=8) :: strlbl(*)
       character(len=*) :: hedtyp
-      double precision :: small_tol, zero
-      data small_tol, zero / 1.0d-50, 0.0d00 /
+      double precision, parameter :: small_tol =  1.0d-50
 c
 c                       local declarations
 c
+      integer :: j, nitm, hfmtyp, fmtyp, nl, npts, strpt, optno, fnsh, 
+     &           cl, strt
+      logical :: newhed
       character(len=4) :: loctyp
 c
 c                       set up paramters for format of printed output.
