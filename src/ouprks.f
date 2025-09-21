@@ -16,20 +16,20 @@ c
       subroutine ouprks( span, blk, felem, type, order, ngp,                    
      &                   nnode, geonl,                                          
      &                   do_stresses, mat_type, center_output,                  
-     &                   num_short_stress, num_short_strain,                    
      &                   element_output )                                       
-      use global_data ! old common.main
+c
+      use global_data, only : iprops, out, total_model_time, ltmstp
       use elblk_data, only : elestr                                             
+      use output_value_indexes, only : num_short_strain, 
+     &            num_short_stress, num_long_strain, num_long_stress
 c                                                                               
       implicit none                                                             
 c                                                                               
-      integer :: span, blk, felem, type, order, ngp, nnode, mat_type,           
-     &           num_short_stress, num_short_strain                             
+      integer :: span, blk, felem, type, order, ngp, nnode, mat_type
       logical :: do_stresses, geonl, center_output, element_output              
 c                                                                               
       integer :: matnum, kout, nowstep                                          
       double precision :: nowtime                                               
-c                                                                               
 c                                                                               
 c                       technically, the output configuration flag              
 c                       is not a criteria for similarity. but for               
@@ -37,23 +37,21 @@ c                       patran output to make any sense, all ele-
 c                       ments must have the same output config-                 
 c                       uration. thus, the flag is being treated                
 c                       like a similarity criteria.                             
+                                                                               
+      matnum = iprops(38,felem)                              
+      kout = out                                             
+      nowtime = total_model_time                             
+      nowstep = ltmstp                                       
 c                                                                               
-c                                                                               
-c                       get the element or strains                              
+c                       get the element stresses or strains                              
 c                       into a final form.                                      
 c                       for geonl: the cauchy stresses are computed             
 c                       from the unrotated cauchy stresses; the                 
 c                       strains are accumulated spatial deformation             
 c                       increments.                                             
-c                                                                               
-      matnum = iprops(38,felem)  ! common.main                                  
-      kout = out                 !   "                                          
-      nowtime = total_model_time !   "                                          
-      nowstep = ltmstp           !   "                                          
-c                                                                               
+c
       call ougts1( span, blk, felem, do_stresses, ngp,                          
-     &             geonl, mat_type, matnum, kout, nowtime, nowstep )            
-c                                                                               
+     &             geonl, mat_type, matnum, kout, nowtime, nowstep )                                                                                           
 c                                                                               
 c                       for output at element center, make                      
 c                       all gauss points have the average values.               
@@ -62,7 +60,7 @@ c                       will be replaced with values computed from
 c                       the averaged computavalues later.                       
 c                                                                               
       if( element_output ) call oumkcv( span, ngp, do_stresses,                 
-     &                     num_short_stress + 1, num_short_strain + 1 )         
+     &                     num_short_stress, num_short_strain )         
 c                                                                               
 c                       if we are generating nodal results,                     
 c                       extrapolate gauss point results to element              
@@ -79,7 +77,7 @@ c                       this will keep extrapolated mises values and
 c                       equivalent strains from ever becoming negative.         
 c                                                                               
       if( .not. element_output ) call ounds1( span, type, order, nnode,         
-     &   ngp, do_stresses, num_short_stress + 1, num_short_strain + 1 )         
+     &   ngp, do_stresses, num_short_stress, num_short_strain )         
 c                                                                               
       return                                                                    
       end                                                                       
