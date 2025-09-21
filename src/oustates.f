@@ -14,8 +14,10 @@ c
       subroutine oustates_files( ouflg, oubin, ouasc, ounod,
      &                           flat_file, stream_file, text_file,
      &                           compressed )
-      use global_data ! old common.main
 c
+      use global_data, only : ltmstp, stname,lsldnm, out, myid, 
+     &                        use_mpi, noelem, mxmat, max_crystals,
+     &                        nelblk, elblks, iprops, nonode  
       use elem_block_data, only: history_blk_list ! read only
       use main_data, only: material_model_names,    ! all read only
      &                     output_states_type_opt1,
