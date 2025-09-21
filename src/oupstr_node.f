@@ -26,7 +26,7 @@ c     *                      subroutine oupstr_node                  *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 7/1/2019 rhd               *          
+c     *                   last modified : 9/18/2025 rhd              *          
 c     *                                                              *          
 c     *     drives output of stress or strain nodal results to       *          
 c     *     (1) patran files in either binary or formatted forms or  *          
@@ -35,24 +35,30 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine oupstr_node( stress, oubin, ouasc, flat_file,                  
+      subroutine oupstr_node( do_stress, oubin, ouasc, flat_file,                  
      &                        stream_file, text_file, compressed )               
-      use global_data ! old common.main
+c
+      use global_data, only : nonode, nelblk, myid, iprops, lprops,
+     &                        outmap, use_mpi, numprocs, mxelmp,
+     &                        out, elblks
       use local_oupstr_node, only : nodal_values
       use main_data, only : incmap, incid, cohesive_ele_types                   
+      use output_value_indexes, only : num_short_strain, 
+     &            num_short_stress, num_long_strain, num_long_stress
+c
       implicit none
 c      
-      logical :: stress, oubin, ouasc, flat_file,                                  
+      logical :: do_stress, oubin, ouasc, flat_file,                                  
      &           stream_file, text_file, compressed                                
 c                                                                               
 c                local declarations                                             
 c                                                                               
       logical :: bbar_flg, geo_non_flg, long_out_flg, nodpts_flg,                 
-     &           center_output, cohesive_elem, do_average, serial                 
+     &           center_output, cohesive_elem, do_average, 
+     &           threads_only, do_strains, is_cohesive                
       integer  :: iblk, node, blk, span, felem, elem_type,  
      &            int_order, mat_type, num_enodes, num_enode_dof,
-     &            totdof, num_short_stress, num_short_strain,
-     &            num_vals, ifelem, count,num_int_points,
+     &            totdof, num_vals, ifelem, count,num_int_points,
      &            output_loc, ierror   
       integer :: elem_out_map(mxelmp) ! mxelmp in global_data
       double precision, parameter :: zero = 0.0d0
@@ -69,7 +75,8 @@ c                touch then in this domain.
 c                                                                               
 c                       create structure size vector of derived types.          
 c                       set count for each node to zero.                       
-c                                                                               
+c               
+      do_strains = .not. do_stress                                                                
       allocate( nodal_values(nonode) )                                          
       nodal_values(1:nonode)%count = 0                                             
 c                                                                               
@@ -95,12 +102,10 @@ c
          output_loc        = iprops(12,felem)                                   
          nodpts_flg        = .true.                                             
          center_output     = output_loc .eq. 3                                  
-         num_short_stress  = 11                                                 
-         num_short_strain  = 7                                                  
          cohesive_elem     = cohesive_ele_types(elem_type)                      
 c                                                                               
-         num_vals = 22                                                          
-         if( stress ) num_vals = 26                                             
+         if( do_strains) num_vals = num_long_strain
+         if( do_stress ) num_vals = num_long_stress
 c                                                                               
 c                       skip cohesive elements for now. they do not             
 c                       contribute to nodal results at structure level.         
@@ -110,9 +115,10 @@ c
          elem_out_map(1:mxelmp) = outmap(elem_type,1:mxelmp)                             
 c                                                                               
 c                       duplicate necessary element block data.                 
-c                                                                               
-         call oudups( span, felem, num_int_points, geo_non_flg, stress,         
-     &                .false. )                                               
+c              
+         is_cohesive = .false.                                                                 
+         call oudups( span, felem, num_int_points, geo_non_flg, 
+     &                do_stress, is_cohesive )                                               
 c                                                                               
 c                       compute the element block nodal stress/strain           
 c                       data.                                                   
@@ -120,9 +126,8 @@ c
          iblk   = blk                                                           
          ifelem = felem                                                         
          call ouprks( span, iblk, ifelem, elem_type, int_order,                 
-     &                num_int_points, num_enodes, geo_non_flg, stress,          
-     &                mat_type, center_output, num_short_stress,                
-     &                num_short_strain, .false. )                               
+     &                num_int_points, num_enodes, geo_non_flg,        
+     &                do_stress, mat_type, center_output, .false. )                               
 c                                                                               
 c                       add the element block nodal stress/strain data          
 c                       into the global nodal results data structure.           
@@ -131,7 +136,7 @@ c
 c                                                                               
       end do 
 c
-c                       for scalar processing and/or mpi with just              
+c                       for threads only processing and/or mpi with just              
 c                       one process, average the total results at               
 c                       each node, using node count for the model.              
 c                       then calculate the extended values of stress            
@@ -149,8 +154,8 @@ c                       the external program to combine mpi result
 c                       files handles nodes with missing values.                
 c                                                                               
 c                                                                               
-      serial = .not. use_mpi                                                    
-      do_average =  serial .or. (use_mpi .and. numprocs .eq. 1)    
+      threads_only = .not. use_mpi                                                    
+      do_average =  threads_only .or. (use_mpi .and. numprocs .eq. 1)    
       if( do_average ) call oupstr_node_do_average
 c                                                                               
 c                       output the averaged total nodal results                 
@@ -161,8 +166,8 @@ c
 c                       only results for nodes that appear in this              
 c                       domain are written. see notes                           
 c                       above for values actually written.                      
-c                                                                               
-      call oustpa( stress, oubin, ouasc, num_vals, 
+c                                                                                
+      call oustpa( do_stress, oubin, ouasc, num_vals, 
      &             nonode, flat_file, stream_file, text_file,                   
      &             compressed )                                                 
 c                                                                               
@@ -176,10 +181,10 @@ c
 c     ========                                                                  
 c
 
-      subroutine oupstr_node_1
+      subroutine oupstr_node_1  ! for a block
 c     ------------------------                      
 c
-      use elblk_data, only : elestr                                             
+      use elblk_data, only : elestr ! mxvl x max allowed output values                                             
       implicit none                                                    
 c                    
       integer :: i, j, k, snode, ierror, map                                                                        
@@ -214,6 +219,7 @@ c
       do k = 1, num_vals                                                        
          map = elem_out_map(k)                                                        
          do j = 1, num_enodes                                                        
+!$omp simd
           do i = 1, span                                                        
             snode = incid(incmap(felem+i-1)+j-1)   
             nodal_values(snode)%node_values(map) =  
@@ -226,7 +232,7 @@ c
       end subroutine oupstr_node_1                                                                  
 
 
-      subroutine oupstr_node_do_average
+      subroutine oupstr_node_do_average ! over all model nodes
 c     ---------------------------------
 c
       implicit none
@@ -234,24 +240,27 @@ c
       integer :: snode, count, j, map
       double precision :: dcount
 c
-      do snode = 1, nonode
-c                                                     
-        count = nodal_values(snode)%count     
-        if( count .eq. 0 ) then  ! probably node w/ only cohesive              
-           allocate( nodal_values(snode)%node_values(num_vals) )                 
-           nodal_values(snode)%node_values(1:num_vals) = zero                    
-           nodal_values(snode)%count = 1                                       
-           cycle                                                               
-        end if                                                                 
-        dcount = dble( count )      
-        associate( x => nodal_values(snode)%node_values )
+c$OMP PARALLEL DO  PRIVATE( snode )
+      do snode = 1, nonode  ! all model nodes                                                    
+        if( nodal_values(snode)%count .ne. 0 ) cycle
+        allocate( nodal_values(snode)%node_values(num_vals) )                 
+        nodal_values(snode)%node_values(1:num_vals) = zero                    
+        nodal_values(snode)%count = 1                                       
+      end do 
+c$OMP END PARALLEL DO           
+c                                                                       
+c$OMP PARALLEL DO  PRIVATE( snode, dcount, j, map )
+      do snode = 1, nonode  ! all model nodes                                                    
+        dcount = dble( nodal_values(snode)%count )      
         do j = 1, num_vals                                                     
           map = elem_out_map(j)                                                
-          x(map) = x(map) / dcount
+          nodal_values(snode)%node_values(map) =
+     &              nodal_values(snode)%node_values(map) / dcount
         end do      
-        call ouext2( x, 1, 1, stress )   ! get expanded results
-        end associate                        
+        call ouext2( nodal_values(snode)%node_values(1), 1, 1, 
+     &               do_stress )   ! get expanded results
       end do ! on snode       
+c$OMP END PARALLEL DO    
 c
       return                                                 
 
@@ -265,7 +274,7 @@ c     *                      subroutine oustpa                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 7/1/2019 rhd               *
+c     *                   last modified : 8/5/25 rhd                 *
 c     *                                                              *
 c     *     output stress or strain nodal results to (1) patran file *
 c     *     in either binary or formatted forms, or (2) flat file    *
@@ -277,7 +286,9 @@ c
       subroutine oustpa( stress, oubin, ouasc, num_vals,
      &                   num_struct_nodes, flat_file,
      &                   stream_file, text_file, compressed )
-      use global_data ! old common.main
+c
+      use global_data, only : ltmstp, out, use_mpi, myid, numprocs,
+     &                        stname, lsldnm, nonode 
       use local_oupstr_node, only : nodal_values
       implicit none
 c
