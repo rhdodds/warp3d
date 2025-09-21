@@ -4,7 +4,7 @@ c     *                      subroutine oust_elem                    *
 c     *                                                              *
 c     *                       written by : kck                       *
 c     *                                                              *
-c     *                   last modified : 1/31/2019 rhd              *
+c     *                   last modified : 9/19/2025 rhd              *
 c     *                                                              *
 c     *     output element (center) stress or strain results         *
 c     *     to (1) patran file in either binary or formatted forms   *
@@ -18,7 +18,9 @@ c
      &                      elem_values, nrowd, nrow, first_block,
      &                      felem, last_block, flat_file,
      &                      stream_file, text_file, compressed )
-      use global_data ! old common.main
+c     
+      use global_data, only : ltmstp, myid, out, use_mpi, stname,
+     &                        lsldnm, noelem     
       implicit none
 c
       integer :: num_vals, nrowd, nrow, felem
@@ -160,6 +162,7 @@ c
      & /     '            patran or flat file. action skipped...',/)
  9100 format(i8,30d15.6)
  9200 format(30e15.6)
+ 9300 format(10x,i3,2x E15.6)
 c
       contains
 c     ========
