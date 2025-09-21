@@ -4,47 +4,52 @@ c     *                      subroutine ouhprn                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 3/11/04 (rhd)              *          
+c     *                   last modified : 9/17/2025 rhd              *          
 c     *                                                              *          
-c     *     this subroutine prints the hardcopy output and/or        *          
+c     *     prints the hardcopy output and/or                        *          
 c     *     the record within the packet for a single element        *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
 c                                                                               
       subroutine ouhprn( elem, type, ngp, nnode, long, nodpts,                  
-     &                   stress, wide, eform, prec, lnum, pgnum,                
-     &                   lbltyp, strlbl, hedtyp, num_short_stress,              
-     &                   num_short_strain, center_output, geonl,                
-     &                   noheader, out_packet_now )                             
-      use global_data ! old common.main
-      implicit integer (a-z)                                                    
+     &                   do_stress, wide, eform, prec, lnum, pgnum,                
+     &                   lbltyp, strlbl, hedtyp, center_output, geonl,                
+     &                   noheader, out_packet_now ) 
+c                                 
+      use output_value_indexes, only : num_short_strain,
+     &        num_short_stress, num_long_strain, num_long_stress
+      implicit none
+c      
+      integer :: elem, type, ngp, nnode, lnum, lbltyp
       character(len=8) :: strlbl(*)                                             
       character(len=*) :: hedtyp                                                
-      logical long, nodpts, stress, wide, eform, prec,                          
-     &        center_output, geonl, noheader, out_packet_now                    
+      logical :: long, nodpts, do_stress, wide, eform, prec,                          
+     &           center_output, geonl, noheader, out_packet_now                    
 c                                                                               
 c                       local declartions                                       
 c                                                                               
-      logical newel                                                             
+      logical :: newel
+      integer :: nstrou, pgnum, bele                                                             
 c                                                                               
 c                                                                               
 c                       set the number of strain or stress                      
 c                       values for output.                                      
 c                                                                               
       nstrou = num_short_strain                                                 
-      if ( stress ) nstrou = num_short_stress                                   
+      if ( do_stress ) nstrou = num_short_stress                                   
       if( long .or. out_packet_now ) then                                       
-         nstrou = num_short_strain + 15                                         
-         if ( stress ) nstrou = num_short_stress + 15                           
+         nstrou = num_long_strain
+         if ( do_stress ) nstrou = num_long_stress
       end if                                                                    
 c                                                                               
       bele  = 1                                                                 
       newel = .true.                                                            
 c                                                                               
-c                       set the stress labels for the current element.          
+c                       set the stress-strain output labels for the 
+c                       current element.          
 c                                                                               
-      call oulbst( stress, lbltyp, type, elem, strlbl, long, hedtyp,            
+      call oulbst( do_stress, lbltyp, type, elem, strlbl, long, hedtyp,            
      &             geonl, 0  )                                                  
 c                                                                               
 c                       output the stress/strain data for the current           
