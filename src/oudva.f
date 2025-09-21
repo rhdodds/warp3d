@@ -19,7 +19,7 @@ c
      &                  prec, noheader, react_totals_only ,                     
      &                  out_packet_now, flat_file, stream_file,                 
      &                  text_file, compressed  )                                
-      use global_data ! old common.main
+      use global_data, only : nonode, noelem, out
       use allocated_integer_list
 c                                                                               
       implicit none                                                             
