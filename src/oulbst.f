@@ -4,7 +4,7 @@ c     *                      subroutine oulbst                       *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 8/21/2017 rhd              *          
+c     *                   last modified : 8/4/25 rhd                 *          
 c     *                                                              *          
 c     *     sets the label type and corresponding                    *          
 c     *     dof labels for an element for stress/strain output       *          
@@ -178,7 +178,7 @@ c     *                    subroutine oulbst_solid                   *
 c     *                                                              *          
 c     *                       written by : rhs                       *          
 c     *                                                              *          
-c     *                   last modified : 03/11/13  rhd              *          
+c     *                   last modified : 08/4/25   rhd              *          
 c     *                                                              *          
 c     *       sets output header labels for solid elements           *          
 c     *                                                              *          
@@ -200,10 +200,10 @@ c
          strlbl(5)  = 'sigma_yz'                                                
          strlbl(6)  = 'sigma_xz'                                                
          strlbl(7)  = 'eng_dens'                                                
-         strlbl(8)  = 'mises   '                                                
-         strlbl(9)  = 'c1      '                                                
-         strlbl(10) = 'c2      '                                                
-         strlbl(11) = 'c3      '                                                
+         strlbl(8)  = ' mises  '                                                
+         strlbl(9)  = '   c1   '                                                
+         strlbl(10) = '   c2   '                                                
+         strlbl(11) = '   c3   '                                                
       else                                                                      
          hedtyp(1:)= 'strains '                                                 
          if ( geonl ) hedtyp(1:) = 'logarithmic strains'                        
@@ -212,18 +212,18 @@ c
          strlbl(3) = '  eps_zz'                                                 
          strlbl(4) = '  gam_xy'                                                 
          strlbl(5) = '  gam_yz'                                                 
-         strlbl(6) = '  gam_xz'                                                 
+         strlbl(6) = '  gam_xz'           
          strlbl(7) = ' eff_eps'                                                 
       end if                                                                    
 c                                                                               
       if( long ) then                                                           
          if( do_stress ) then                                                   
-            strlbl(12) = '   inv_1'                                             
-            strlbl(13) = '   inv_2'                                             
-            strlbl(14) = '   inv_3'                                             
-            strlbl(15) = '   sig_1'                                             
-            strlbl(16) = '   sig_2'                                             
-            strlbl(17) = '   sig_3'                                             
+            strlbl(12) = 'sig_mean'                                             
+            strlbl(13) = ' triaxi '                                             
+            strlbl(14) = 'Lode prm'                                             
+            strlbl(15) = ' sig_1  '                                            
+            strlbl(16) = ' sig_2  '                                             
+            strlbl(17) = ' sig_3  '                                             
             strlbl(18) = 'angle1_x'                                             
             strlbl(19) = 'angle1_y'                                             
             strlbl(20) = 'angle1_z'                                             
@@ -233,13 +233,13 @@ c
             strlbl(24) = 'angle3_x'                                             
             strlbl(25) = 'angle3_y'                                             
             strlbl(26) = 'angle3_z'                                             
-         else                                                                   
-            strlbl(8)= '   inv_1'                                               
-            strlbl(9)= '   inv_2'                                               
-            strlbl(10)= '   inv_3'                                              
-            strlbl(11)= '   eps_1'                                              
-            strlbl(12)= '   eps_2'                                              
-            strlbl(13)= '   eps_3'                                              
+         else         !   12345678                                                        
+            strlbl(8)=  ' inv_1  '                                               
+            strlbl(9)=  ' inv_2  '                                               
+            strlbl(10)= ' inv_3  '                                              
+            strlbl(11)= ' eps_1  '                                              
+            strlbl(12)= ' eps_2  '                                              
+            strlbl(13)= ' eps_3  '                                              
             strlbl(14)= 'angle1_x'                                              
             strlbl(15)= 'angle1_y'                                              
             strlbl(16)= 'angle1_z'                                              
