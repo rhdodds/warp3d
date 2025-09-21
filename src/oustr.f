@@ -4,7 +4,7 @@ c     *               subroutine oustr_pat_flat_file                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 6/30/2019 rhd              *          
+c     *                   last modified : 8/6/2025 rhd               *          
 c     *                                                              *          
 c     *     output of stresses or strains to patran results file     *          
 c     *     or to a flat file (text or stream)                       *          
@@ -12,16 +12,17 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine oustr_pat_flat_file( stress, ouflg, oubin, ouasc,              
+      subroutine oustr_pat_flat_file( do_stress, ouflg, oubin, ouasc,              
      &                           ounod, flat_file, stream_file,                 
      &                           text_file, compressed  )                       
-      use global_data ! old common.main
-      use elblk_data, only : elestr ! mxvl,mxoupr,mxoupt                        
+      use global_data, only : ltmstp, stname, lsldnm
+      use elblk_data, only : elestr ! mxvl,mxoupr,mxoupt 
+      use constants                       
       implicit none                                                             
 c                                                                               
-      logical :: ouflg, oubin, ouasc, stress, ounod,                            
+      logical :: ouflg, oubin, ouasc, do_stress, ounod,                            
      &           flat_file, stream_file, text_file, compressed                  
-      double precision, parameter :: zero = 0.0d0                                                 
+
 c                                                                               
 c                       MPI:                                                    
 c                         Results remain distributed onto ranks for.            
@@ -30,7 +31,7 @@ c                         written in pieces,
 c                         with one piece (file) for each rank.                  
 c                                                                               
       call wmpi_alert_slaves ( 35 )                                             
-      call wmpi_bcast_log( stress )                                             
+      call wmpi_bcast_log( do_stress )                                             
       call wmpi_bcast_log( ouflg )                                              
       call wmpi_bcast_log( oubin )                                              
       call wmpi_bcast_log( ouasc )                                              
@@ -55,22 +56,27 @@ c                       binary (Fortran).
 c                                                                               
 c                       Flat files can be text (and optionally                  
 c                       compressed) or stream binary files.                     
-c                       Compression valid only on Linux and OS X.               
+c                       Compression valid only on Linux and MacOS.               
 c                                                                               
-c                       set up block                                            
-c                       arrays used in the module by the lower                  
-c                       level routines. release them when done                  
-c                       with output                                             
+c                       set up block arrays used in the module by the 
+c                       lower level routines. release them when done                  
+c                       with output      
+c                       
+c                       elestr is mxvl x max number output vales in code 
+c                       need better design than to share this across
+c                       lower level routines.                                      
 c                                                                               
-      call oustr_set_block_arrays      
-      elestr = zero  ! used as work in lower levels. prevent uninits                                       
+      call oustr_set_block_arrays  
+c          
+      elestr = zero  ! used as work in lower levels. prevent un-inits                                       
       if ( ounod ) then  ! nodal strain or stress values                        
-          call oupstr_node( stress, oubin, ouasc, flat_file,                    
+          call oupstr_node( do_stress, oubin, ouasc, flat_file,                    
      &                      stream_file, text_file, compressed )                
       else  ! element strain or stress values                                   
-          call oupstr_elem( stress, oubin, ouasc, flat_file,                    
+          call oupstr_elem( do_stress, oubin, ouasc, flat_file,                    
      &                      stream_file, text_file, compressed )                
-      end if                                                                    
+      end if      
+c                                                                    
       call oustr_release_block_arrays                                           
 c                                                                               
       ouflg = .false.                                                           
@@ -92,37 +98,36 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine oustr( stress, ouflg, oupat, oubin, ouasc, ounod,              
+      subroutine oustr( do_stress, ouflg, oupat, oubin, ouasc, ounod,              
      &                  wide, eform, prec, noheader, out_packet_now )           
-      use global_data ! old common.main
+c
+      use global_data, only : noelem, out 
       use elblk_data, only : elestr ! mxvl,mxoupr,mxoupt                        
       use allocated_integer_list
+      use constants
       implicit none                                                             
 c
       logical :: ouflg, oupat, oubin, ouasc, ounod, wide, eform, prec,          
-     &           stress, noheader, out_packet_now                               
+     &           do_stress, noheader, out_packet_now                               
 c                                                                               
 c                       local declarations                                      
 c                                                                               
       integer :: lenlst, errnum, icn, iplist, num_list_entries,                 
      &           bad_list, param, next, i, dummy, list_size                                
       integer, allocatable :: intlst(:), element_list(:)                                  
-      logical, external :: matchs, true, endcrd                                 
-      logical :: eject_flag                                                     
+      logical, external :: matchs, true, endcrd
+      logical :: eject_flag, do_strains                                                     
       real :: dumr                                                              
       double precision :: dumd 
-      double precision, parameter :: zero = 0.0d0                                                 
       character(len=1) :: dums                                                  
 c                                                                               
 c                       MPI:                                                    
 c                         we need to gather all the stresses or strains         
 c                         back to the root processor for printing.              
-c                                                                               
-      if ( stress ) then                                                        
-         call wmpi_get_str ( 2 )                                                
-      else                                                                      
-         call wmpi_get_str ( 4 )                                                
-      endif                                                                     
+c    
+      do_strains = .not. do_stress                                                                           
+      if( do_stress )  call wmpi_get_str ( 2 )                                                
+      if( do_strains ) call wmpi_get_str ( 4 )                                                
 c                                                                               
 c                      read the integerlist of element numbers from             
 c                      input line.                                              
@@ -203,7 +208,7 @@ c                       with output
 c                                                                               
       call oustr_set_block_arrays
       elestr = zero ! used as work array in lower routines                                               
-      call ouhstr( stress, wide, eform, prec,                                   
+      call ouhstr( do_stress, wide, eform, prec,                                   
      &             noheader, out_packet_now, element_list,                      
      &             num_list_entries )                                           
       call oustr_release_block_arrays                                           
@@ -244,8 +249,9 @@ c     *     routines                                                 *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine oustr_set_block_arrays                                         
-      use global_data ! old common.main
+      subroutine oustr_set_block_arrays  
+c                                             
+      use global_data, only : nelblk, out, mxvl
       use elem_block_data, only : history_blk_list, gausspts_blk_list           
       use elblk_data, only : elem_hist, elem_hist1, blk_size_gp,                
      &                       blk_size_hist                                     
@@ -305,8 +311,9 @@ c     *     routines                                                 *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine oustr_release_block_arrays                                     
-      use global_data, only : out  ! old common.main
+      subroutine oustr_release_block_arrays    
+c                                       
+      use global_data, only : out 
       use elblk_data, only : elem_hist, elem_hist1                              
 c                                                                               
       implicit none  
