@@ -13,14 +13,19 @@ c     ****************************************************************
 c
 c
 c
-      subroutine ourlhd(pgnum,lnum,hedtyp,doflbl,ndof,newhed,ldnum,
-     &                                           nitm,nl,fmtyp,iter)
-      use global_data ! old common.main
-      implicit integer (a-z)
-      logical newhed
-      character(len=8) :: doflbl(*),ldnam
+      subroutine ourlhd( pgnum, lnum, hedtyp, doflbl, ndof, newhed, 
+     &                   ldnum, nitm, nl, fmtyp, iter )
+      use global_data, only : out, stname, ltmstp, lodnam 
+      implicit none
+c      
+      integer ::  pgnum, lnum, ndof, ldnum, nitm, nl, fmtyp, iter
+      logical :: newhed
+      character(len=8)  :: doflbl(*)
       character(len=20) :: hedtyp
-      character(len=1) :: formfeed
+c
+      integer :: i, cl, strt, fnsh, stepno  
+      character(len=1)  :: formfeed
+      character(len=8)  :: ldnam
 c
       formfeed = char(12)
 c
