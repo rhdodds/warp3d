@@ -30,9 +30,10 @@ c                       copy element results into global
 c                       data structure for element center results.              
 c                                                                               
       num_vals = num_strain                                                     
-      if( do_stresses ) num_vals = num_stress                                   
+      if( do_stresses ) num_vals = num_stress   
 c                                                                               
       do k = 1, num_vals                                                        
+!$omp simd
         do i = 1, span                                                          
           elem_results(i,k) =  elestr(i,k,1)                                    
         end do                                                                  
