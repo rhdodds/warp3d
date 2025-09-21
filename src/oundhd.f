@@ -4,23 +4,29 @@ c     *                      subroutine oundhd                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 07/01/90                   *
+c     *                   last modified : 8/8/25 rhd                 *
 c     *                                                              *
-c     *     this subroutine prints the headers on a new page of out- *
-c     *     put for output of displacements, velocities, or accel-   *
+c     *     prints the headers on a new page of output               *
+c     *     for output of displacements, velocities, or accel-   *
 c     *     erations, if necessary.                                  *
 c     *                                                              *
 c     ****************************************************************
 c
 c
 c
-      subroutine oundhd(pgnum,lnum,hedtyp,doflbl,ndof,newhed,fmtyp,
-     &                                                       nitm,nl)
-      use global_data ! old common.main
-      implicit integer (a-z)
-      logical newhed
+      subroutine oundhd( pgnum, lnum, hedtyp, doflbl, ndof, newhed,
+     &                   fmtyp, nitm, nl )
+c     
+      use global_data, only : out, stname, ltmstp, lsldnm
+c
+      implicit none
+c
+      integer :: pgnum, lnum, ndof, nitm, nl, fmtyp      
+      logical ::  newhed
       character(len=8) :: doflbl(*)
       character(len=20) :: hedtyp
+c      
+      integer :: cl, strt, fnsh, i
       character(len=1) :: formfeed
 c
       formfeed = char(12)
