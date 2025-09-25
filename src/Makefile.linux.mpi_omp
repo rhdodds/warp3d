@@ -1,12 +1,12 @@
 #
 # ****************************************************************************
 #
-#   Updated: June 25, 2024 RHD
+#   Updated: September 24, 2025 RH
 #
 #   Description:
 #     Makefile Header for use with the WARP3D
 #     This header will make an MPI + OpenMP Makefile for Linux using 
-#     Intel Fortran Compiler, Intel MKL and Intel MPI
+#     Intel Fortran Compiler (ifort), Intel MKL and Intel MPI
 #
 #     It sets specific flags required to compile the MPI+threaded 
 #     version of WARP3D,

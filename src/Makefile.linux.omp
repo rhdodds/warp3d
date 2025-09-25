@@ -4,12 +4,12 @@
 #
 #   Invoked by:    Makewarp.bash script
 #
-#   Updated:   June 25, 2024 RHD
+#   Updated:   September 24, 2025 RHD
 #
 #   Description:
 #     Makefile Header for use with the WARP3D 
 #     This header will make an OpenMP Makefile for Linux using the Intel
-#     Fortran Compiler + MKL systems
+#     Fortran Compiler (ifort) + MKL systems
 #
 #     It sets specific flags required to compile the threaded version of WARP3D,
 #     then calls the part of the Makefile which is the same for both the OpenMP 

@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 6/25/2024 rhd
+#   Last modifications: 9/24/2025 rhd
 #
 #   This is invoked by a higher-level makefile:
 #         Makefile.linux_Intel.omp        for threads-only executable
@@ -63,7 +63,7 @@
 #          Intel MKL (and MPI if needed)
 #
 OSNAME   := Linux
-BUILDNUM := 4300
+BUILDNUM := 4400
 #
 #                Extension for relocatable object code files and
 #                remove/move shell commands.

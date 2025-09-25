@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#     Makewarp.bash (6th version)
+#     Makewarp.bash (7th version)
 #
-#     modified: June 2024
+#     modified: September 24, 2025  RHD
 #
 #     Description:
 #
@@ -11,7 +11,7 @@
 #           Run in a Bash shell:  Makewarp.bash
 #
 #           Mac: no user selectable options.
-#                script hunts down the MKL files, checks for Intel compiler, 
+#                script hunts down the MKL files, checks for Intel (ifort) compiler, 
 #                and runs the makefile
 #                to build the threads (OpenMP) executable.
 #
@@ -19,8 +19,8 @@
 #           Linux can either do that (simple mode) or prompt interactively for
 #           the libraries, compiler, etc.
 #
-#           June 2024. Remove support for gfortran. Intel comoiler stack isnow
-#                      available for free.
+#           June 2024. Remove support for gfortran. Intel (ifort) 
+#                      comiler stack is available for free.
 #
 #      Main program (function) at bottom of this script
 #

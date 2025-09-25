@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: June 2024 rhd  (removed gfortran support)
+#   Last modifications: Sept 24, 2025  (build number 4400)
 #
 #   How to run:
 #
@@ -71,7 +71,7 @@
 #
 #
 OSNAME   := OSX
-BUILDNUM := 4300
+BUILDNUM := 4400
 #
 ODIR = ././../obj_macOS
 EXE_NAME = warp3d.omp
