@@ -3,7 +3,25 @@
            Highest Level README File for WARP3D
            ====================================
 
-             Last Update: June 26, 2024
+            Last Update: September 21, 2025
+            
+            See Revision History sector of updated User Manual for
+            more complete descriptions. 
+             
+            Version 18.4.2 Build 4400 on all platforms
+
+            Stress output variables have been modified. The previous stress 
+            invariants I1,I2,I3 are replaced by σmean, σtriaxiality, 
+            and ξ a Lode angle parameter. This applies for printed output, 
+            Patran nodal/element result files and flat nodal/element result 
+            files, and binary packet files.
+            
+            Manual section 2.12.1 provides more discussion of these new stress 
+            output values. Changed sections: 2.12.1, 2.12.2, 2.12.3, 
+            2.12.4, 2.12.5, Appendix F.     
+            
+            Extensive cleanup and re-factoring of most routines for output 
+            generation. Not visible to the user.        
 
             Version 18.4.0 Build 4300 on all platforms
 
