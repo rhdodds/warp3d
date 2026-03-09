@@ -32,12 +32,13 @@ c
      &                 do_nonlocal, nonlocal_state, maxnonlocal,
      &                 iter_0_extrapolate_off, killed_status )
 c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use segmental_curves, only: max_seg_points
       use mm10_defs
       use mm10_constants
 c
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c
 c                 parameter definitions
 c
@@ -52,6 +53,7 @@ c
       double precision, intent(inout) ::
      &      history_n(span,hist_sz), history_np1(span,hist_sz),
      &      nonlocal_state(mxvl,maxnonlocal)
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                 locals
 c
@@ -378,12 +380,14 @@ c
 c
       subroutine mm10_set_cons( local_work, cc_props, isw, i, c )
 c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use mm10_defs ! to get definition of cc_props
       use mm10_constants
 c
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c
+      type (nonlinear_sigeps_work) :: local_work
       type(crystal_props) :: cc_props
       integer :: isw, s_type1, n_hard, h_type, allocate_status
       integer :: i, c
@@ -1825,10 +1829,13 @@ c     ****************************************************************
 c
       subroutine mm10_init_cc_props( inc_props, atype, aconv, debug,
      &                               cc_props )
+c
+      use sigeps_work_mod, only : crystal_properties
       use mm10_defs
       use mm10_constants
+c      
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
       integer :: atype, aconv
       logical :: debug
       type(crystal_properties) :: inc_props

@@ -6219,16 +6219,18 @@ c     ****************************************************************
 c
       subroutine mm10_DJGM_GH( local_work, s_type, num_hard, G, H,
      &                        i, c )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use mm10_defs ! to get definition of cc_props
+      use constants
+c
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c
       integer :: s_type, num_hard, i, c
       double precision, dimension(num_hard,num_hard) ::  G
       double precision, dimension(7,num_hard) ::  H
-      double precision :: one
-c
-      one = 1.d0
+      type (nonlinear_sigeps_work) :: local_work
 c
         if( s_type .eq. 7 ) then ! BCC12
 c       Parameters

@@ -19,6 +19,7 @@ c
       use iso_Fortran_env
       use mm10_defs
       use mm10_constants
+      use mm10_work_def, only : mm10_working_data
       implicit none
 c
 c              parameters
@@ -38,7 +39,6 @@ c
 c
 c               locals
 c
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 c
       double precision :: nR, atol, rtol,   
@@ -517,6 +517,7 @@ c
      *                  outopt,xp,fp,gp,njcnt,nfcnt,iter,termcd)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer n,jacflg(5),maxit,njcnt,nfcnt,iter,termcd,method
       integer global,xscalm,ldr,lrwork,qrwsiz
       integer outopt(*)
@@ -525,7 +526,6 @@ c
       double precision  rjac(ldr,*),rwork(*),rcdwrk(*),qrwork(*)
       double precision  scalex(*)
       integer           icdwrk(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
 
@@ -848,9 +848,9 @@ c     ****************************************************************
 c      
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       implicit none
 c      
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
       integer :: n, ldr
       double precision, dimension(n) :: x
@@ -906,9 +906,9 @@ c
       subroutine mm10_fvec( solve_work, x, fz, n, j )
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       implicit none
 c      
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 c      
       integer :: n, j
@@ -953,12 +953,12 @@ c
       use iso_Fortran_env
       use mm10_defs
       use mm10_constants
+      use mm10_work_def, only : mm10_working_data
       implicit none
 c      
       integer :: n, j, param_num_hard
       complex(kind=real64), dimension(n) :: x, fz
-
-      include 'include_mm10'
+c
       type(mm10_working_data) :: solve_work
 c
       integer :: length
@@ -1603,6 +1603,7 @@ c
 c-----------------------------------------------------------------------
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer ldr,n,iter, njcnt, ierr,priter
       integer jacflg(5),xscalm,qrwsiz
       logical fstjac
@@ -1614,7 +1615,6 @@ c-----------------------------------------------------------------------
       double precision  scalex(*)
       double precision  rcdwrk(*),qrwork(*)
       integer           icdwrk(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
       logical stepadj
@@ -1771,6 +1771,7 @@ c            copy lower triangular R to upper triangular
      *                  solve_work,outopt,xp,fp,gp,njcnt,nfcnt,iter,
      *                  termcd)
       use iso_Fortran_env
+      use mm10_work_def, only : mm10_working_data
       use mm10_defs
       integer ldr,n,termcd,njcnt,nfcnt,iter
       integer maxit,jacflg(5),global,xscalm,qrwsiz
@@ -1784,7 +1785,6 @@ c            copy lower triangular R to upper triangular
       double precision  scalex(*)
       double precision  rcdwrk(*),qrwork(*)
       integer           icdwrk(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
 c-----------------------------------------------------------------------
@@ -2253,14 +2253,14 @@ c      call mm10_nwsnot(1,ierr,rcond)
      *             solve_work,xp,fp,fpnorm,xw,retcd,gcnt,priter,iter)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer n,retcd,gcnt
       double precision  stepmx,xtol,fcnorm,fpnorm
       double precision  xc(*)
       double precision  d(*),g(*),xp(n),fp(n),xw(*)
       double precision  scalex(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
-
+c
       integer priter,iter
 
 c-------------------------------------------------------------------------
@@ -2436,13 +2436,13 @@ c                          downward opening parabola ==> leftmost is solution
      *                  priter,iter)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer ldr, n, retcd, gcnt, priter, iter
       double precision  fcnorm, stepmx, xtol, fpnorm, delta
       double precision  rjac(ldr,*), dn(*), g(*), xc(*), qtf(*)
       double precision  scalex(*), d(*)
       double precision  xprev(*), xp(n), fp(n)
       double precision  ssd(*), v(*), wa(*), fprev(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
 c-------------------------------------------------------------------------
@@ -2685,12 +2685,12 @@ c        calculate convex combination of ssd and eta*dn with length delta
      *                      iter)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer n,retcd,gcnt
       double precision  sigma,stepmx,xtol,fcnorm,fpnorm
       double precision  xc(*)
       double precision  d(*),g(*),xp(n),fp(n),xw(*)
       double precision  scalex(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
       integer priter,iter
@@ -2837,13 +2837,13 @@ c            write(*,*) 'lambda', lambda
      *                  priter,iter)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer ldr, n, retcd, gcnt, priter, iter
       double precision  fcnorm, stepmx, xtol, fpnorm, delta
       double precision  rjac(ldr,*), dn(*), g(*), xc(*), qtf(*)
       double precision  scalex(*), d(*)
       double precision  xprev(*), xp(n), fp(n)
       double precision  ssd(*), v(*), wa(*), fprev(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
 c-------------------------------------------------------------------------
@@ -3099,6 +3099,7 @@ c
 c-----------------------------------------------------------------------
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer ldr,n,iter, njcnt, ierr
       integer jacflg(5),xscalm,qrwsiz,priter
       logical fstjac
@@ -3110,7 +3111,6 @@ c-----------------------------------------------------------------------
       double precision  scalex(*)
       double precision  rcdwrk(*),qrwork(*)
       integer           icdwrk(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
       logical stepadj
@@ -3271,6 +3271,7 @@ c            copy lower triangular Rjac to upper triangular
      *                  termcd)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer ldr,n,termcd,njcnt,nfcnt,iter
       integer maxit,jacflg(5),global,xscalm,qrwsiz
       integer outopt(*)
@@ -3283,7 +3284,6 @@ c            copy lower triangular Rjac to upper triangular
       double precision  scalex(*)
       double precision  rcdwrk(*),qrwork(*)
       integer           icdwrk(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
 c-----------------------------------------------------------------------
@@ -3543,13 +3543,13 @@ c           update xc, fc, and fcnorm
      *                  priter,iter)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer ldr, n, retcd, gcnt, priter, iter
       double precision  fcnorm, stepmx, xtol, fpnorm, delta
       double precision  rjac(ldr,*), dn(*), g(*), xc(*), qtf(*)
       double precision  scalex(*), d(*)
       double precision  xprev(*), xp(n), fp(n)
       double precision  ssd(*), v(*), wa(*), fprev(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
 c-------------------------------------------------------------------------
@@ -3766,14 +3766,14 @@ c        calculate convex combination of ssd and dn with length delta
      *                  xp,fp,fpnorm,xw,retcd,gcnt,priter,iter)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer n,retcd,gcnt
       double precision  stepmx,fpnorm
       double precision  xc(*)
       double precision  d(*),xp(n),fp(n),xw(*)
       double precision  scalex(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
-
+c
       integer priter,iter
 
 c-------------------------------------------------------------------------
@@ -3850,12 +3850,12 @@ c     evaluate functions and the objective function at xp
      *           solve_work,xp,fp,fpnorm,xw,retcd,gcnt,priter,iter)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer n,retcd,gcnt
       double precision  stepmx,xtol,fcnorm,fpnorm
       double precision  xc(*)
       double precision  d(*),g(*),xp(n),fp(n),xw(*)
       double precision  scalex(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
       integer priter,iter
@@ -4271,11 +4271,11 @@ c-----------------------------------------------------------------------
      & solve_work,termcd)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer lda,n,termcd
       double precision  A(lda,*),xc(*),fc(*)
       double precision  epsm,scalex(*)
       double precision  fz(*),wa(*),xw(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work, solve_work1
 
 c-------------------------------------------------------------------------
@@ -4384,11 +4384,11 @@ c-----------------------------------------------------------------------
      *                   solve_work,termcd,dsub,dsuper)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer lda,n,termcd,dsub,dsuper
       double precision  A(lda,*),xc(*),fc(*)
       double precision  epsm,scalex(*)
       double precision  fz(*),wa(*),xw(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work, solve_work1
 
 c-------------------------------------------------------------------------
@@ -4495,11 +4495,11 @@ c-----------------------------------------------------------------------
      & solve_work,termcd)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer lda,n,termcd
       double precision  A(lda,*),xc(*),fc(*)
       double precision  epsm,scalex(*)
       double precision  fz(*),wa(*),xw(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work, solve_work1
 
 c-------------------------------------------------------------------------
@@ -4618,11 +4618,11 @@ c-----------------------------------------------------------------------
      *                  solve_work,termcd)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer lda,n,termcd,jacflg(5)
       double precision  A(lda,*),xc(*),fc(*)
       double precision  epsm,scalex(*)
       double precision  fz(*),wa(*),xw(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
 c-------------------------------------------------------------------------
@@ -4678,10 +4678,10 @@ c-----------------------------------------------------------------------
 
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer ldr,n
       double precision  epsm
       double precision  rjac(ldr,*),fz(*),xc(*),fc(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work, solve_work1
 
 c-------------------------------------------------------------------------
@@ -4747,11 +4747,11 @@ c-----------------------------------------------------------------------
      *                  dsuper,w,xstep)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer ldr,n,dsub,dsuper
       double precision  epsm
       double precision  rjac(ldr,*),fz(*),xc(*),fc(*)
       double precision  w(*), xstep(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work, solve_work1
 
 c-------------------------------------------------------------------------
@@ -5045,11 +5045,11 @@ c-----------------------------------------------------------------------
      *                  rjac,ldr,xw,w,xstep,priter)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer ldr,n,jacflg(5), priter
       double precision  epsm
       double precision  x(*),f(*),scalex(*),xw(*),w(*),xstep(*)
       double precision  rjac(ldr,*),fq(*)
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
 c-------------------------------------------------------------------------
@@ -5333,9 +5333,9 @@ c-----------------------------------------------------------------------
       subroutine mm10_nwfvec(x,n,scalex,solve_work,f,fnorm,xw)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       integer n
       double precision  x(*),xw(*),scalex(*),f(*),fnorm
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work
 
 c-------------------------------------------------------------------------
@@ -5599,8 +5599,8 @@ c-----------------------------------------------------------------------
       subroutine mm10_copy_work(solve_work,solve_work1)
       use iso_Fortran_env
       use mm10_defs
+      use mm10_work_def, only : mm10_working_data
       implicit none
-      include 'include_mm10'
       type(mm10_working_data) :: solve_work, solve_work1
       
 c      write(*,*) 'I found out we did not need this'
