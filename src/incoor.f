@@ -14,8 +14,8 @@ c
 c
 c
       subroutine incoor( sbflg1, sbflg2 )
+c      
       use global_data ! old common.main
-c
       use main_data, only : crdmap
 c
       implicit none
@@ -549,7 +549,7 @@ c
 c
       x_min =  1.0d20;  x_max = -1.0d20
       y_min =  1.0d20;  y_max = -1.0d20
-      z_min =  1.0d20;  y_max = -1.0d20
+      z_min =  1.0d20;  z_max = -1.0d20
 c
       do node = 1, nonode
         idx = crdmap(node)
@@ -574,9 +574,9 @@ c
       return
 c
  9000 format(/,"...... Minimum and maximum coordinate values ......")  
- 9010 format(10x,'X min: ',e14.6,2x,'X max: ',e14.6)    
- 9020 format(10x,'Y min: ',e14.6,2x,'Y max: ',e14.6)    
- 9030 format(10x,'Z min: ',e14.6,2x,'Z max: ',e14.6)    
+ 9010 format(10x,'X min: ',d14.6,2x,'X max: ',d14.6)    
+ 9020 format(10x,'Y min: ',d14.6,2x,'Y max: ',d14.6)    
+ 9030 format(10x,'Z min: ',d14.6,2x,'Z max: ',d14.6)    
 c
       end subroutine incoor_min_max
       end subroutine incoor
