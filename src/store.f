@@ -4,7 +4,7 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/19/26 rhd                *
+c     *                   last modified : 3/8/2026 rhd               *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
@@ -163,7 +163,7 @@ c
      &              solver_mkl_iterative, output_packets,
      &              temperatures_ref, fgm_node_values_defined,
      &              fgm_node_values_used,
-     &              time_assembly, mkl_solve, nasa_vss,
+     &              time_assembly, mkl_solve, nasa_vss, mumps_solve,
      &              nonlocal_analysis,
      &              umat_serial, umat_used, asymmetric_assembly,
      &              extrapolate, extrap_off_next_step,
