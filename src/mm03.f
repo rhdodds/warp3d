@@ -184,7 +184,9 @@ c                  gurson- tvergaard yield function for the trial
 c                  elastic stress state. current matrix stress is
 c                  history(2), current void fraction is history(5).
 c
+      yld_func(1:span) = zero 
       do i = 1, span
+        if( null_point(i) ) cycle
         gurson = f0(i) .gt. zero .or. nucleation(i)
         if( gurson ) then
           term1 = q_trial(i) / flow_stress(i)
