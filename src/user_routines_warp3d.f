@@ -9,7 +9,7 @@ c     *                 subroutine user_solution_parmeters           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/7/2015 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     user routine to potentially alter solution parameters    *
 c     *     and loading before the next load (time) step             *
@@ -19,9 +19,13 @@ c
 c
       subroutine user_solution_parameters( now_step, iout,
      &    sol_parms, next_step_loading, convergence_history )
+c
+      use user_parms_def, only : solution_parameters,
+     &                           step_define    
+c
       implicit none
 c
-      integer now_step, iout ! others are user-defined types
+      integer :: now_step, iout ! others are user-defined types
 c
 c           declaration of data structure used to communicate between
 c           WARP3D and the user_solution_params routine
@@ -30,7 +34,6 @@ c           See Section 2.10 of User Manual for more details. The
 c           variables below have 1-to-1 correspondence with
 c           user input commands.
 c
-      include 'include_usr_parm'
       type :: step_convergence_data
         logical :: step_converged
         logical :: adaptive_used
@@ -39,15 +42,14 @@ c
       end type
 c
       type(solution_parameters) :: sol_parms
-      type(step_definition) :: next_step_loading
+      type(step_define) :: next_step_loading
       type(step_convergence_data), dimension(5) ::
      &                         convergence_history
 c
 c            locals
 c
-      integer i, num_patts, step_to_write
-      logical debug_local
-      data debug_local  / .false. /
+      integer :: i, num_patts, step_to_write
+      logical, parameter :: debug_local = .false.
 c
       if( debug_local ) then ! values provided by WARP3D
         write(iout,*)
@@ -161,11 +163,11 @@ c
       implicit none
 c
       character :: load_name*8, user_file_name*80
-      integer  nnode, step_np1, kout
-      double precision pattern_values(nnode,4), initial_temps(*),
-     &                 node_coords(nnode,3),
-     &                 time_n, dtime
-      logical forces_set, temps_set, use_linear_k
+      integer ::  nnode, step_np1, kout
+      double precision :: pattern_values(nnode,4),
+     &                  initial_temps(*), node_coords(nnode,3),
+     &                  time_n, dtime
+      logical :: forces_set, temps_set, use_linear_k
 c
 c       Routine for direct specification of incremental nodal
 c       forces and temperatures for a loading condition (pattern).
@@ -223,8 +225,8 @@ c
 c               local variables
 c               ---------------
 c
-      double precision x
-      integer node
+      double precision :: x
+      integer :: node
 c
 c                code below is just a simple example for illustration
 c

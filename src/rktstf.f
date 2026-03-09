@@ -4,7 +4,7 @@ c     *                      subroutine rktstf                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 9/5/2017  rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     drive computation of tangent stiffness matrices for a    *
 c     *     block of similar elements.                               *
@@ -14,10 +14,12 @@ c
 c
       subroutine rktstf( props, iprops, lprops, glb_ek_blk, nrow_ek,
      &                   ispan, local_work )
+c
       use main_data, only : matprp, lmtprp, asymmetric_assembly
+      use tan_ek_work_mod, only :  nonlinear_ek_work
+c
       implicit none
       include 'param_def'
-      include 'include_tan_ek'
 c
 c                 parameter declarations
 c
@@ -27,6 +29,7 @@ c
       real    :: props(mxelpr,*)   !  all 3 are same. read-only here
       integer :: iprops(mxelpr,*)  !  1st col is for felem
       logical :: lprops(mxelpr,*)
+      type(nonlinear_ek_work) :: local_work
 c
 c                 local
 c

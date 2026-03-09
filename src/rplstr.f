@@ -4,7 +4,7 @@ c     *                      subroutine rplstr                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/17/2017 rhd             *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     stores globally the recovered material                   *
 c     *     and stress states.                                       *
@@ -15,20 +15,21 @@ c
       subroutine rplstr( span, felem, ngp, mat_type, iter, geonl,
      &                   local_work, blk, block_stress_sums,
      &                   block_strain_sums, local_debug_sums )
+c
       use global_data ! old common.main
       use elem_block_data, only : history1_blocks, rot_n1_blocks,
      &                            eps_n1_blocks,
      &                            urcs_n1_blocks, history_blk_list
-
-      implicit none
+      use sigeps_work_mod, only : nonlinear_sigeps_work
 c
-      include 'include_sig_up'
+      implicit none
 c
 c                   parameter declarations
 c
       integer :: span, felem, ngp, iter, blk
       logical :: geonl, local_debug_sums
-      double precision :: block_stress_sums(1), block_strain_sums(1)
+      double precision :: block_stress_sums(*), block_strain_sums(*)
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                   local declarations
 c

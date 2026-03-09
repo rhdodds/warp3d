@@ -4,7 +4,7 @@ c     *                      subroutine rstgp1                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/23/21 rhd                *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     compute strains, stresses and                            *
 c     *     accompaning stress data at an integration point          *
@@ -20,6 +20,7 @@ c
 c
       use global_data, only : mxelpr, max_slip_sys, nstr, mxvl
       use elem_block_data,  only : initial_state_data
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use constants
 c
       implicit none
@@ -29,7 +30,7 @@ c
       real, intent(in)    :: props(mxelpr,*)   ! all 3 are same by read-only
       logical, intent(in) :: lprops(mxelpr,*)
       integer, intent(in) :: iprops(mxelpr,*)
-      include 'include_sig_up'  ! definition for local_work
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                       locally defined variables
 c
@@ -334,7 +335,7 @@ c     *                      subroutine rstgp2                       *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/23/21 rhd                *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     supervise the computation of strains, stresses and       *
 c     *     accompaning stress data at an integration point          *
@@ -350,6 +351,7 @@ c
 c
       use global_data, only : mxelpr, max_slip_sys, nstr, mxvl, nstrs
       use elem_block_data,  only : initial_state_data
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       implicit none
 c
 c                      parameter declarations
@@ -357,7 +359,7 @@ c
       real, intent(in)    ::  props(mxelpr,*) ! all 3 are same but read only
       logical, intent(in) :: lprops(mxelpr,*) ! 1st col is 1st elem of blk
       integer, intent(in) :: iprops(mxelpr,*)
-      include 'include_sig_up' ! definition for local_work
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                       locally defined variables
 c
@@ -365,7 +367,8 @@ c
      &           iter, mat_type, number_points, iout,
      &           curve_set, i, k, nowblk
       double precision :: internal_energy, beta_fact, eps_bbar,
-     &  uddt(mxvl,nstr), plastic_work, dummy_q(1), dummy_dfn1(1),
+     &  uddt(mxvl,nstr), plastic_work, dummy_q(mxvl,nstr,nstr),
+     &  dummy_dfn1(1),
      &  bar_volumes(mxvl), bar_areas_0(mxvl), bar_areas_nx(mxvl)
       logical :: bbar, signal_flag, drive_material_model
       logical, parameter :: local_debug = .false.
@@ -566,7 +569,8 @@ c
 c
 c                general UMAT -- Abaqus compatible
 c
-       call drive_umat_update( gpn, local_work, uddt, dummy_q, iout )
+       call drive_umat_update( gpn, local_work, uddt, 
+     &                         dummy_q, iout )
 c
       case ( 9 )
 c
@@ -598,7 +602,7 @@ c     *                subroutine drive_01_update                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 8/30/2018 rhd                   *
+c     *              last modified : Feb 2026 rhd                    *
 c     *                                                              *
 c     *     drives material model #1 (bilinear) to                   *
 c     *     update stresses and history for all elements in the      *
@@ -609,6 +613,8 @@ c
 c
       subroutine drive_01_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       use main_data, only : extrapolated_du
       use constants
@@ -623,7 +629,7 @@ c
       integer :: iprops(mxelpr,*)
       integer :: gpn, iout
       double precision ::  uddt_displ(mxvl,nstr)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                       locally defined variables
 c
@@ -632,7 +638,7 @@ c
      &           hist_size_for_blk, curve_type, elem_type, i,
      &           local_out
 c
-      double precision :: dtime, ddummy(1), gp_alpha, ymfgm, et
+      double precision :: dtime, ddummy(mxvl), gp_alpha, ymfgm, et
       double precision, allocatable :: eps_elas(:,:),
      &  gp_temps(:), gp_rtemps(:), gp_dtemps(:), uddt_temps(:,:), 
      &  uddt(:,:), cep(:,:,:)
@@ -1025,7 +1031,7 @@ c     *                 subroutine drive_02_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     this subroutine drives material model 02 to              *
 c     *     update stresses and history for all elements in the      *
@@ -1036,6 +1042,8 @@ c
 c
       subroutine drive_02_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       use main_data, only : extrapolated_du
       use constants
@@ -1050,7 +1058,7 @@ c
       integer :: iprops(mxelpr,*)
       integer :: gpn, iout
       double precision ::  uddt_displ(mxvl,nstr)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 
 c
 c                       locally defined variables
@@ -1384,7 +1392,7 @@ c     *                  subroutine drive_03_update                  *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *             last modified : 3/5/21 rhd                       *
+c     *             last modified : Feb 2026 rhd                     *
 c     *                                                              *
 c     *     drives material model 03 to update stresses and history  *
 c     *     for all elements in the block at 1 integration point     *
@@ -1395,6 +1403,8 @@ c
 c
       subroutine drive_03_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use segmental_curves, only : max_seg_points, max_seg_curves,
      &                             now_blk_relem, sigma_curve_min_values
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
@@ -1412,7 +1422,7 @@ c
       integer :: iprops(mxelpr,*)
       integer :: gpn, iout
       double precision ::  uddt_displ(mxvl,nstr)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                       locally defined variables
 c
@@ -2062,7 +2072,7 @@ c     *                 subroutine drive_04_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 10/26/2015 rhd             *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     drive model 04 interface-cohesive to                     *
 c     *     update stresses, history, [D]s for all elements in the   *
@@ -2073,6 +2083,8 @@ c
 c
       subroutine drive_04_update( gpn, props, lprops, iprops,
      &                            local_work, uddt, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use main_data, only : extrapolated_du
       use elem_block_data, only  : gbl_cep_blocks => cep_blocks
       use constants
@@ -2087,7 +2099,7 @@ c
       logical ::  lprops(mxelpr,*)
       integer ::  iprops(mxelpr,*)
       double precision :: uddt(mxvl,nstr)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c              locally defined variables
 c
@@ -2323,7 +2335,7 @@ c     *                 subroutine drive_05_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     drives material model 05 (cyclic plastcity) to           *
 c     *     update stresses and history for all elements in the      *
@@ -2334,6 +2346,8 @@ c
 c
       subroutine drive_05_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use elem_block_data, only : gbl_cep_blocks => cep_blocks,
      &                            nonlocal_flags, nonlocal_data_n1
       use main_data, only : extrapolated_du
@@ -2348,7 +2362,7 @@ c
       integer :: iprops(mxelpr,*)
       integer :: gpn, iout
       double precision ::  uddt_displ(mxvl,nstr)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c
 c                       locally defined variables
@@ -2359,7 +2373,7 @@ c
 c
       double precision ::
      &  gp_temps(mxvl), gp_rtemps(mxvl), gp_dtemps(mxvl),
-     &  zero, dtime, ddummy,
+     &  zero, dtime, ddummy(mxvl),
      &  nh_sigma_0_vec(mxvl), nh_q_u_vec(mxvl), nh_b_u_vec(mxvl),
      &  nh_h_u_vec(mxvl), nh_gamma_u_vec(mxvl), gp_tau_vec(mxvl)
       double precision, allocatable ::  uddt_temps(:,:), uddt(:,:), 
@@ -2906,7 +2920,7 @@ c     *            subroutine drive_06_update  (creep)               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/23/21 rhd                *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     drives material model 06 to update stresses and history  *
 c     *     for all elements in the block for gauss point gpn        *
@@ -2916,6 +2930,8 @@ c
 c
       subroutine drive_06_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use global_data, only : nstr, mxvl, mxelpr, max_slip_sys, nstrs,
      &                        nonlocal_shared_state_size
       use main_data, only : extrapolated_du
@@ -2932,7 +2948,7 @@ c
       logical, intent(in)  :: lprops(mxelpr,*)
       integer, intent(in)  :: iprops(mxelpr,*)
       double precision :: uddt_displ(mxvl,nstr)
-      include 'include_sig_up' ! definition of local-work
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                       locally defined variables
 c
@@ -3134,7 +3150,7 @@ c     *                 subroutine drive_07_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     drives material model 07 (mises + hydrogen) to           *
 c     *     update stresses and history for all elements in the      *
@@ -3145,6 +3161,8 @@ c
 c
       subroutine drive_07_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       use main_data, only : extrapolated_du
       use constants
@@ -3159,7 +3177,7 @@ c
       integer :: iprops(mxelpr,*)
       integer :: gpn, iout
       double precision ::  uddt_displ(mxvl,nstr)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                       locally defined variables
 c
@@ -3405,7 +3423,7 @@ c     *            subroutine drive_umat_update  (umat)              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified: 9/16/2018 rhd               *
+c     *                   last modified: Feb 2026 rhd                *
 c     *                                                              *
 c     *     drives material model 08 (Abaqus umat) to update         *
 c     *     stresses and history for all elements in block at        *
@@ -3415,6 +3433,8 @@ c     ****************************************************************
 c
 c
       subroutine drive_umat_update( gpn, local_work, uddt, qn1, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use main_data, only : nonlocal_analysis,
      &                      extrapolated_du, non_zero_imposed_du
       use elem_block_data, only : nonlocal_flags, nonlocal_data_n1,
@@ -3428,7 +3448,7 @@ c                      parameter declarations
 c
       integer :: gpn, iout
       double precision :: uddt(mxvl,nstr), qn1(mxvl,nstr,nstr)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                       locally defined variables
 c
@@ -3983,7 +4003,7 @@ c     *                 subroutine drive_09_update                   *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 1/2/2016 rhd               *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     drives material model 09:; <available> to                *
 c     *     update stresses and history for all elements in the      *
@@ -3994,6 +4014,8 @@ c
 c
       subroutine drive_09_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use elem_block_data, only : gbl_cep_blocks => cep_blocks
       use main_data, only : extrapolated_du
       use constants
@@ -4008,7 +4030,7 @@ c
       integer :: iprops(mxelpr,*)
       integer :: gpn, iout
       double precision ::  uddt_displ(mxvl,nstr)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                       locally defined variables
 c
@@ -4248,7 +4270,7 @@ c     *                                                              *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/8/15                    *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     this subroutine drives material model 10 to              *
 c     *     update stresses and history for all elements in the      *
@@ -4259,6 +4281,8 @@ c
 c
       subroutine drive_10_update( gpn, props, lprops, iprops,
      &                            local_work, uddt_displ, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use main_data, only : imatprp, dmatprp,
      &                      extrapolated_du
       use elem_block_data, only : nonlocal_flags, nonlocal_data_n1
@@ -4274,7 +4298,7 @@ c
       logical :: lprops(mxelpr,*)
       integer :: iprops(mxelpr,*)
       double precision :: uddt_displ(mxvl,nstr)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c
 c                       locally defined variables
@@ -4747,6 +4771,16 @@ c
 c
       subroutine drive_11_update( gpn, props, lprops, iprops,
      &                            local_work, uddt, iout )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
+c
+      implicit none
+c
+      integer :: gpn, iprops(*), iout
+      real :: props(*)
+      logical :: lprops(*)
+      double precision :: uddt(*)
+      type (nonlinear_sigeps_work) :: local_work
       write(*,*) ".... routine drive_11_update: deprecated"
       call die_abort
       return
@@ -4870,9 +4904,9 @@ c
 c              change history length if we are actually an
 c              interface damaged material
 c
-      if( is_inter_dmg )
-     &   call mm11_set_sizes_special(inter_mat,info_vector,
-     &                               local_element_no)
+c      if( is_inter_dmg )
+c     &   call mm11_set_sizes_special(inter_mat,info_vector,
+c     &                               local_element_no)
 c
       if( info_type .gt. 0 .and. info_type .le. 4 ) then
          value = info_vector(info_type)

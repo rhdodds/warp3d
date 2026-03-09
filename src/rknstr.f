@@ -4,7 +4,7 @@ c     *                      subroutine rknstr                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 4/24/2018 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     drive updating of strains/stresses for a block of        *
 c     *     elements                                                 *
@@ -13,10 +13,12 @@ c     ****************************************************************
 c
 c
       subroutine rknstr( props, lprops, iprops, local_work )
+c      
       use segmental_curves
       use main_data, only : matprp, lmtprp, imatprp, dmatprp,
      &                      initial_stresses
       use mm10_defs, only : indexes_common, index_crys_hist
+      use sigeps_work_mod, only : nonlinear_sigeps_work
 c
       implicit none
       include 'param_def'
@@ -24,7 +26,7 @@ c
       real    :: props(mxelpr,mxvl)   ! all 3 the same. read only
       logical :: lprops(mxelpr,mxvl)  ! props(1,1) -> 1st element of blk
       integer :: iprops(mxelpr,mxvl)
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                    locals
 c
@@ -772,7 +774,7 @@ c     *                   subroutine setup_segmental                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 3/13/23                    *
+c     *                   last modified : Feb 2-26 rhd               *
 c     *                                                              *
 c     *     set up segemetnal stress-strain curves for use in        *
 c     *     stress updating                                          *
@@ -782,9 +784,10 @@ c
 c
       subroutine setup_segmental( span, props, lprops, iprops,
      &                            local_work )
+c
       use segmental_curves, only: seg_curve_table,  num_seg_points,
      &                            seg_curves, max_seg_points
-c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
 c
       implicit none
       include 'param_def'
@@ -794,7 +797,7 @@ c
       real    props(mxelpr,mxvl)
       logical lprops(mxelpr,mxvl)
       integer iprops(mxelpr,mxvl), span
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                    local declarations
 c
@@ -994,7 +997,7 @@ c     *                   subroutine setup_mm01_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *              last modified : 8/25/2020 rhd                   *
+c     *              last modified : Feb 2026                        *
 c     *                                                              *
 c     *     set up material model #1 (bilinear mises) for stress     *
 c     *     updating                                                 *
@@ -1004,7 +1007,9 @@ c
 c
       subroutine setup_mm01_rknstr( span, props, lprops, iprops,
      &                              local_work )
+c
       use segmental_curves
+      use sigeps_work_mod, only : nonlinear_sigeps_work
 c
       implicit none
       include 'param_def'
@@ -1014,7 +1019,7 @@ c
       real :: props(mxelpr,mxvl)
       logical :: lprops(mxelpr,mxvl)
       integer :: iprops(mxelpr,mxvl), span
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
       integer :: i
 c
@@ -1056,7 +1061,7 @@ c     *                   subroutine setup_mm02_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     set up material model #2 (deformation plasticity)        *
 c     *     for stress updating                                      *
@@ -1066,7 +1071,9 @@ c
 c
       subroutine setup_mm02_rknstr( span, props, lprops, iprops,
      &                              local_work )
+c
       use segmental_curves 
+      use sigeps_work_mod, only : nonlinear_sigeps_work
 c
 c
       implicit none
@@ -1077,7 +1084,7 @@ c
       real :: props(mxelpr,mxvl)
       logical :: lprops(mxelpr,mxvl)
       integer :: iprops(mxelpr,mxvl), span
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
       integer :: i
 c
@@ -1116,7 +1123,7 @@ c     *                   subroutine setup_mm03_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     set up material model #3 (general mises and gurson)      *
 c     *     for stress updating                                      *
@@ -1126,6 +1133,7 @@ c
 c
       subroutine setup_mm03_rknstr( span, props, lprops, iprops,
      &                              adaptive, local_work )
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use segmental_curves
 c
       implicit none
@@ -1136,7 +1144,7 @@ c
       real ::   props(mxelpr,mxvl)
       logical :: lprops(mxelpr,mxvl), adaptive
       integer :: iprops(mxelpr,mxvl), span
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                    local
 c
@@ -1205,7 +1213,7 @@ c     *                   subroutine setup_mm05_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     set up material model #5 (cyclic plasticity)             *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1215,6 +1223,8 @@ c
 c
       subroutine setup_mm05_rknstr( span, props, lprops, iprops,
      &                              adaptive, local_work )
+c
+      use sigeps_work_mod,   only : nonlinear_sigeps_work
       use segmental_curves
       use main_data, only : matprp, lmtprp
 c
@@ -1226,7 +1236,7 @@ c
       real  ::  props(mxelpr,mxvl)
       logical :: lprops(mxelpr,mxvl), adaptive
       integer :: iprops(mxelpr,mxvl), span
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                    local
 c
@@ -1302,7 +1312,7 @@ c     *                   subroutine setup_mm06_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     set up material model #6 (creep)                         *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1312,6 +1322,8 @@ c
 c
       subroutine setup_mm06_rknstr( span, props, lprops, iprops,
      &                              adaptive, local_work )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use main_data, only : matprp, lmtprp
 c
       implicit none
@@ -1322,7 +1334,7 @@ c
       real    ::  props(mxelpr,mxvl)
       logical ::  lprops(mxelpr,mxvl), adaptive
       integer ::  iprops(mxelpr,mxvl), span
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                    local
 c
@@ -1389,7 +1401,7 @@ c     *                   subroutine setup_mm07_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     set up material model #7 (mises + hydrogen)              *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1399,6 +1411,8 @@ c
 c
       subroutine setup_mm07_rknstr( span, props, lprops, iprops,
      &                              adaptive, local_work )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use segmental_curves
       use main_data, only : matprp, lmtprp
 c
@@ -1410,7 +1424,7 @@ c
       real  ::  props(mxelpr,mxvl)
       logical :: lprops(mxelpr,mxvl), adaptive
       integer :: iprops(mxelpr,mxvl), span
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                    local
 c
@@ -1457,7 +1471,7 @@ c     *                   subroutine setup_umat_rknstr               *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 8/25/2020 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *   set up material model #8 (Abaqus compatible UMAT)          *
 c     *                                                              *
@@ -1466,6 +1480,8 @@ c
 c
       subroutine setup_umat_rknstr( span, props, lprops, iprops,
      &                              adaptive, local_work )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use segmental_curves
       use main_data, only : matprp, lmtprp, dmatprp
 c
@@ -1477,7 +1493,7 @@ c
       real ::   props(mxelpr,mxvl)
       logical :: lprops(mxelpr,mxvl), adaptive
       integer :: iprops(mxelpr,mxvl), span
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                    local
 c
@@ -1531,7 +1547,7 @@ c     *                   subroutine setup_mm10_rknstr               *
 c     *                                                              *
 c     *                       written by : mcm                       *
 c     *                                                              *
-c     *                   last modified : 3/27/2022 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     set up material model #10 (crystal plasticity)           *
 c     *     for stress updating: values constant across all g. pts.  *
@@ -1545,6 +1561,7 @@ c
       use main_data, only : matprp, lmtprp, imatprp, dmatprp, smatprp
       use crystal_data, only : c_array, angle_input, crystal_input,
      &                         crystal_data_offset
+      use sigeps_work_mod,   only : nonlinear_sigeps_work
 c
       implicit none
       include 'param_def'
@@ -1554,7 +1571,7 @@ c
       integer :: iprops(mxelpr,mxvl), span
       real    :: props(mxelpr,mxvl)
       logical :: lprops(mxelpr,mxvl), adaptive
-      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                    local
 c
@@ -2013,6 +2030,16 @@ c
 c
       subroutine setup_mm11_rknstr( span, props, lprops, iprops,
      &                              adaptive, local_work )
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
+c
+      implicit none
+c
+      integer :: span, iprops(*)
+      real :: props(*)
+      logical :: lprops(*), adaptive      
+      type (nonlinear_sigeps_work) :: local_work
+c      
       write(*,*) ".... routine setup_mm11_rknstr: deprecated"
       call die_abort
       end

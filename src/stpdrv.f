@@ -1055,7 +1055,7 @@ c     *              subroutine stpdrv_user_solution_parms           *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/6/2015 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     drive execution of user_solution_parms routine           *
 c     *                                                              *
@@ -1063,21 +1063,22 @@ c     ****************************************************************
 c
 c
       subroutine stpdrv_user_solution_parms( now_step )
-      use global_data ! old common.main
+      use global_data 
 c
-      use damage_data, only :  perm_load_fact
+      use damage_data, only : perm_load_fact
       use main_data, only : step_load_data, convergence_history,
      &                      extrapolate, extrap_off_next_step,
      &                      divergence_check, diverge_check_strict,
      &                      line_search, user_cnstrn_stp_factors
+      use user_parms_def, only : solution_parameters, 
+     &                           step_define
       implicit none
 c
       integer :: now_step
 c
       integer :: num_patt, i, ld_cond_number
-      include 'include_usr_parm'
       type(solution_parameters) :: usolution_parms
-      type(step_definition) :: next_step_loading
+      type(step_define) :: next_step_loading
 c
 
 c

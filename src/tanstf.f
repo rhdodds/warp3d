@@ -4,7 +4,7 @@ c     *                                                              *
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
-c     *                   last modified : 3/23/21 rhd                *          
+c     *                   last modified : Feb 2026 rhd               *          
 c     *                                                              *          
 c     *     drive computation of all element [K]s. can be symmetric  *          
 c     *     (store upper-triangle) or asymmetric (store full [K])    *          
@@ -101,7 +101,7 @@ c     *                      subroutine do_nlek_block                *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 3/28/21 rhd                *          
+c     *                   last modified : feb 2026 rhd               *          
 c     *                                                              *          
 c     *     computes the global nonlinear stiffness                  *          
 c     *     matrices for a block of elements. the data structures    *          
@@ -132,6 +132,7 @@ c
       use damage_data, only : growth_by_kill, use_mesh_regularization,
      &                        use_estiff_at_death, dam_ptr                                                                                                          
       use contact, only : use_contact    
+      use tan_ek_work_mod, only :  nonlinear_ek_work
       use constants                                       
 c                                                                               
       implicit none                                                             
@@ -143,7 +144,7 @@ c
 c                                                                               
 c                       local declarations                                      
 c                                                                               
-      include 'include_tan_ek'                                                  
+      type(nonlinear_ek_work) :: local_work
       logical :: geo_non_flg, bbar_flg, std_kill_method,                            
      &           symmetric_assembly, block_is_killable 
       logical, parameter :: local_debug = .false.                         
@@ -625,7 +626,7 @@ c     *                  subroutine dptstf_blocks                    *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 4/26/2017 rhd              *          
+c     *                   last modified : Feb 2026 rhd              *          
 c     *                                                              *          
 c     *     this subroutine creates a separate copy of element       *          
 c     *     data necessary for the tangent stiffness computation of  *          
@@ -638,21 +639,23 @@ c
 c                                                                               
       subroutine dptstf_blocks(                                                 
      &   blk, span, belinc, felem, ngp, nnode, ndof, geonl, totdof,             
-     &   mat_type, local_work )                                                 
-      use global_data ! old common.main
-c                                                                               
+     &   mat_type, local_work ) 
+c                                                     
+      use global_data
+      use tan_ek_work_mod, only :  nonlinear_ek_work
       use elem_block_data, only:  rot_n1_blocks, history1_blocks,               
      &                            urcs_n1_blocks,                
      &                            history_blk_list                              
 c                                                                               
       implicit none                                                             
-      include 'include_tan_ek'                                                  
 c                                                                               
 c           parameter declarations                                              
 c                                                                               
       integer :: blk, span, felem, ngp, nnode, ndof, totdof, mat_type           
       integer :: belinc(nnode,*)                                                
       logical :: geonl                                                          
+      type(nonlinear_ek_work) :: local_work
+
 c                                                                               
 c           local declarations                                                  
 c                                                                               
@@ -836,7 +839,7 @@ c     *                   subroutine tanstf_allocate                 *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 3/13/23 rhd                *          
+c     *                   last modified : feb 2026 rhd               *          
 c     *                                                              *          
 c     *     allocate data structure in local_work for updating       *          
 c     *     element stiffnesses                                      *          
@@ -844,11 +847,14 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine tanstf_allocate( local_work )                                  
+      subroutine tanstf_allocate( local_work ) 
+c                                       
       use global_data ! old common.main
+      use tan_ek_work_mod, only :  nonlinear_ek_work
+c
       implicit none                                                             
-                                                                                
-      include 'include_tan_ek'                                                  
+c
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
       integer :: error                                                          
       double precision :: zero                                                  
@@ -958,7 +964,7 @@ c     *                   subroutine tanstf_deallocate               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 7/29/2017 rhd              *          
+c     *                   last modified : feb 2026 rhd               *          
 c     *                                                              *          
 c     *     release data structure in local_work for updating        *          
 c     *     strains-stresses-internal forces.                        *          
@@ -967,10 +973,14 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine tanstf_deallocate( local_work )                                
+c
       use global_data ! old common.main
+      use tan_ek_work_mod, only :  nonlinear_ek_work
+c
       implicit none                                                             
-      include 'include_tan_ek'                                                  
 c                                                                               
+      type(nonlinear_ek_work) :: local_work
+c
       integer :: local_mt, error                                                
       logical :: local_debug                                                    
 c                                                                               

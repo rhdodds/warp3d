@@ -4,7 +4,7 @@ c     *                      subroutine rknifv                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/12/2017 rhd              *
+c     *                   last modified : Feb 2026 rhd               *
 c     *                                                              *
 c     *     drives comptuation of internal force vectors for a       *
 c           block of similar elements. integral trans B * sigma      *
@@ -15,17 +15,20 @@ c
       subroutine rknifv( eleifv, updated_element_volumes, props,
      &                   nrow_ifv, local_work )
      &
+c
       use segmental_curves, only : max_seg_points, max_seg_curves
+      use sigeps_work_mod,   only : nonlinear_sigeps_work
       use constants
+
       implicit none
       include 'param_def'
-      include 'include_sig_up'
 c
 c                       parameter declarations
 c
       integer :: nrow_ifv    ! same as span
       real :: props(mxelpr,*)
       double precision :: eleifv(nrow_ifv,*), updated_element_volumes(*)
+      type (nonlinear_sigeps_work) :: local_work
 c
 c                       local variables
 c

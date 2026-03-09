@@ -12,31 +12,23 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine thyme( calc, flag )                                            
-      use global_data ! old common.main
-      implicit integer (a-z)                                                    
-      real  t1, wcputime                                                        
-      external wcputime                                                         
-c                                                                               
-c                                                                               
-      if ( slave_processor ) return                                             
-c                                                                               
-      if ( flag .eq. 1 ) then                                                   
-c                                                                               
-c                       initial call.                                           
-c                                                                               
+      subroutine thyme( calc, flag )    
+c                                              
+      use global_data, only : times, strtm
+c      
+      implicit none
+c      
+      integer :: calc, flag      
+      real ::  t1
+      real, external :: wcputime                                                        
+c
+      if ( flag .eq. 1 ) then  ! initial call                                                                               
          strtm = wcputime ( 1 )                                                 
-c                                                                               
-      else                                                                      
-c                                                                               
-c                       final call                                              
-c                                                                               
+      else  ! accumulate wall time and counts.
          t1            = wcputime ( 1 )                                         
          times(calc,1) = times(calc,1) + t1 - strtm                             
          times(calc,2) = times(calc,2) + 1.0                                    
-c                                                                               
       end if                                                                    
-c                                                                               
 c                                                                               
       return                                                                    
       end                                                                       
