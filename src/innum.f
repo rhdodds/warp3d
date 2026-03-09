@@ -13,7 +13,7 @@ c
 c                                                                               
 c                                                                               
       subroutine innum( sbflg1, sbflg2 )                                        
-      use global_data ! old common.main
+      use global_data
       use main_data, only : elstor, incmap, crdmap                              
       use erflgs                                                                
 c                                                                               
