@@ -4,7 +4,7 @@ c     *                      module performance_data                 *
 c     *                                                              *          
 c     *                       written by : mcm                       *          
 c     *                                                              *          
-c     *                   last modified : 04/27/2017 rhd             *          
+c     *                   last modified : 3/8/2026 rhd               *          
 c     *                                                              *          
 c     *                      stores various profiling data           *          
 c     *                                                              *          
@@ -18,8 +18,8 @@ c
       double precision, save :: start_assembly_step, assembly_total             
       integer, save :: ntimes_assembly                                          
 c                                                                               
-      real, save, private :: time_pardiso, time_warp,                           
-     &                       start_run_pardiso                                  
+      real, save, private :: time_pardiso, time_warp,  time_mumps,                        
+     &                       start_run_pardiso,  start_run_mumps                                
 c                                                                               
       contains                                                                  
 c                                                                               
@@ -45,7 +45,8 @@ c
         implicit none                                                           
 c                                                                               
         time_pardiso = 0.0                                                      
-        time_warp = 0.0                                                         
+        time_warp = 0.0  
+        time_mumps = 0.0                                                       
 c                                                                               
         return                                                                  
         end subroutine                                                          
@@ -85,8 +86,34 @@ c
         t1 = time_pardiso                                                       
 c                                                                               
         return                                                                  
+        end subroutine     
+        
+                                                             
+        subroutine t_performance_start_mumps                                  
+        implicit none                                                           
+c                                                                               
+        call cpu_time( start_run_mumps )                                      
+c                                                                               
+        return                                                                  
         end subroutine                                                          
                                                                                 
+        subroutine t_performance_end_mumps                                    
+        implicit none                                                           
+        real :: t1                                                              
+c                                                                               
+        call cpu_time( t1 )                                                     
+        time_mumps = time_mumps + (t1 - start_run_mumps)                  
+c                                                                               
+        return                                                                  
+        end subroutine                                                          
                                                                                 
-                                                                                
+        subroutine t_performance_eoj_mumps( t1 )                              
+        implicit none                                                           
+        real :: t1                                                              
+c                                                                               
+        t1 = time_mumps                                                       
+c                                                                               
+        return                                                                  
+        end subroutine                                                          
+c                                                                                
       end module performance_data                                               
