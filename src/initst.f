@@ -42,7 +42,7 @@ c
      &                      actual_cnstrn_stp_factors,
      &                      fgm_node_values_defined,
      &                      fgm_node_values_used, nasa_vss, mkl_solve,
-     &                      fgm_node_values_cols,
+     &                      fgm_node_values_cols, mumps_solve, 
      &                      initial_state_option, initial_state_step,
      &                      initial_stresses_input,
      &                      id_dollar, force_solver_rebuild,
@@ -374,21 +374,10 @@ c
 c    **********************************************************************
 c    *                                                                    *
 c    *                     Selection of Solver Type                       *
-c    *                (most are now obsolete and removed)                 *
 c    *                                                                    *
 c    *    The solver flag is an integer:                                  *
-c    *                                                                    *
-c    *      7 = Intel MKL Pardiso symmetric (Win, Mac, Linux)             *
-c    *      8 = Intel MKL Pardiso asymmetric (Win, Mac, Linux)            *
-c    *                                                                    *
-c    *      All others below deprecated with removal of MPI support       *
-c    *                                                                    *
-c    *      -1 = Lin. Preconditioned Conj. Gradient solver (lnpcg)        *
-c    *           no longer allowed via input. code gradually removed      *
-c    *           DEPRECATED                                               *
-c    *      0, 1, 2, 3, 4, 5,  available                                  *
 c    *      1 = NASA/VSS sparse solver. No OpenMP                         *
-c    *      6 = (not implemented) IBM WSMP                                *
+c    *      2 = MUMPS    (default if MKL Pardiso not available)           *
 c    *      7 = Intel MKL Pardiso symmetric (Win, Mac, Linux)             *
 c    *      8 = Intel MKL Pardiso asymmetric (Win, Mac, Linux)            *
 c    *                                                                    *
@@ -396,17 +385,18 @@ c    **********************************************************************
 c
 c
       old_solver_flag = -2
-      solver_flag = 1
-#ifdef MKL
-      solver_flag = 7
-#endif
       solver_out_of_core = .false.
       solver_scr_dir(1:) = './warp3d_ooc_solver'
       solver_memory      = 500
       solver_mkl_iterative = .false.
-      nasa_vss = .false.
+      nasa_vss     = .false.
+      mumps_solve  = .true.
+      mkl_solve    = .false.
+      solver_flag  = 2  !  MUMPS
 #ifdef MKL
-      mkl_solve = .false.
+      solver_flag = 7
+      mkl_solve   = .true.
+      mumps_solve = .false.
 #endif
 c
 c                       initialize input error flags
