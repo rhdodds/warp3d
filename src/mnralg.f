@@ -1,3 +1,17 @@
+
+      module info_def
+c
+      implicit none       
+      type :: info_mnralg
+        logical :: adaptive_used
+        logical :: step_converged
+        integer :: adapt_substeps
+        integer :: iters_at_convergence
+        integer :: adapt_iters_at_convergence
+      end type
+c      
+      end module info_def
+
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine mnralg                       *
@@ -43,6 +57,7 @@ c
       use stiffness_data, only :  total_lagrange_forces,
      &                            d_lagrange_forces,
      &                            i_lagrange_forces 
+      use info_def
       use constants, only : one, zero
 c
       implicit none
@@ -69,13 +84,6 @@ c
      &        cnverg, adaptive, local_mf_ratio_change,
      &        check_crk_growth
 c
-      type :: info_mnralg
-        logical :: adaptive_used
-        logical :: step_converged
-        integer :: adapt_substeps
-        integer :: iters_at_convergence
-        integer :: adapt_iters_at_convergence
-      end type
       type( info_mnralg ) info
 c
 c          predct:          .true. if user requested extrapolate on
@@ -625,7 +633,7 @@ c
      & '>> extrapolating displacements to start step:      ',i7,
      & ' (* ',e10.3,')')
  9410 format(/1x,'>> iteration limit exceeded for current step:',i7,
-     & /,1x       '   (or adaptive sub-increment) or the solution ',
+     & /,1x,       '   (or adaptive sub-increment) or the solution ',
      &   'appears to be diverging....')
  9420 format(/,2x,'>>> material model stress update computations',
      &     /,2x,'    requested load step reduction...')
@@ -1080,19 +1088,13 @@ c
      &                                       info )
 c
       use main_data, only : convergence_history
+      use info_def
       implicit none
 c
       integer :: step, iout
       integer :: i, j
       logical :: local_debug
 c
-      type :: info_mnralg
-        logical :: adaptive_used
-        logical :: step_converged
-        integer :: adapt_substeps
-        integer :: iters_at_convergence
-        integer :: adapt_iters_at_convergence
-      end type
       type( info_mnralg ) info
 c
 c          we save convergence history for 5 most recent steps.
@@ -1165,7 +1167,7 @@ c
 c
       implicit none 
 c     
-      integer :: ngp, alloc_stat, blk, felem, span, block_size
+      integer :: ngp, alloc_stat, blk, felem, span, block_size, bs
       double precision ::  dummy(1)
 c
 c                      we also save the current 3x3 rotation matrices
@@ -1188,7 +1190,7 @@ c
            stop
         end if
       end if
-      call vec_ops( du_nm1, du, dummy, nodof, 5 )
+      du_nm1(1:nodof) = du(1:nodof)
 c
       if ( .not. allocated(rot_n1_blocks) ) go to 200
       do blk = 1, nelblk
@@ -1197,9 +1199,8 @@ c
           span       = elblks(0,blk)
           ngp        = iprops(6,felem)
           block_size = span * ngp * 9
-          call vec_ops( rot_n_blocks(blk)%ptr(1),
-     &                  rot_n1_blocks(blk)%ptr(1), dummy,
-     &                  block_size, 5 )
+          bs = block_size
+          rot_n_blocks(blk)%ptr(1:bs) = rot_n1_blocks(blk)%ptr(1:bs)
         end if
       end do
 c
@@ -1246,7 +1247,7 @@ c
 c                      local values
 c
       integer :: blk, felem, span, ngp, hist_size,rot_size, eps_size,
-     &           sig_size, n, i
+     &           sig_size, n, i, hs, rs, es, ss
       double precision ::  dummy(1)
       logical :: chk
 c
@@ -1254,7 +1255,7 @@ c                      the displacement increment for the previous
 c                      step or converged sub-increment due to
 c                      adaptive solution.
 c
-      call vec_ops( du, du_nm1, dummy, nodof, 5 )
+      du(:nodof) = du_nm1(nodof)
 c
 c                      reset:
 c                       1) the structural history data,
@@ -1274,25 +1275,26 @@ c
         span       = elblks(0,blk)
         ngp        = iprops(6,felem)
         hist_size  = span * ngp * history_blk_list(blk)
+        hs         = hist_size
         rot_size   = span * ngp * 9
+        rs         = rot_size
         eps_size   = span * ngp * nstr
+        es         = eps_size
         sig_size   = span * ngp * nstrs
+        ss         = sig_size
         if ( hist_size .gt. 0 )
-     &      call vec_ops( history1_blocks(blk)%ptr(1),
-     &                    history_blocks(blk)%ptr(1), dummy,
-     &                    hist_size, 5 )
+     &      history1_blocks(blk)%ptr(1:hs) = 
+     &                   history_blocks(blk)%ptr(1:hs)
         if ( rot_blk_list(blk) .eq. 1 )
-     &      call vec_ops( rot_n1_blocks(blk)%ptr(1),
-     &                    rot_n_blocks(blk)%ptr(1), dummy,
-     &                    rot_size, 5 )
+     &      rot_n1_blocks(blk)%ptr(1:rs) = 
+     &                   rot_n_blocks(blk)%ptr(1:rs)
         if ( eps_blk_list(blk) .eq. 1 )
-     &      call vec_ops( eps_n1_blocks(blk)%ptr(1),
-     &                    eps_n_blocks(blk)%ptr(1), dummy,
-     &                    eps_size, 5 )
+     &      eps_n1_blocks(blk)%ptr(1:es) = 
+     &                   eps_n_blocks(blk)%ptr(1:es)
         if ( urcs_blk_list(blk) .eq. 1 )
-     &      call vec_ops( urcs_n1_blocks(blk)%ptr(1),
-     &                    urcs_n_blocks(blk)%ptr(1), dummy,
-     &                    sig_size, 5 )
+     &      urcs_n1_blocks(blk)%ptr(1:ss) = 
+     &                   urcs_n_blocks(blk)%ptr(1:ss)
+c      
       end do
 c
 c                      nonlocal shared state values if they exist.
@@ -1669,7 +1671,6 @@ c     *                                                              *
 c     *     outputs convergence status of global Newton iterations   *
 c     *                                                              *
 c     ****************************************************************
-c
 c
 c
       subroutine mnralg_ouconv( itpr, lstitr, step, cnvflg, out,
