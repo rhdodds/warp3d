@@ -321,7 +321,7 @@ c
 c
       logical :: nonlocal_analysis, modified_mpcs,
      &           divergence_check, diverge_check_strict,
-     &           mkl_solve, nasa_vss 
+     &           mkl_solve, nasa_vss, mumps_solve
 c
 c
 c                 information for output packets
