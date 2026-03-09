@@ -928,9 +928,6 @@ c
          write(out,9010) 1
          call die_gracefully
       case ( 11 )
-        call mm11_states_labels( size_state,
-     &      num_states, state_labels, state_descriptors, out,
-     &      comment_lines, max_comment_lines, num_comment_lines )
       case default
            write(out,9000) warp3d_matl
            call die_abort
@@ -1001,8 +998,6 @@ c
          write(out,9010) 1
          call die_gracefully
       case ( 11 )
-         call mm11_set_sizes( info_vector )
-         nstates = info_vector(4)
       case default
            write(out,9000) warp3d_matl
            call die_abort
