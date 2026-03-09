@@ -36,7 +36,7 @@ c
      &                      ls_details, ls_min_step_length,
      &                      ls_max_step_length, ls_rho,
      &                      ls_slack_tol, umat_serial,
-     &                      nasa_vss, mkl_solve,  
+     &                      nasa_vss, mkl_solve, mumps_solve, 
      &                      initial_state_option, initial_state_step
       use j_data, only :  J_cutoff_active, J_cutoff_restart_file,
      &                    J_cutoff_ratio, J_cutoff_e, J_cutoff_nu,
@@ -450,6 +450,7 @@ c
       local_direct_flag = .false.
       mkl_solve  = .false.
       nasa_vss   = .false.
+      mumps_solve = .false.
       if ( matchs('technique',4) ) call splunj
       if ( matchs('type',4) ) call splunj
 c
@@ -479,6 +480,18 @@ c
           solver_mkl_iterative = .false.
           solver_flag = 1
           nasa_vss  = .true.
+          mkl_solve = .false.
+          go to 1150
+        end if
+      end if
+      
+      if ( matchs('mumps',3) ) then
+        local_direct = .true.
+        if ( endcrd(dum) ) then
+          solver_mkl_iterative = .false.
+          solver_flag = 2
+          mumps_solve = .true.
+          nasa_vss  = .false.
           mkl_solve = .false.
           go to 1150
         end if
@@ -563,21 +576,6 @@ c
               mkl_solve = .true.
               nasa_vss  = .false.
             go to 1150
-      end if
-c
-      if( matchs('hypre',5) ) then
-        solver_flag = 0
-        num_error = num_error + 1
-        write(out,9600)
-        go to 10
-      end if  
-c
-      if( matchs('cluster',4) ) then
-        solver_flag = 0
-        solver_mkl_iterative = .false.
-        num_error = num_error + 1
-        write(out,9605)
-        go to 10
       end if
 c
  1150 continue
@@ -1284,7 +1282,7 @@ c
 c
       return
 c
- 9000 format(/1x'>>>>>> Warning: the option:  linear stiffness ... ',
+ 9000 format(/1x,'>>>>>> Warning: the option:  linear stiffness ... ',
      &   'has been deleted from WARP3D.',
      &/,1x,'                Use the option: extrapolate off   to '
      &      ' force use of linear [D] at start of subsequent steps.',
