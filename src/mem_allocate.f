@@ -17,13 +17,13 @@ c
       use main_data
       use contact, only : contact_cause, maxcontact, contact_force
       use ISO_FORTRAN_ENV
+      use constants, only : zero
 c
       implicit none
 c
       integer :: itype, i, alloc_stat, k
       integer (kind=int64) :: mkl_malloc, local_isize
       external :: mkl_malloc
-      double precision, parameter :: zero=0.0d0
       logical, parameter :: local_debug=.false.
 c
       if( local_debug ) write(out,*) myid,
@@ -120,7 +120,14 @@ c
           v(i) = zero
           a(i) = zero
           du(i) = zero
+          c(i)  = zero
+          idu(i) = zero
+          load(i) = zero
+          res(i) = zero
+          ifv(i) = zero
          end do
+         dstmap = 0
+         cstmap = 0
          max_mpc = 500 ! resized as needed in incon.f
          max_mpc_tied = 500 ! resized as needed in tied_mesh.f
 c
