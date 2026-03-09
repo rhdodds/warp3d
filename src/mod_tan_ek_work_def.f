@@ -1,0 +1,77 @@
+      module tan_ek_work_mod
+c      
+      implicit none
+      include 'param_def'
+c
+c              declaration of local arrays to be allocated on the
+c              stack for nonlinear stiffness generation. this
+c              enables blocks of elements to be processed
+c              in parallel.
+c
+      integer, parameter :: h_prec = selected_real_kind(12)
+c
+      type :: nonlinear_ek_work
+c
+       real (h_prec), allocatable :: ce(:,:), ce_0(:,:)       ! mxvl,mxecor
+       real (h_prec), allocatable :: trnmte(:,:,:)            ! mxvl,mxedof,mxndof
+
+       real (h_prec), allocatable :: det_jac_block(:,:)      ! mxvl,mxgp
+       real (h_prec), allocatable :: shape(:,:)               ! mxndel,mxgp
+       real (h_prec), allocatable :: nxi(:,:)                 ! mxndel,mxgp
+       real (h_prec), allocatable :: neta(:,:)                ! mxndel,mxgp
+       real (h_prec), allocatable :: nzeta(:,:)               ! mxndel,mxgp
+       real (h_prec), allocatable :: gama_block(:,:,:,:)      ! mxvl,3,3,mxgp
+
+
+       real (h_prec), allocatable :: vol_block(:,:,:)         ! mxvl,8,3
+       real (h_prec), allocatable :: volume_block(:)          ! mxvl
+       real (h_prec), allocatable :: jac_block(:,:,:)         ! mxvl,3,3
+       real (h_prec), allocatable :: b_block(:,:,:)           ! mxvl,mxedof,nstr
+       real (h_prec), allocatable :: bd_block(:,:,:)          ! mxvl,mxedof,nstr
+       real (h_prec), allocatable :: ue(:,:)                  ! mxvl,mxedof
+       real (h_prec), allocatable :: due(:,:)                 ! mxvl,mxedof
+       real (h_prec), allocatable :: urcs_blk_n1(:,:,:)       ! mxvl,nstrs,mxgp
+       real (h_prec), allocatable :: rot_blk_n1(:,:,:)        ! mxvl,9,mxgp
+       real (h_prec), allocatable :: elem_hist1(:,:,:), elem_hist(:,:,:)
+       real (h_prec), allocatable :: cohes_rot_block(:,:,:)   ! mxvl,3,3
+c
+       real (h_prec), allocatable :: cep(:,:,:)               ! mxvl,nstr,nstr
+       real (h_prec), allocatable :: qn1(:,:,:)               ! mxvl,nstr,nstr
+       real (h_prec), allocatable :: cs_blk_n1(:,:)           ! mxvl,nstr
+c
+       real (h_prec), allocatable :: ek_symm(:,:)             !span,nrow_ek       
+       real (h_prec), allocatable :: ek_full(:,:)             !span,totdof**2       
+c
+       real (h_prec), allocatable :: weights(:)  ! mxgp on weights
+c
+       real (h_prec) :: beta_fact, eps_bbar, dt, time_n
+       real (h_prec), allocatable :: sv(:), lv(:), tv(:)      ! 3 each
+
+       integer, allocatable :: cp(:), icp(:,:) !  mxedof; mxutsz,2
+
+       logical, allocatable :: trn_e_flags(:), trne(:,:)  ! mxvl; mxvl,mxndel
+
+c
+       integer :: felem, blk, elem_type, int_order, mat_type,
+     &            matnum, num_enodes, num_enode_dof, totdof,
+     &            num_int_points, span, utsz, iter, step,
+     &            cohes_type, surface, hist_size_for_blk,
+     &            umat_stress_type, cep_sym_size, num_threads,
+     &            iout, macro_sz, cp_sz, inter_mat
+c
+       logical :: geo_non_flg, bbar_flg, trn_e_block,
+     &            first, qbar_flag, temperatures, temperatures_ref,
+     &            temps_node_to_process,
+     &            segmental, fgm_enode_props, is_cohes_elem,
+     &            linear_displ_elem, adjust_const_elem,
+     &            is_axisymm_elem, nuc_v(mxvl),
+     &            killed_status_vec(mxvl), block_killed,
+     &            is_umat, is_solid_matl, is_deform_plas,
+     &            is_crys_pls, is_cohes_nonlocal, is_inter_dmg,
+     &            is_bar_elem, is_link_elem
+c
+c     Added stuff for CP, if any
+c
+      end type
+c
+      end module tan_ek_work_mod
