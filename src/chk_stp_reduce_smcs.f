@@ -22,6 +22,7 @@ c
      &           perm_load_fact, num_elements_in_force_release,
      &           smcs_adapt_alpha_min, smcs_adapt_alpha_max,    
      &           smcs_allowable_in_release
+      use damage_elem_vals, only : values_T     
       use constants
 c                                                 
       implicit none                                                    
@@ -37,7 +38,6 @@ c
      &                    increase_multiplier, delta 
       double precision, parameter :: one_toler = 0.999d0
 c
-      include 'include_damage_values'
       type(values_T) :: values
 c                
       ldebug = debug

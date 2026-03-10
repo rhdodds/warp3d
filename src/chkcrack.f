@@ -119,6 +119,7 @@ c
      &     tolerance_mesh_regularization, use_distortion_metric, 
      &     Oddy_critical_ratio, use_weighted,
      &     gt_list_file_flag, gt_list_file_name
+      use damage_elem_vals, only : values_T     
       use constants                   
 c                                                         
       implicit none
@@ -151,7 +152,6 @@ c
      &   avg_bar_theta, tear_param, sig_mises, mises_at_death,
      &   sig_1, sig_1_at_death, sig_mean, ddum, local_zero
 c
-      include 'include_damage_values'
       type(values_T) :: smcs_elem_values, gt_elem_values
 
 c        
@@ -2080,11 +2080,12 @@ c
 c       
       subroutine damage_update_smcs( elem )
 c
+      use damage_elem_vals, only : values_T     
+c
       implicit none
 c      
       integer :: elem, dowhat
 c      
-      include 'include_damage_values'
       type(values_T) :: values
 c
       logical :: get_princ      
@@ -3030,6 +3031,7 @@ c
       subroutine dam_param_smcs( elem, values )
 c
       use global_data, only : out  
+      use damage_elem_vals, only : values_T     
 c                                                                               
 c        elem      -- (input)   element number to be checked for                
 c                               killing                                         
@@ -3041,7 +3043,6 @@ c              parameter declarations
 c                             
       integer, intent(in) :: elem                                         
 c
-      include 'include_damage_values'
       type(values_T) :: values
 c                                                                               
 c              local declarations                                               
@@ -3085,6 +3086,7 @@ c
 c      
       use global_data, only : iprops, out  
       use damage_data, only : crack_growth_type 
+      use damage_elem_vals, only : values_T     
       use constants
 c                                                                               
 c        elem      -- (input)   element number to be checked for 
@@ -3096,7 +3098,6 @@ c              parameter declarations
 c                             
       integer, intent(in) :: elem   
 c
-      include 'include_damage_values'
       type(values_T) :: values
 c                                                                               
 c              local declarations                                               

@@ -162,6 +162,7 @@ c
      &                        num_print_list, use_distortion_metric,
      &                        print_status, print_top_list,
      &                        num_top_list, num_kill_elem 
+      use damage_elem_vals, only : values_T     
       use constants
 c                                                        
       implicit none                                                                      
@@ -169,7 +170,6 @@ c
 c              parameter declarations                                           
 c
       integer, intent(in) :: step, iter
-      include 'include_damage_values'
       type(values_T) :: gt_elem_values
 c                                        
 c              local declarations                                               
