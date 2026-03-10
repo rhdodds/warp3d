@@ -22,7 +22,7 @@ c
       use elem_block_data, only : edest_blocks
       use main_data, only : repeat_incid, modified_mpcs,
      &                      asymmetric_assembly, force_solver_rebuild,
-     &                      mkl_solve, nasa_vss 
+     &                      mkl_solve, nasa_vss, mumps_solve
       use stiffness_data, only : ncoeff, big_ncoeff, k_coeffs,
      &                           k_indexes,
      &                           ncoeff_from_assembled_profile
@@ -159,6 +159,14 @@ c
      &                        u_vec, k_coeffs, k_ptrs, k_indexes,
      &                        cpu_stats, itype, out )
        if( local_debug ) write(*,*) '... drive_assem_solve @ 5b'
+c       
+      case( 2 ) ! MUMPS symmetric sparse. direct only
+c
+       if( local_debug ) write(*,*) '... drive_assem_solve  @ 5a'
+       call drive_mumps( neqns, ncoeff, k_diag, p_vec, 
+     &                   u_vec, k_coeffs, k_ptrs, k_indexes,
+     &                   cpu_stats, itype, out )
+       if( local_debug ) write(*,*) '... drive_assem_solve @ 5b'
 
       case( 7 ) ! symmetric pardiso
 c
@@ -292,13 +300,13 @@ c
       contains 
 c     ========      
 c
- 
+
 c     ****************************************************************
 c     *                                                              *
 c     *   set up equation sparsity for local assembly: symmetric     *
 c     *                                                              *
 c     *                       written by  : rhd                      *
-c     *                   last modified : 11/7/25 rhd                *  
+c     *                   last modified : 3/7/2026 rhd               *  
 c     *                                                              *
 c     ****************************************************************
 c
@@ -310,12 +318,16 @@ c
 c
 c                    locals
 c
-      integer :: i, j, k, l, srow, start_srow
+      integer :: i, j, k, l, srow, start_srow, num_omp_thrds
       integer, allocatable :: start_kindex_locs(:), edest(:,:,:),
      &                        scol_flags(:,:), scol_lists(:,:)
       character(len=200) mkl_string
       integer :: mkl_num_thrds, next_space, count_previous, count_now,
      &           nrow_lists, safety_factor
+      integer, external :: omp_get_max_threads
+#ifdef MKL
+      integer, external :: mkl_get_max_threads
+#endif
       logical, parameter :: local_debug_2 = .false.
 c
 c              1. generate equation numbers for all unconstrained
@@ -332,15 +344,24 @@ c
 c      
       call thyme( 21, 1 )
       if( cpu_stats .and. show_details ) then
+          num_omp_thrds = omp_get_max_threads()
+          mkl_num_thrds = 0
 #ifdef MKL
+          mkl_num_thrds = mkl_get_max_threads()
           call mkl_get_version_string( mkl_string )
 #endif
-        if( mkl_solve ) then
-           mkl_num_thrds = solver_threads
-             write(out,9400) mkl_num_thrds, mkl_string(45:50),
+          if( mkl_solve )
+     &         write(out,9400) mkl_num_thrds, mkl_string(45:50),
      &                       mkl_string(66:73), wcputime(1)   
-        end if
-        if( nasa_vss ) write(out,9402)  wcputime(1)   
+#ifdef MKL
+          if( mumps_solve )
+     &        write(out,9404)  wcputime(1)   
+#endif              
+#ifndef MKL
+          if( mumps_solve )
+     &        write(out,9406) num_omp_thrds, wcputime(1)   
+#endif              
+          if( nasa_vss ) write(out,9402)  wcputime(1)   
       end if  
 c      
       if( .not. allocated ( dof_eqn_map ) ) then
@@ -494,10 +515,17 @@ c
      &  10x, '>> solver wall time statistics (secs):'
      & /,15x,'number of MKL threads used      ',i10,
      & /,15x,'MKL version, build: ',5x,a6,1x,a8,
-     & /,15x,'starting work                 @ ',f10.2 )
+     & /,15x,'Pardiso starting work         @ ',f10.2 )
  9402  format (
      &  10x, '>> solver wall time statistics (secs):'
      & /,15x,'starting work: NASA-VSS       @ ',f10.2 )
+ 9404  format (
+     &  10x, '>> solver wall time statistics (secs):'
+     & /,15x,'starting work: MUMPS          @ ',f10.2 )
+ 9406  format (
+     &  10x, '>> solver wall time statistics (secs):'
+     & /,15x,'number of OMP threads used      ',i10,
+     & /,15x,'starting work: MUMPS          @ ',f10.2 )
  9409  format(
      &  15x, 'finished dof setup            @ ',f10.2 )
  9410  format(
