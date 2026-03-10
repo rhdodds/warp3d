@@ -5,9 +5,12 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: January 24, 2026  (build number 4600)
+#   Last modifications: MArch 10, 2026  (build number 5000)
 #                       ** MPI support deprecated **
-#                          continued use of ifort 
+#                          continued use of ifort on OSX
+#                       extensive cleanup for all the code
+#                       that gfortran 10.2 complains about
+#                       add MUMPS solver
 #
 #   How to run:
 #
@@ -73,7 +76,6 @@
 #
 # ***********************************************************************
 #
-#
 OSNAME   := OSX
 BUILDNUM := 5000  #   removal of MPI 
 #
@@ -81,6 +83,7 @@ ODIR = ././../obj_macOS
 EXE_NAME = warp3d.omp
 BUILD_FLAG :=  
 KMP_ERROR  := KMP_ERROR  # temp fix for MKL 
+MKL := MKL  # include MKL routines
 #
 #                Define extension for relocatable object code files,
 #                macros for the remove command and the move command.
@@ -106,24 +109,26 @@ CHECKOTHER = -check bounds,pointers,uninit
 CHECKOTHER = 
 #
 OSX_LIBDIR = ../OSX_MKL_files
+MUMPS_LIBDIR = ../MUMPS_ifort_ifx_lib
 LINKOPS2  = -static-intel -qopenmp-link=static \
             ${OSX_LIBDIR}/libiomp5.a \
             ${OSX_LIBDIR}/libmkl_intel_lp64.a \
             ${OSX_LIBDIR}/libmkl_intel_thread.a \
             ${OSX_LIBDIR}/libmkl_core.a
-LINKOPS   = $(LINKOPS2) -Wl,-ld_classic  # classic loader 
+LINKOPS   = $(LINKOPS2) $(MUMPS_LIBDIR)/libmumps_all.a #-Wl,-ld_classic  # classic loader 
 ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
                        -align array64byte  -qopt-zmm-usage=high
 ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
                        -align array64byte  -qopt-zmm-usage=high
 HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-MACHINE_TYPE =  $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC) 
+MACHINE_TYPE =  $(HARDWARE_SPECIFIC) #  $(ALL_PROCESSORS) 
 #
 FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
             $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
-            $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT) $(CHECKOTHER)
+            $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT) $(CHECKOTHER) \
+            -mmacosx-version-min=11.5
 #
-FOR      = $(COMPILER) $(FCOPTS) -D$(KMP_ERROR) -D$(OSNAME) 
+FOR      = $(COMPILER) $(FCOPTS) -D$(MKL)-D$(KMP_ERROR) -D$(OSNAME) 
 LINK     = $(COMPILER) $(FCOPTS)
 #
 #               all system level module files that appear as separate *.f
@@ -149,10 +154,14 @@ MODS     := $(OD)/mod_adaptive_steps.o \
 			$(OD)/mod_scan.o       \
 			$(OD)/mod_segmental_curves.o \
 			$(OD)/mod_stiffness.o \
-			$(OD)/mod_trlist.o
+			$(OD)/mod_trlist.o \
+			$(OD)/mod_tan_ek_work_def.o \
+			$(OD)/mod_damage_values_def.o \
+			$(OD)/mod_user_parms_def.o \
+			$(OD)/mod_mm10_working.o \
+			$(OD)/mod_sig_eps_work_def.o 
 #
-INCLUDES := param_def include_mm10 include_sig_up include_tan_ek \
-			include_usr_parm include_damage_values
+INCLUDES := param_def   
 #
 #                all *.o files for linking.  module files are listed
 #                first for readability. try to keep ordering alphabetic
@@ -170,14 +179,19 @@ OBJ =	 \
 	$(OD)/mod_file_info.o	 \
 	$(OD)/mod_jintegral.o	 \
 	$(OD)/mod_local_stiffness.o \
-	$(OD)/mod_main.o	 \
-	$(OD)/mod_mpc.o	 \
+	$(OD)/mod_main.o \
+	$(OD)/mod_mpc.o \
+	$(OD)/mod_pconvert.o \
 	$(OD)/mod_performance.o \
-	$(OD)/mod_pconvert.o	 \
-	$(OD)/mod_scan.o	 \
-	$(OD)/mod_segmental_curves.o	 \
-	$(OD)/mod_stiffness.o	 \
-	$(OD)/mod_trlist.o	 \
+	$(OD)/mod_scan.o       \
+	$(OD)/mod_segmental_curves.o \
+	$(OD)/mod_stiffness.o \
+	$(OD)/mod_trlist.o \
+	$(OD)/mod_tan_ek_work_def.o \
+	$(OD)/mod_damage_values_def.o \
+	$(OD)/mod_user_parms_def.o \
+	$(OD)/mod_mm10_working.o \
+	$(OD)/mod_sig_eps_work_def.o \
 	$(OD)/user_routines_module.o \
 	$(OD)/addifv.o	 \
 	$(OD)/addmas.o	 \
@@ -220,6 +234,7 @@ OBJ =	 \
 	$(OD)/drive_assemble_solve.o	 \
 	$(OD)/drive_pardiso.o	 \
 	$(OD)/drive_pardiso_asym.o	 \
+	$(OD)/drive_mumps.o	 \
 	$(OD)/dupmas.o	 \
 	$(OD)/dupstr.o	 \
 	$(OD)/elmas1.o	 \
@@ -294,6 +309,15 @@ OBJ =	 \
 	$(OD)/mm_return_values.o	\
 	$(OD)/mpc_modify.o	 \
 	$(OD)/name_strip.o	 \
+	$(OD)/nasa_vss.o	 \
+	$(OD)/nasa_sparse_adj.o	 \
+	$(OD)/nasa_sparse_check.o	 \
+	$(OD)/nasa_sparse_factor.o	 \
+	$(OD)/nasa_sparse_fill.o	 \
+	$(OD)/nasa_sparse_loadpass.o	 \
+	$(OD)/nasa_sparse_reorder_a.o	 \
+	$(OD)/nasa_sparse_reorder_b.o	 \
+	$(OD)/nasa_sparse_sym_fact.o	 \
 	$(OD)/ndpts1.o	 \
 	$(OD)/ouddpa.o	 \
 	$(OD)/oudriv.o	 \
@@ -420,7 +444,8 @@ $(OD)/main_program$O : main_program.f $(MODS) $(INCLUDES)
 	$(RMC)  $@
 	$(FOR)  -inline-level=1 $< -c -o $@
 
-  $(OD)/user_routines_umat$O : user_routines_umat.f $(OD)/user_routines_module$O
+  $(OD)/user_routines_umat$O : user_routines_umat.f \
+              $(OD)/user_routines_module$O $(OD)/mod_user_parms_def$O
 	$(RMC)  $@
 	$(FOR)  -inline-level=1  $< -c -o $@
 
@@ -429,13 +454,15 @@ $(OD)/main_program$O : main_program.f $(MODS) $(INCLUDES)
 	$(RMC)  $@
 	$(FOR) -inline-level=1 -heap-arrays $< -c -o $@
 
-  $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
-                               $(OD)/user_routines_module$O
+  $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  \
+                               $(OD)/user_routines_module$O \
+                               $(OD)/mod_user_parms_def$O
 	$(RMC)  $@
 	$(FOR) -inline-level=1 -heap-arrays  $< -c -o $@
 
-  $(OD)/user_routines_support$O : user_routines_support.f  include_usr_parm \
-                                $(OD)/user_routines_module$O
+  $(OD)/user_routines_support$O : user_routines_support.f  \
+                                $(OD)/user_routines_module$O \
+                                $(OD)/mod_user_parms_def$O
 	$(RMC)  $@
 	$(FOR)  -inline-level=1 $< -c -o $@
 #
@@ -444,11 +471,11 @@ $(OD)/main_program$O : main_program.f $(MODS) $(INCLUDES)
 #    ------   system level module files ----------------
 #             =========================
 #
-$(ODIR)/mod_adaptive_steps$O : mod_adaptive_steps.f
+$(ODIR)/mod_adaptive_steps$O : mod_adaptive_steps.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_contact$O : mod_contact.f
+$(ODIR)/mod_contact$O : mod_contact.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -462,7 +489,7 @@ $(ODIR)/mod_crystals$O : mod_crystals.f param_def  $(OD)/mod_main$O
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_damage$O : mod_damage.f
+$(ODIR)/mod_damage$O : mod_damage.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -478,7 +505,7 @@ $(ODIR)/mod_elem_load$O : mod_elem_load.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_file_info$O : mod_file_info.f
+$(ODIR)/mod_file_info$O : mod_file_info.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 	
@@ -490,7 +517,7 @@ $(ODIR)/mod_local_stiffness$O : mod_local_stiffness.f   param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_main$O : mod_main.f
+$(ODIR)/mod_main$O : mod_main.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -498,11 +525,11 @@ $(ODIR)/mod_mpc$O : mod_mpc.f param_def
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_pconvert$O : mod_pconvert.f
+$(ODIR)/mod_pconvert$O : mod_pconvert.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_performance$O : mod_performance.f
+$(ODIR)/mod_performance$O : mod_performance.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -519,6 +546,27 @@ $(ODIR)/mod_stiffness$O : mod_stiffness.f param_def
 	$(FOR) $< -c -o $@
 
 $(ODIR)/mod_trlist$O : mod_trlist.f param_def $(OD)/mod_main$O $(OD)/mod_scan$O
+	$(RMC)  $@
+	$(FOR) $< -c -o $@
+
+$(ODIR)/mod_sigeps_work_def$O : mod_sigeps_work_def.f param_def 
+	$(RMC)  $@
+	$(FOR) $< -c -o $@
+
+$(ODIR)/mod_tan_ek_work_def$O : mod_tan_ek_work_def.f param_def 
+	$(RMC)  $@
+	$(FOR) $< -c -o $@
+
+$(ODIR)/mod_damage_values_def$O : mod_damage_values_def.f
+	$(RMC)  $@
+	$(FOR) $< -c -o $@
+
+$(ODIR)/mod_mm10_working$O : mod_mm10_working.f param_def  \
+                             $(OD)/mod_main$O $(OD)/mod_crystals$O
+	$(RMC)  $@
+	$(FOR) $< -c -o $@
+
+$(ODIR)/mod_user_parms_def$O : mod_user_parms_def.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
