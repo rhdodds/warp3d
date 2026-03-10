@@ -412,10 +412,12 @@ c
      &                              initial_stresses,
      &                              initial_state_option,
      &                              initial_state_step
+c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use constants
 c
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c              
 c              parameters
 c
@@ -434,6 +436,7 @@ c
       logical :: geo_non_flg, bbar_flg, tet_elem, tri_elem,
      &           axisymm_elem, tflag
       logical, parameter :: local_debug = .false.
+      type (nonlinear_sigeps_work) :: local_work
 c
       span           = elblks(0,blk)
       felem          = elblks(1,blk)
@@ -706,18 +709,22 @@ c     ****************************************************************
 c
 c
       subroutine recstr_allocate_1( local_work )
+c      
       use global_data, only : out, mxvl, max_slip_sys, mxecor, mxedof,
      &                        mxndof, mxgp, mxndel, nstr, nstrs,
      &                        mxndpr, max_crystals, 
      &                        nonlocal_shared_state_size,
      &                        max_interface_props
       use elem_block_data, only: history_blk_list
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use constants
+c      
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
+      type (nonlinear_sigeps_work) :: local_work
 c
       if( debug ) write(out,*) '... entered recstr_allocate_1 ...'
       local_mt = local_work%mat_type
@@ -825,13 +832,15 @@ c
      &                        nonlocal_shared_state_size,
      &                        max_interface_props
       use elem_block_data, only: history_blk_list
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use constants
 c 
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
+      type (nonlinear_sigeps_work) :: local_work
 c
       if( debug ) write(out,*) '... entered recstr_allocate_2 ...'
       local_mt = local_work%mat_type
@@ -981,13 +990,15 @@ c
      &                        max_interface_props
       use elem_block_data, only: history_blk_list
       use segmental_curves, only : max_seg_points
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use constants
 c
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
+      type (nonlinear_sigeps_work) :: local_work
 c
       if( debug ) write(out,*) '... entered recstr_allocate_3 ...'
       local_mt = local_work%mat_type
@@ -1094,13 +1105,15 @@ c
      &                        nonlocal_shared_state_size,
      &                        max_interface_props
       use elem_block_data, only: history_blk_list
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use constants
 c
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
+      type (nonlinear_sigeps_work) :: local_work
 c
       if( debug ) write(out,*) '... entered recstr_allocate_4 ...'
       local_mt = local_work%mat_type
@@ -1218,10 +1231,12 @@ c
      &                        nonlocal_shared_state_size,
      &                        max_interface_props
       use elem_block_data, only: history_blk_list
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use constants
 c
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
+      type (nonlinear_sigeps_work) :: local_work
 c
       integer :: local_mt, error, span, blk, ngp, hist_size, nlsize
       logical, parameter :: debug = .false.
@@ -1326,8 +1341,11 @@ c
 c
       subroutine recstr_deallocate( local_work )
       use global_data ! old common.main
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
+c
+      type (nonlinear_sigeps_work) :: local_work
 c
       integer :: local_mt, error
       logical :: local_debug
@@ -1655,10 +1673,12 @@ c
      &                            fgm_node_values_defined,
      &                            fgm_node_values_cols, matprp
 c
+      use sigeps_work_mod, only : nonlinear_sigeps_work
+c      
       use constants
 c
       implicit none
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c
 c           parameter declarations
 c
@@ -1669,6 +1689,7 @@ c
       double precision ::
      & ce_0(mxvl,*), ce_mid(mxvl,*), ue(mxvl,*), due(mxvl,*),
      & ce_n(mxvl,*), ce_n1(mxvl,*)
+      type (nonlinear_sigeps_work) :: local_work
 c
 c           local declarations
 c
@@ -2087,15 +2108,17 @@ c     ****************************************************************
 c
 c
       subroutine recstr_build_cohes_nonlocal( local_work, iprops  )
-
+c
       use elem_block_data, only:  solid_interface_lists
+      use sigeps_work_mod, only : nonlinear_sigeps_work
       use constants
 c
       implicit none
       include 'param_def'
-      include 'include_sig_up'
+c      include 'include_sig_up'
 c
       integer :: iprops(mxelpr,*)  ! global element props array
+      type (nonlinear_sigeps_work) :: local_work
 c
 c           local declarations.
 c
