@@ -15,7 +15,10 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine gtmat1( qnhalf, qn1, error, local_work )
+c
       use constants
+      use sigeps_work_mod,   only : nonlinear_sigeps_work
+c
       implicit none
       include 'param_def'
 c
@@ -23,7 +26,8 @@ c          parameter declarations
 c
       integer, intent(inout) :: error
       double precision :: qnhalf(mxvl,nstr,*),  qn1(mxvl,nstr,*)
-      include 'include_sig_up'   ! defines local_work
+      type (nonlinear_sigeps_work) :: local_work
+c      include 'include_sig_up'   ! defines local_work
 c
 c          local declarations - make allocatable
 c          to reduce stack size. they are automatically released

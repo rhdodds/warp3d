@@ -14,17 +14,21 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine gptns1( cp, icp, gpn, props, iprops, glb_ek_blk,               
-     &                   local_work )                                           
-      use main_data, only: asymmetric_assembly                                  
+     &                   local_work )        
+c                                        
+      use main_data, only: asymmetric_assembly     
+      use tan_ek_work_mod, only : nonlinear_ek_work
+c                        
       implicit none                                                             
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn                                                            
       real :: props(mxelpr,*)    ! 1st col of block passed                                                  
-      integer :: cp(*), icp(mxutsz,*), iprops(mxelpr,*)                            
+      integer :: cp(*), icp(mxutsz,*), iprops(mxelpr,*)    
+      type(nonlinear_ek_work) :: local_work                                                  
+                      
 c                                                                               
       double precision :: glb_ek_blk(*)                                         
 c                                                                               
@@ -836,13 +840,16 @@ c
 c                                                                               
       subroutine drive_01_cnst( gpn, iout, local_work )                         
 c                                                                               
-      implicit none                                                             
+      use tan_ek_work_mod, only : nonlinear_ek_work
+c
+      implicit none        
+c                                                           
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn, iout                                                      
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
 c                     local variables                                           
 c                                                                               
@@ -887,13 +894,15 @@ c
 c                                                                               
       subroutine drive_02_cnst( gpn, iout, local_work )                         
 c                                                                               
+      use tan_ek_work_mod, only : nonlinear_ek_work
+c
       implicit none                                                             
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn, iout                                                      
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
 c                     local variables                                           
 c                                                                               
@@ -938,13 +947,15 @@ c     ****************************************************************
 c                                                                               
       subroutine drive_03_cnst( gpn, iout, local_work )                         
 c                                                                               
+      use tan_ek_work_mod, only : nonlinear_ek_work
+c
       implicit none                                                             
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn, iout                                                      
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
       call extract_D_symmetric( gpn, local_work )                               
       return                                                                    
@@ -967,13 +978,15 @@ c
       subroutine drive_04_cnst( gpn, iout, local_work )                         
 c                                                                               
       use elem_block_data, only : gbl_cep_blocks => cep_blocks                  
+      use tan_ek_work_mod, only : nonlinear_ek_work
+c
       implicit none                                                             
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn, iout                                                      
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
 c                     local variables                                           
 c                                                                               
@@ -1042,13 +1055,16 @@ c
 c                                                                               
       subroutine drive_05_cnst( gpn, iout, local_work )                         
 c                                                                               
-      implicit none                                                             
+      use tan_ek_work_mod, only :  nonlinear_ek_work
+c
+      implicit none                
+c                                                   
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn, iout                                                      
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
 c                     local variables                                           
 c                                                                               
@@ -1095,13 +1111,15 @@ c
 c                                                                               
       subroutine drive_06_cnst( gpn, iout, local_work )                         
 c                                                                               
+      use tan_ek_work_mod, only : nonlinear_ek_work
+c
       implicit none                                                             
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn, iout                                                      
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
       call extract_D_symmetric( gpn, local_work )                               
 c                                                                               
@@ -1121,13 +1139,15 @@ c
 c                                                                               
       subroutine drive_07_cnst( gpn, iout, local_work )                         
 c                                                                               
+      use tan_ek_work_mod, only : nonlinear_ek_work
+c
       implicit none                                                             
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn, iout                                                      
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
 c                     local variables                                           
 c                                                                               
@@ -1174,14 +1194,16 @@ c
 c 
       use global_data, only: out                                                                              
       use elem_block_data, only : gbl_cep_blocks => cep_blocks   
+      use tan_ek_work_mod, only : nonlinear_ek_work
       use constants
-c      implicit none                                                             
+c
+      implicit none                                                             
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
       integer :: gpn                                                   
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
 c                     local variables                                           
 c                                                                               
@@ -1280,15 +1302,17 @@ c
       subroutine drive_umat_cnst( gpn, iout, local_work )                       
 c                                                                               
       use elem_block_data, only : gbl_cep_blocks => cep_blocks                  
+      use tan_ek_work_mod, only : nonlinear_ek_work
+c
       implicit integer (a-z)                                                    
       include 'param_def'                                                       
-      include 'include_tan_ek'  ! has local_work definition                     
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
 c                     local variables                                           
 c                                                                               
-      double precision                                                          
+      double precision ::                                                         
      & weight, symm_part_cep(21), factor                                        
-      logical local_debug, debug_now                                            
+      logical :: local_debug, debug_now                                            
 c                                                                               
 c           1. pull a few values from work space for block                      
 c                                                                               
@@ -1361,6 +1385,7 @@ c
 c                                                                               
       subroutine drive_10_cnst( gpn, iout, local_work )                         
 c                                                                               
+      use tan_ek_work_mod, only : nonlinear_ek_work
       use mm10_defs, only : indexes_common                    
 c                                                                               
       implicit none                                                             
@@ -1368,8 +1393,8 @@ c
 c                                                                               
 c                     parameter declarations                                    
 c                                                                               
-      include 'include_tan_ek'                                                  
       integer :: gpn, iout                                                      
+      type(nonlinear_ek_work) :: local_work
 c                                                                               
 c                     local variables                                           
 c                                                                               
@@ -1460,16 +1485,17 @@ c
 c                                                                               
       subroutine drive_11_cnst( gpn, iout, local_work )                         
 c                                                                               
+      use tan_ek_work_mod, only : nonlinear_ek_work     
       include 'param_def'                                                       
-      include 'include_tan_ek'                                                  
 c                                                                               
 c                     parameter declarations                                    
-c                                                                               
+c
+      type(nonlinear_ek_work) :: local_work
+                                                                               
 c                     local variables                                           
 c                                                                               
-      double precision                                                          
-     & weight                                                                   
-      logical first                                                             
+      double precision :: weight                                                                   
+      logical :: first                                                             
 c                                                                               
       span             = local_work%span                                        
       felem            = local_work%felem                                       
@@ -2095,25 +2121,25 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine bdbt_asym_mcm( span, icp, b, bt, bd, d, ek,                    
-     &                    mxvl, mxedof, utsz, nstr, totdof, mxutsz )            
-      implicit integer (a-z)                                                    
+c      subroutine bdbt_asym_mcm( span, icp, b, bt, bd, d, ek,                    
+c     &                    mxvl, mxedof, utsz, nstr, totdof, mxutsz )            
+c      implicit integer (a-z)                                                    
 c                                                                               
 c                       parameter declarations                                  
 c                                                                               
-      double precision                                                          
-     &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,nstr,*),                 
-     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)                                     
-      integer icp(mxutsz,*)                                                     
+c      double precision                                                          
+c     &   b(mxvl,mxedof,*), ek(totdof*totdof,*), d(mxvl,nstr,*),                 
+c     &   bd(mxvl,mxedof,*), bt(mxvl,nstr,*)                                     
+c      integer icp(mxutsz,*)                                                     
 c                                                                               
-      do i=1,span                                                               
-        ek(:,i) = ek(:,i) + reshape(matmul(b(i,1:totdof,1:6),                   
-     &      matmul(d(i,1:6,1:6), transpose(b(i,1:totdof,1:6)))),                
-     &      (/totdof*totdof/))                                                  
-      end do                                                                    
+c      do i=1,span                                                               
+c        ek(:,i) = ek(:,i) + reshape(matmul(b(i,1:totdof,1:6),                   
+c     &      matmul(d(i,1:6,1:6), transpose(b(i,1:totdof,1:6)))),                
+c     &      (/totdof*totdof/))                                                  
+c      end do                                                                    
 c                                                                               
-      return                                                                    
-      end subroutine                                                            
+c      return                                                                    
+c      end subroutine                                                            
 c     ****************************************************************          
 c     *                                                              *          
 c     *           subroutine bdbt_asym2 : not used. saved for        *          

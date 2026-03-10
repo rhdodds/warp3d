@@ -16,9 +16,11 @@ c
       subroutine gpifv1( eleifv, nrow_ifv, gpn, weight, dj, b,                  
      &                   urcs_blk_n1, local_work, element_volumes )             
 c                                                                               
+      use sigeps_work_mod,   only : nonlinear_sigeps_work
+c
       implicit none                                                   
       include 'param_def'                                                       
-      include 'include_sig_up'                                                  
+c      include 'include_sig_up'                                                  
 c                                                                               
 c                       parameter declarations                                  
 c             
@@ -27,6 +29,7 @@ c
       double precision :: eleifv(nrow_ifv,*), weight, dj(*), 
      &                    element_volumes(*), b(mxvl,mxedof,*), 
      &                    urcs_blk_n1(mxvl,*)                                   
+      type (nonlinear_sigeps_work) :: local_work
 c                                                                               
 c                       local declarations                                      
 c      
