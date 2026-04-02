@@ -360,9 +360,9 @@ c
      & /,    10x,"one_crys_his_size, total_hist_size: ", i6, i10 )
  9110 format(10x,i2,2i6)
  9120 format( 10x,i2,2i10)
- 9200 format(/,1x">>>>> FATAL ERROR:",
-     &       /,1x"      routine mm10_set_history_locs @",i2,
-     &       /,1x"      aborting job..." )
+ 9200 format(/,1x,">>>>> FATAL ERROR:",
+     &       /,1x,"      routine mm10_set_history_locs @",i2,
+     &       /,1x,"      aborting job..." )
 
  9502 format(/,1x,
      & '>>>> FATAL ERROR: unexpected input type in',

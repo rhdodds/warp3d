@@ -1730,7 +1730,7 @@ c
      &    /,15x,  "term2, term3, pm, triax, v2_dot: ",
      &    2e14.5,f4.1,2e14.5 )
 9220  format(15x, "S, nuc active:                    ",e14.5, 5x, l1,
-     &    /,15x,  "c_0, c_1:                         " 2e14.5 )
+     &    /,15x,  "c_0, c_1:                         ", 2e14.5 )
 9232  format(15x, "linear solve, T_(n+1):            ",e14.5)
 9240  format(15x, "v1_dot, V_new:                    ",2e14.5,
      &    /,15x,  "a_new, b_new:                     ",2e14.5,
@@ -2480,9 +2480,12 @@ c
       subroutine mm04_traction_ppr( span, ppr_support, del, trac_n1,
      &             history, history1, elem_killed,
      &             local_debug, iout, mxvl )
+c
+      use constants, only : zero, one, two
+c
       implicit none
       integer :: i, span, mxvl, iout
-      double precision
+      double precision ::
      &        ppr_support(mxvl,*), del(mxvl,*), trac_n1(mxvl,*),
      &        history(span,*), history1(span,*)
       logical :: elem_killed(*), local_debug
@@ -2492,10 +2495,11 @@ c
       double precision
      &        Gam_n, Gam_t, Tn_m, Tt_m, dn, dt, alph, beta, m, n,
      &        dGtn, dGnt, dnb, dtb,
-     &        deln, delt, deln_max, delt_max, Tn, Tt, dTn, zero, tol,
-     &        dtol, one, two, comp_multiplier
-      logical :: compression
-      data zero, one, two, tol / 0.0d00, 1.0d00, 2.0d00, 0.00001d00 /
+     &        deln, delt, deln_max, delt_max, Tn, Tt, dTn, tol,
+     &        dtol, comp_multiplier
+      logical :: compression, ok
+      logical, parameter :: llbug = .false.
+      data  tol / 0.00001d00 /
 c
 c              regular (nonlinear) stress updating
 c              -----------------------------------
@@ -2526,6 +2530,29 @@ c
         deln_max = history(i,3)
         delt_max = history(i,4)
         compression = deln .lt. zero
+        if( llbug ) then
+             write(iout,*) '..... @ 1.  i =  ', i
+             write(iout,*)' Tn_m ',Tn_m  
+             write(iout,*)' Tt_m ',Tt_m  
+             write(iout,*)' alph ',alph  
+             write(iout,*)' beta ',beta  
+             write(iout,*)' m    ',m     
+             write(iout,*)' n    ',n     
+             write(iout,*)' dn   ',dn    
+             write(iout,*)' dt   ',dt    
+             write(iout,*)' Gam_n ',Gam_n 
+             write(iout,*)' Gam_t ',Gam_t 
+             write(iout,*)' dGnt ',dGnt  
+             write(iout,*)' dGtn ',dGtn  
+             write(iout,*)' dnb  ',dnb   
+             write(iout,*)' dtb  ',dtb   
+             write(iout,*)' delt ',delt  
+             write(iout,*)' deln ',deln  
+             write(iout,*)' dtol ',dtol  
+             write(iout,*)' deln_max ', deln_max 
+             write(iout,*)' delt_max ', delt_max 
+             write(iout,*)' compression ', compression
+       end if             
 c
 c        Compute normal traction (Tn): 4 cases
 c        Case 1: Compression region
@@ -2546,17 +2573,17 @@ c
 c        Case 3: Softening region
 c
         elseif (deln .ge. deln_max) then
-          Tn = (Gam_t*(1-delt/dt)**beta*(delt/dt+n/beta)**n+dGtn) *
-     & Gam_n/dn*(m*(1-deln/dn)**alph*(m/alph+deln/dn)**(m-1)
-     &       -alph*(1-deln/dn)**(alph-1)*(m/alph+deln/dn)**m)
+          Tn = (Gam_t*(one-delt/dt)**beta*(delt/dt+n/beta)**n+dGtn) *
+     & Gam_n/dn*(m*(one-deln/dn)**alph*(m/alph+deln/dn)**(m-one)
+     &       -alph*(one-deln/dn)**(alph-one)*(m/alph+deln/dn)**m)
           deln_max = deln
 c
 c         Case 4: Unloading/reloading condition
 c
         else
-          Tn = (Gam_t*(1-delt/dt)**beta*(delt/dt+n/beta)**n+dGtn) *
-     & Gam_n/dn*(m*(1-deln_max/dn)**alph*(m/alph+deln_max/dn)**(m-1)
-     &   -alph*(1-deln_max/dn)**(alph-1)*(m/alph+deln_max/dn)**m) *
+          Tn = (Gam_t*(one-delt/dt)**beta*(delt/dt+n/beta)**n+dGtn) *
+     & Gam_n/dn*(m*(one-deln_max/dn)**alph*(m/alph+deln_max/dn)**(m-one)
+     &   -alph*(one-deln_max/dn)**(alph-one)*(m/alph+deln_max/dn)**m) *
      & deln/deln_max
         end if
 c
@@ -2570,19 +2597,20 @@ c
 c        Case 2: Softening region
 c
         elseif (delt .ge. delt_max) then
-          Tt = (Gam_n*(1-deln/dn)**alph*(deln/dn+m/alph)**m+dGnt) *
-     & Gam_t/dt*(n*(1-delt/dt)**beta*(delt/dt+n/alph)**(n-1)
-     &       -beta*(1-delt/dt)**(beta-1)*(delt/dt+n/beta)**n)
+          Tt = (Gam_n*(one-deln/dn)**alph*(deln/dn+m/alph)**m+dGnt) *
+     & Gam_t/dt*(n*(one-delt/dt)**beta*(delt/dt+n/alph)**(n-one)
+     &       -beta*(one-delt/dt)**(beta-one)*(delt/dt+n/beta)**n)
           delt_max = delt
 c
 c         Case 3: Unloading/reloading condition
 c
         else
-          Tt = (Gam_n*(1-deln/dn)**alph*(deln/dn+m/alph)**m+dGnt) *
-     & Gam_t/dt*(n*(1-delt_max/dt)**beta*(delt_max/dt+n/alph)**(n-1)
-     &   -beta*(1-delt_max/dt)**(beta-1)*(delt_max/dt+n/beta)**n) *
+          Tt = (Gam_n*(one-deln/dn)**alph*(deln/dn+m/alph)**m+dGnt) *
+     & Gam_t/dt*(n*(one-delt_max/dt)**beta*(delt_max/dt+n/alph)**(n-one)
+     &   -beta*(one-delt_max/dt)**(beta-one)*(delt_max/dt+n/beta)**n) *
      & delt/delt_max
         end if
+ 
 c
 c        Store cohesive tractions
 c
@@ -2751,76 +2779,170 @@ c
 c
       return
       end
-c
 c    ****************************************************************
 c    *                                                              *
 c    *               subroutine mm04_get_dn_dt_bar                  *
 c    *                                                              *
-c    *           written by : Kyoungsoo Park                        *
+c    *           written by : 3/15/2-26 rhd                         *
 c    *                                                              *
-c    *     this subroutine estimates the conjugate final crack      *
+c    *     estimate the conjugate final crack                       *
 c    *     opening width in the PPR cohesive zone models            *
+c    *                                                              *
+c    *     revised: bracketed Brent solve for y = dnb/dn in [0,1]   *
 c    *                                                              *
 c    ****************************************************************
 c
       subroutine mm04_get_dn_dt_bar( Gam_n, dn, m, alph, dGnt, dnb,
      &                               iout )
+c
+      use constants, only : zero, half, one, two, three
+c
       implicit none
-      integer :: itr, iout
-      double precision
-     &        Gam_n, dn, m, alph, dGnt, dnb, fx, dfx
-      double precision
-     &        half, tol, one
-      data half, tol, one / 0.5d00, 1.0d-08, 1.0d00 /
 c
-c                            bug in do while itr = 1.
-c                            for some set up step 1 iter = 1
-c                            floating invalid on fx = 
-c    
-c                            only detected with float trapping set       
+      double precision, intent(in)    :: Gam_n, dn, m, alph, dGnt
+      double precision, intent(inout) :: dnb
+      integer, intent(in)             :: iout
 c
-      itr = 0
-      dnb = half*dn
-c            write(iout,*) '.. Gam_n: ', Gam_n
-c            write(iout,*) '.. dnb: ', dnb
-c            write(iout,*) '.. dn: ', dn
-c            write(iout,*) '.. alph: ', alph
-c            write(iout,*) '.. m: ', m
-c            write(iout,*) '.. Gam_n: ', Gam_n
-c            write(iout,*) '.. dGnt: ', dGnt            
-      fx = Gam_n*(one-dnb/dn)**alph*(m/alph+dnb/dn)**m + dGnt      
+      integer :: iter, maxit
+      double precision :: a, b, c, d, e, fa, fb, fc, p, q, r, s,
+     &                    xm, tol1, xtol, ftol, epsm
 c
-c      Newton Raphson method is used to solve a nonlinear equation fx
-c      The solution of the nonlinear equation fx is unique,
-c      and exists between 0 and dn. The initial guess is set to be
-c      0.5*dn. Please, see Ref. JMPS 57 (6), 891-908 (2009) for more detail.
+      xtol  = 1.0d-10
+      ftol  = 1.0d-10
+      maxit = 100
+      epsm  = epsilon(one)
 c
-      do while ((abs(fx) .gt. tol) .and. (itr .lt. 200))
-c            write(iout,*) '.. itr: ', itr
-c            write(iout,*) '.. Gam_n: ', Gam_n
-c            write(iout,*) '.. dnb: ', dnb
-c            write(iout,*) '.. dn: ', dn
-c            write(iout,*) '.. alph: ', alph
-c            write(iout,*) '.. m: ', m
-c            write(iout,*) '.. Gam_n: ', Gam_n
-c            write(iout,*) '.. dGnt: ', dGnt            
-        fx = Gam_n*(one-dnb/dn)**alph*(m/alph+dnb/dn)**m + dGnt
-        dfx = (-alph*(one-dnb/dn)**(alph-one)*(m/alph+dnb/dn)**m +
-     &        m*(one-dnb/dn)**alph*(m/alph+dnb/dn)**(m-one))*Gam_n/dn
-        dnb = dnb - fx/dfx
-        itr = itr + 1
-      end do
-      if( abs(fx) .gt. tol ) then
-         write(iout,9000)
+      if( dn .le. zero ) then
+         write(iout,*) ">>>> FATAL ERROR: "
+         write(iout,*) '>>> mm04_get_dn_dt_bar: dn <= 0'
          call die_abort
       end if
 c
+      if( alph .le. zero ) then
+         write(iout,*) ">>>> FATAL ERROR: "
+         write(iout,*) '>>> mm04_get_dn_dt_bar: alph <= 0'
+         call die_abort
+      end if
+c
+      a  = zero
+      b  = one
+      fa = fx(a)
+      fb = fx(b)
+c
+      if( abs(fa) .le. ftol ) then
+         dnb = zero
+         return
+      end if
+c
+      if( abs(fb) .le. ftol ) then
+         dnb = dn
+         return
+      end if
+c
+      if( fa * fb .gt. zero ) then
+         write(iout,*) ">>>> FATAL ERROR: "
+         write(iout,*) '>>> mm04_get_dn_dt_bar: root not bracketed'
+         write(iout,*) '    fa, fb: ', fa, fb
+         call die_abort
+      end if
+c
+      c  = a
+      fc = fa
+      d  = b - a
+      e  = d
+c
+      do iter = 1, maxit
+c
+         if( abs(fc) .lt. abs(fb) ) then
+            a  = b
+            b  = c
+            c  = a
+            fa = fb
+            fb = fc
+            fc = fa
+         end if
+c
+         tol1 = two*epsm*abs(b) + half*xtol
+         xm   = half * ( c - b )
+c
+         if( abs(xm) .le. tol1 .or. abs(fb) .le. ftol ) then
+            dnb = max(zero,min(one,b)) * dn
+            return
+         end if
+c
+         if( abs(e) .ge. tol1 .and. abs(fa) .gt. abs(fb) ) then
+            s = fb / fa
+            if ( a .eq. c ) then
+               p = two * xm * s
+               q = one - s
+            else
+               q = fa / fc
+               r = fb / fc
+               p = s * ( two*xm*q*(q-r) - (b-a)*(r-one) )
+               q = (q-one) * (r-one) * (s-one)
+            end if
+c
+            if ( p .gt. zero ) q = -q
+            p = abs(p)
+c
+            if( two*p .lt.
+     &           min( three*xm*q - abs(tol1*q), abs(e*q) ) ) then
+               e = d
+               d = p / q
+            else
+               d = xm
+               e = d
+            end if
+         else
+            d = xm
+            e = d
+         end if
+c
+         a  = b
+         fa = fb
+c
+         if( abs(d) .gt. tol1 ) then
+            b = b + d
+         else
+            b = b + sign( tol1, xm )
+         end if
+c
+         fb = fx(b)
+c
+         if( (fb .gt. zero .and. fc .gt. zero) .or.
+     &        (fb .lt. zero .and. fc .lt. zero) ) then
+            c  = a
+            fc = fa
+            d  = b - a
+            e  = d
+         end if
+c
+      end do
+c
+      write(iout,*) ">>>> FATAL ERROR: "
+      write(iout,*) '>>> mm04_get_dn_dt_bar: Brent no convergence'
+      call die_abort
+c
+      contains
+c     ========
+c
+      double precision function fx( y )
+      implicit none
+      double precision, intent(in) :: y
+      double precision :: yy, t1, t2, t3, t4
+c
+      yy = max( zero, min( one, y ) )
+      t1 = one - yy
+      t2 = t1 ** alph
+      t3 = m/alph + yy
+      t4 = t3 ** m
+      fx = Gam_n * t2 * t4 + dGnt
+c      
       return
- 9000 format('>>>>> FATAL ERROR: ppr option of cohesive model.',
-     & /,'                   failed to converge in mm04_get_dn_dt_bar',
-     & /,'                   analysis terminated.' )
-      end
-      
+      end function fx
+c
+      end subroutine mm04_get_dn_dt_bar     
+ 
       
 c     ****************************************************************
 c     *                                                              *
@@ -2863,11 +2985,6 @@ c
 c
       return
       end
-      
-      
-      
-      
-c
 c     ****************************************************************
 c     *                                                              *
 c     *             subroutine mm04_states_values                    *

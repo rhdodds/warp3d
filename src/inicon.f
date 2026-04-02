@@ -4,22 +4,23 @@ c     *                      subroutine inicon                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 8/22/2020 rhd              *
+c     *                   last modified : 3/16/20256 rhd             *
 c     *                                                              *
 c     *     process input commands that define initial conditions    *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine inicon( sbflg1, sbflg2 )
+c
       use global_data ! old common.main
       use allocated_integer_list
-c
       use main_data, only : trn, trnmat, temper_nodes,
      &                      inverse_incidences, initial_stresses,
      &                      initial_stresses_user_routine,
      &                      initial_stresses_file,
      &                      initial_stresses_input,
      &                      temper_nodes_ref, temperatures_ref
+      use constants, only : zero
       implicit none
 c
       logical :: sbflg1, sbflg2
@@ -32,7 +33,6 @@ c
       real :: dumr
       double precision :: cval, dumd
       double precision, allocatable :: edva(:,:), trnmte(:,:,:)
-      double precision, parameter :: zero = 0.0d0
       character :: dums, curtyp*1
       logical :: found, dvaflg(mxndof)
       logical, allocatable :: trne(:,:)
@@ -397,7 +397,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *     contains:   inicon_chk_stress_tbl                        *
 c     *                                                              *
-c     *                 last modified : 09/9/2020 rhd                *
+c     *                 last modified : 03/16/2026 rhd               *
 c     *                                                              *
 c     ****************************************************************
 
@@ -407,7 +407,8 @@ c
       integer :: i, j
       logical :: found
       double precision :: sum
-
+c
+      sum = zero
       do j = 1, 6
         do i = 1, noelem
            sum = sum + abs( initial_stresses(j,i) )
@@ -543,7 +544,6 @@ c
      &   " values listed ....." )
  9010 format(2x,i8,6d16.6)
 c
-      end subroutine inicon_dump_stresses
+      end subroutine inicon_dump_stresses    
 c
-      end subroutine inicon
-
+      end subroutine inicon        

@@ -4,7 +4,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/19/26 rhd                *
+c     *                   last modified : 3/28/2026 rhd              *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -451,6 +451,12 @@ c
       mkl_solve  = .false.
       nasa_vss   = .false.
       mumps_solve = .false.
+#ifndef MKL
+      mumps_solve = .true.
+      solver_flag = 2
+      write(out,9620)
+      go to 1150
+#endif            
       if ( matchs('technique',4) ) call splunj
       if ( matchs('type',4) ) call splunj
 c
@@ -1318,6 +1324,9 @@ c
  9600 format(/1x,'>>>>> error: HYpre solver has been deprecated',/)
  9605 format(/1x,'>>>>> error: Cluster solver has been deprecated',/)
  9610 format(/1x,'>>>>> error: Assembly command deprecated',/)
+ 9620 format(/1x,'>>>>> NOTE: The Pardiso solvers are not available ',
+     &       /1x,'            on this platform. MUMPS solver used',
+     &  //)
 c
       contains
 c     ========

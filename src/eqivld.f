@@ -867,7 +867,7 @@ c     *                  subroutine eqiv_out_patters                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/16/22  rhd              *
+c     *                   last modified : 3/14/2026 rhd              *
 c     *                                                              *
 c     *     at completion of a load step, output a summary of        *
 c     *     loading pattern multipliers acting on model. this aids   *
@@ -880,12 +880,12 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine eqiv_out_patterns( doing_restart )
-      use global_data ! old common.main
+      use global_data, only : lodnam, ltmstp, numlod, out, lodtyp
 c
       use main_data,  only : load_pattern_factors, output_packets,
      &                       packet_file_no, actual_cnstrn_stp_factors
       use j_data, only : J_cutoff_active
-      use constants
+      use constants, only : zero
 c
       implicit none
 c
@@ -893,8 +893,7 @@ c
 c
       integer :: now_step, i, k, line_count, pattern_count, 
      &           all_pattern_counts
-      double precision :: step_factor, total_factor, dzero, 
-     &                    sum_constraints
+      double precision :: step_factor, total_factor, sum_constraints
       double precision, allocatable :: all_pattern_factors(:)
       character(len=12) pattern_names(3)
       character(len=8), allocatable :: all_pattern_ids(:)
@@ -980,7 +979,7 @@ c
       write(packet_file_no) 24, pattern_count, now_step, 0
       do i = 1, numlod
         total_factor = load_pattern_factors(i,1)
-        if( total_factor .ne. dzero ) then
+        if( total_factor .ne. zero ) then
            pattern_names(1) = lodnam(i)
            write(packet_file_no) pattern_names(1), total_factor
         end if

@@ -233,7 +233,7 @@ c
 c                                                                               
       return                                                                    
 c                                                                               
- 9040 format(//,1x                                                              
+ 9040 format(//,1x,                                                              
      &'>>>> Unknown option on blocking command - command ignore')               
  9050 format(//,1x,'>>>> Invalid blocksize: ',i4,' using: ',i4,                 
      &        /,1x,'     cannot exceed mxvl in file param_def')                 

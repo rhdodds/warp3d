@@ -4,7 +4,7 @@ c     *                      subroutine initst                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 2/20/2026 rhd              *
+c     *                   last modified : 3/28/2026 rhd              *
 c     *                                                              *
 c     *     at program startup, initializes various variables and    *
 c     *     arrays needed to set up the program correctly.           *
@@ -390,9 +390,14 @@ c
       solver_memory      = 500
       solver_mkl_iterative = .false.
       nasa_vss     = .false.
-      mumps_solve  = .true.
+      mumps_solve  = .false.
       mkl_solve    = .false.
-      solver_flag  = 2  !  MUMPS
+      solver_flag  = -1  
+#ifndef MKL
+      solver_flag = 2
+      mkl_solve   = .false.
+      mumps_solve = .true.
+#endif
 #ifdef MKL
       solver_flag = 7
       mkl_solve   = .true.

@@ -1968,7 +1968,7 @@ c
 !          end do
 !      end do
       
- 9000 format(' ..i,j,k:' 3i5,2d14.6)      
+ 9000 format(' ..i,j,k:',3i5,2d14.6)      
       return
       end subroutine ctran1_qbar
 c
