@@ -18,9 +18,22 @@ if [ $# = "0" ]; then
    exit 1
 fi
 #
+#              set the platform: Intel or silicon
+#
+if [[ "$(uname -m)" == "arm64" ]]; then
+    platform="silicon"
+else
+    platform="intel"
+fi
+#
 echo " "
-echo ">> Running WARP3D on macOS ..."
-echo "   OpenMP + threaded MKL direct/iterative sparse solver "
+if [[ "$platform" == "silicon" ]]; then
+    echo ">> Running WARP3D on macOS ... Apple silicon"
+elif [[ "$platform" == "intel" ]]; then
+    echo ">> Running WARP3D on macOS ...Intel"
+else
+    echo "unknown platform: $platform"
+fi
 #
 if [ -z "$WARP3D_HOME" ]; then
    printf "[ERROR]\n"
@@ -30,12 +43,14 @@ if [ -z "$WARP3D_HOME" ]; then
    exit 1
 fi
 #
-#           set executable file name for OpenMP + MKL sparse solver
-#           version of warp3d
+#           set executable file name 
 #
-warp3d_exe="$WARP3D_HOME/run_macOS/warp3d.omp"
+warp3d_exe="$WARP3D_HOME/run_macOS/warp3d_Intel.exe"
+if [[ "$platform" == "silicon" ]]; then
+    warp3d_exe="$WARP3D_HOME/run_macOS/warp3d_silicon.exe"
+fi
 #
-if [[ ! -f "$WARP3D_HOME/run_macOS/warp3d.omp" ]]
+if [[ ! -f "$warp3d_exe" ]]
 then
     echo " "; echo " "
     echo ">>>> WARP3D executable does not exist:'$warp3d_exe'"
@@ -43,7 +58,7 @@ then
     echo " "; echo " "
     exit
 fi
-if [[ ! -x "$WARP3D_HOME/run_macOS/warp3d.omp" ]]
+if [[ ! -x "$warp3d_exe" ]]
 then
     echo " "; echo " "
     echo ">>>> WARP3D executable must have execute permissions:'$warp3d_exe'"

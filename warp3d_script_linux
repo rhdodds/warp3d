@@ -35,9 +35,9 @@ fi
 #           set executable file name for OpenMP + MKL sparse solver
 #           version of warp3d
 #
-warp3d_exe="$WARP3D_HOME/run_linux/warp3d.omp"
+warp3d_exe="$WARP3D_HOME/run_linux/warp3d.exe"
 #
-if [[ ! -f "$WARP3D_HOME/run_linux/warp3d.omp" ]]
+if [[ ! -f "$WARP3D_HOME/run_linux/warp3d.exe" ]]
 then
     echo " "; echo " "
     echo ">>>> WARP3D executable does not exist:'$warp3d_exe'"
@@ -45,7 +45,7 @@ then
     echo " "; echo " "
     exit
 fi
-if [[ ! -x "$WARP3D_HOME/run_linux/warp3d.omp" ]]
+if [[ ! -x "$WARP3D_HOME/run_linux/warp3d.exe" ]]
 then
     echo " "; echo " "
     echo ">>>> WARP3D executable must have execute permissions:'$warp3d_exe'"
