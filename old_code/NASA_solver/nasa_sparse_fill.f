@@ -5,8 +5,7 @@ c
 c
 c****************************************************************
 c
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real (a-h,o-z)
+      implicit double precision (a-h,o-z)
       integer adjncy(*), xlnz(*), irow(*), iloc(*), inum(*)  
       dimension  amat(*), s_matrix(*)
       data zero / 0.0 /

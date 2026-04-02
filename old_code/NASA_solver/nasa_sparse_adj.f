@@ -1,7 +1,6 @@
       subroutine sparse_adj( neq, irow, icoln, ncof,
      &                     maxn, nt, xadj, adjncy, jmax, maxan )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real (a-h,o-z)
+      implicit double precision (a-h,o-z)
       dimension irow(*), icoln(*), maxan(*)
       integer adjncy(*), xadj(*)
       allocatable itemp(:), jtemp(:)

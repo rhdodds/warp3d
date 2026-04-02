@@ -13,8 +13,7 @@ c
      &                            d, b, a, irow, icoln,
      &                            xdjncy, itemp, btemp )
 c
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
       dimension adjncy(*), perm(*), itemp(*), xadj(*), icoln(*),
      &          irow(*), a(*), b(*), d(*), xdjncy(*),  btemp(*)
@@ -95,8 +94,7 @@ c
       subroutine sparse_reorder3( neq, irow, icoln, itemp,
      &                            jtemp, maxn, nt, xadj, adjncy,
      &                            xtemp, a, xdjncy, jmax, maxan )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real (a-h,o-z)
+      implicit double precision (a-h,o-z)
       dimension xtemp(*), a(*), xdjncy(*), irow(*), itemp(*),
      &          jtemp(*), maxan(*), icoln(*)
       integer adjncy(*), xadj(*)
@@ -150,8 +148,7 @@ c
 
       subroutine sparse_reorder2( neq, irow, icoln, jtemp,
      &                            maxan, ncof, maxn )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real (a-h,o-z)
+      implicit double precision (a-h,o-z)
       integer neq, irow(*), jtemp(*), maxan(*), icoln(*)
 c 
 c              nt number of terms in adjncy

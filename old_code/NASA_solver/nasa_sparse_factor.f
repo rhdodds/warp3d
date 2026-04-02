@@ -1,8 +1,7 @@
       subroutine sparse_factor( neqns, xlnz, coefs,
      &                          diag, iloc, inum, itemp, jtemp,
      &                          link, jloc, c1 )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real (a-h,o-z)
+      implicit double precision (a-h,o-z)
       integer    xlnz(*)
       dimension  coefs(*), diag(*), inum(*), iloc(*),
      &           itemp(*), jtemp(*), link(*), jloc(*), c1(*)

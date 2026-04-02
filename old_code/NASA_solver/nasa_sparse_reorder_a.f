@@ -12,12 +12,10 @@ c     ****************************************************************
 c
       subroutine sparse_reorder( neq, ncoeff, diag, rhs, coefs, kpt,
      &                           kind, perm, xadj, adjncy, itype  )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real (a-h,o-z)
+      implicit double precision (a-h,o-z)
 c
       integer xadj, adjncy, perm, deg, qsize, qlink
-#sgl      real xdjncy
-#dbl      double precision xdjncy
+      double precision xdjncy
 c
 c		these allocatables are released before returning.
 c               this set of routines retains no space between calls.
@@ -37,8 +35,7 @@ c
      &                      ncof, maxn )
 c
       incof        = max(ncof,neq)
-#sgl      isize_xdjncy = ((ncoeff * nb) + neq) * 2
-#dbl      isize_xdjncy = ((ncoeff * nb) + neq)
+      isize_xdjncy = ((ncoeff * nb) + neq)
       allocate( itemp(incof) )
       allocate( xtemp(ncof) )
       allocate( xdjncy(isize_xdjncy) )

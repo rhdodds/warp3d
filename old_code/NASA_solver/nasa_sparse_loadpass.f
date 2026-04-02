@@ -1,7 +1,6 @@
       subroutine sparse_loadpass( neqns, xlnz, maxlnz, coefs,
      &                            diag, rhs, iloc, inum  )
-#dbl      implicit double precision (a-h,o-z)
-#sgl      implicit real (a-h,o-z)
+      implicit double precision (a-h,o-z)
       integer    xlnz(*)
       dimension   coefs(*), rhs(*), diag(*), inum(*), iloc(*)
       data zero / 0.0 /
