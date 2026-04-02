@@ -10,24 +10,23 @@ fi
 #
 cd $WARP3D_HOME
 #
-file_1="https://www.dropbox.com/s/4erh4ccgft475b1/warp3d_external_libs_2021_Sept.zip?dl=0"
-file_1="https://www.dropbox.com/s/j1ladq851libtvm/warp3d_external_libs_2023_May.zip?dl=0"
+file_1="https://www.dropbox.com/scl/fi/0p9rdz9f0ik1z1zhq5qc7/warp3d_external_libs_2026_April.zip?rlkey=4yh407syaui2l2zidpvz6egyr&dl=0"
 #
-wget --no-check-certificate -O warp3d_external_libs_2023_May.zip $file_1
+wget --no-check-certificate -O warp3d_external_libs_2026_April.zip $file_1
 #
-unzip warp3d_external_libs_2023_May.zip
+unzip warp3d_external_libs_2026_April.zip
 #
 mkdir ./linux_packages >& /dev/null
 #
-cd warp3d_external_libs_2023_May
-cp -a include $WARP3D_HOME/linux_packages/
+cd warp3d_external_libs_2026_April
 cp -a lib $WARP3D_HOME/linux_packages/
 cp -a OSX_MKL_files $WARP3D_HOME
+cp -a MUMPS_libs $WARP3D_HOME
 #
 cd $WARP3D_HOME
 #
-/bin/rm -r ./warp3d_external_libs_2023_May  
-/bin/rm -r ./warp3d_external_libs_2023_May.zip
+/bin/rm -r ./warp3d_external_libs_2026_April 
+/bin/rm -r ./warp3d_external_libs_2026_April.zip
 #
 exit
 
