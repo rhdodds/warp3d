@@ -7,10 +7,10 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 1/19/2026 rhd
+#   Last modifications: 3/25/2026 rhd
 #
 #    Makefile for WARP3D on systems running Windows 10/11
-#    on x86 Processors (64-bit mode).
+#    on x8664 Processors (64-bit mode).
 #
 #    This nmake script is initiated by the the command shell script
 #    Makewarp.bat or Makewarp_jom.bat (which sets the 64-bit
@@ -24,12 +24,13 @@
 #    The generated executable is statically linked to enable use on
 #    Windows machines w/o the Intel compiler suite.
 #
-#     Notes
+#    Notes:
 #
 #       1. Key compiler options:
 #
 #           Intel: by default we use the compiler feature to
 #                  build instructions in the executable for all
+#                  processor tyctions in the executable for all
 #                  processor types from ivybridge to current.
 #                  During execution the code dispatches the best
 #                  instructions for your specific computer.
@@ -41,7 +42,7 @@
 #          uses the most efficient instruction set available on
 #          your specific computer.
 #
-# ==>>  3. The distributed executables for WARP3D ** require ** 
+#       3. The distributed executables for WARP3D ** require ** 
 #          that your processor support the AVX instruction 
 #          set from Intel ivybridge and newer processors
 #          (as a minimum).
@@ -57,6 +58,14 @@
 #           During the next year, we plan to require processors
 #           that support the AVX2 instruction set.
 #
+#       4. We build an executable using shared libraries for 
+#          Intel MKL
+#
+#       We ** strongly ** recommend you re-build the executable to leverage
+#       all features of newer x86-64 processors: use the 
+#       HARDWARE_MACHINE_TYPE option set rather than the ALL_PROCESSORS set
+#       defined below.
+#
 !IF DEFINED(ARCH64)
 XXX = abc
 !ELSE
@@ -65,7 +74,6 @@ XXX = abc
 #
 OSNAME   = Windows
 BUILDNUM = 5000
-PRE      = fpp
 #
 ODIR   = .\.\..\obj_windows
 EXEDIR = .\..\run_windows
@@ -90,10 +98,10 @@ ALL_PROCESSORS = $(PART3) $(PART4)
 MACHINE_TYPE = $(ALL_PROCESSORS) #  $(HARDWARE_MACHINE_TYPE)  # $(ALL_PROCESSORS)
 #
 F1 = /fpconstant /fixed /traceback /module:$(ODIR) $(FTRAP)
-F2 = /Qftz /nologo /heap-arrays  /traceback 
+F2 = /Qftz /nologo   /traceback 
 F3 = $(INLINEOPT) $(MACHINE_TYPE) $(PARALLEL) $(STACKSIZE)
 #
-FOR = ifx $(F1) $(F2) $(F3)
+FOR = ifx $(F1) $(F2) $(F3) /fpp /DMKL /DPARDISO /DWindows
 FOR = $(FOR)
 LINKFOR = $(FOR)
 #
@@ -124,6 +132,11 @@ OBJ =	 \
 	$(OD)\mod_segmental_curves$O	 \
 	$(OD)\mod_stiffness$O	 \
 	$(OD)\mod_trlist$O \
+	$(OD)/mod_tan_ek_work_def$O \
+	$(OD)/mod_damage_values_def$O \
+	$(OD)/mod_user_parms_def$O \
+	$(OD)/mod_mm10_working$O \
+	$(OD)/mod_sig_eps_work_def$O \
 	$(OD)\user_routines_module$O \
 	$(OD)\addifv$O	 \
 	$(OD)\addmas$O	 \
@@ -240,6 +253,15 @@ OBJ =	 \
 	$(OD)\mm_return_values$O	 \
 	$(OD)\mpc_modify$O	 \
 	$(OD)\name_strip$O	 \
+	$(OD)\nasa_vss$O	 \
+	$(OD)\nasa_sparse_adj$O	 \
+	$(OD)\nasa_sparse_check$O	 \
+	$(OD)\nasa_sparse_factor$O	 \
+	$(OD)\nasa_sparse_fill$O	 \
+	$(OD)\nasa_sparse_loadpass$O	 \
+	$(OD)\nasa_sparse_reorder_a$O	 \
+	$(OD)\nasa_sparse_reorder_b$O	 \
+	$(OD)\nasa_sparse_sym_fact$O	 \
 	$(OD)\ndpts1$O	 \
 	$(OD)\ouddpa$O	 \
 	$(OD)\oudriv$O	 \
@@ -546,7 +568,7 @@ $(OD)\dptstf$O : dptstf.f $(OD)\mod_main$O \
 
 $(OD)\drive_eps_sig_internal_forces$O : drive_eps_sig_internal_forces.f \
                    $(OD)\mod_crack_growth$O $(OD)\mod_damage$O $(OD)\mod_main$O \
-                   param_def include_sig_up \
+                   param_def $(OD)\mod_sig_eps_work_def$O  \
                    $(OD)\mod_eleblocks$O   $(OD)\mod_segmental_curves$O
 	$(FOR) /O3   /c drive_eps_sig_internal_forces.f
 	$(MVC) drive_eps_sig_internal_forces$O $@
@@ -640,7 +662,7 @@ $(OD)\gp_temp_eps$O : gp_temp_eps.f param_def
 	$(MVC) gp_temp_eps$O $@
 
 $(OD)\gpifv1$O : gpifv1.f param_def \
-                   include_sig_up $(OD)\mod_segmental_curves$O
+                   $(OD)\mod_sig_eps_work_def$O  $(OD)\mod_segmental_curves$O
 	$(FOR) /O3   /c gpifv1.f
 	$(MVC) gpifv1$O $@
 
@@ -648,7 +670,7 @@ $(OD)\gpmas1$O : gpmas1.f param_def
 	$(FOR) /O3   /c gpmas1.f
 	$(MVC) gpmas1$O $@
 
-$(OD)\gptns1$O : gptns1.f include_tan_ek $(OD)\mod_crystals$O \
+$(OD)\gptns1$O : gptns1.f $(OD)\mod_tan_ek_work_def$O  $(OD)\mod_crystals$O \
                    param_def $(OD)\mod_main$O $(OD)\mod_eleblocks$O
 	$(FOR) /O3   /c gptns1.f
 	$(MVC) gptns1$O $@
@@ -820,7 +842,7 @@ $(OD)\linked_list$O : linked_list.f $(OD)\mod_crack_growth$O \
 #
 $(OD)\main_program$O : main_program.f param_def $(OD)\mod_main$O \
                  $(OD)\mod_file_info$O $(OD)\mod_performance$O
-	$(FOR) /D$(OSNAME) /DBuild=$(BUILDNUM) /$(PRE) /O3   /c main_program.f
+	$(FOR)  /DBuild=$(BUILDNUM) /O3   /c main_program.f
 	$(MVC) main_program$O $@
 
 $(OD)\mem_allocate$O : mem_allocate.f $(OD)\mod_main$O \
@@ -868,27 +890,27 @@ $(OD)\mm09$O : mm09.f
 	$(FOR) /O3   /c mm09.f
 	$(MVC) mm09$O $@
 
-$(OD)\mm10_a$O : mm10_a.f $(OD)\mod_crystals$O param_def include_mm10
+$(OD)\mm10_a$O : mm10_a.f $(OD)\mod_crystals$O param_def $(OD)\mod_mm10_working$O 
 	$(FOR) /O3  /c mm10_a.f
 	$(MVC) mm10_a$O $@
 
-$(OD)\mm10_b$O : mm10_b.f $(OD)\mod_crystals$O param_def include_mm10
+$(OD)\mm10_b$O : mm10_b.f $(OD)\mod_crystals$O param_def $(OD)\mod_mm10_working$O 
 	$(FOR) /O3   /c mm10_b.f
 	$(MVC) mm10_b$O $@
 
-$(OD)\mm10_c$O : mm10_c.f $(OD)\mod_crystals$O param_def include_mm10
+$(OD)\mm10_c$O : mm10_c.f $(OD)\mod_crystals$O param_def $(OD)\mod_mm10_working$O 
 	$(FOR) /O3  /c mm10_c.f
 	$(MVC) mm10_c$O $@
 
-$(OD)\mm10_d$O : mm10_d.f $(OD)\mod_crystals$O param_def include_mm10
+$(OD)\mm10_d$O : mm10_d.f $(OD)\mod_crystals$O param_def $(OD)\mod_mm10_working$O 
 	$(FOR) /O3  /c mm10_d.f
 	$(MVC) mm10_d$O $@
 
-$(OD)\mm10_e$O : mm10_e.f $(OD)\mod_crystals$O param_def include_mm10
+$(OD)\mm10_e$O : mm10_e.f $(OD)\mod_crystals$O param_def $(OD)\mod_mm10_working$O 
 	$(FOR) /O3  /c mm10_e.f
 	$(MVC) mm10_e$O $@
 
-$(OD)\mm10_f$O : mm10_f.f $(OD)\mod_crystals$O param_def include_mm10
+$(OD)\mm10_f$O : mm10_f.f $(OD)\mod_crystals$O param_def $(OD)\mod_mm10_working$O 
 	$(FOR) /O3  /c mm10_f.f
 	$(MVC) mm10_f$O $@
 
@@ -922,6 +944,42 @@ $(OD)\name_strip$O : name_strip.f
 	$(FOR) /O3   /c name_strip.f
 	$(MVC) name_strip$O $@
 
+$(OD)\nasa_vss$O : nasa_vss.f
+	$(FOR) /O3   /c nasa_vss.f
+	$(MVC) nasa_vss$O $@
+
+$(OD)\nasa_sparse_adj$O : nasa_sparse_adj.f
+	$(FOR) /O3   /c nasa_sparse_adj.f
+	$(MVC) nasa_sparse_adj$O  $@
+
+$(OD)\nasa_sparse_check$O : nasa_sparse_check.f
+	$(FOR) /O3   /c nasa_sparse_check.f
+	$(MVC) nasa_sparse_check$O  $@
+
+$(OD)\nasa_sparse_factor$O : nasa_sparse_factor.f
+	$(FOR) /O3   /c nasa_sparse_factor.f
+	$(MVC) nasa_sparse_factor$O  $@
+
+$(OD)\nasa_sparse_fill$O : nasa_sparse_fill.f
+	$(FOR) /O3   /c nasa_sparse_fill.f
+	$(MVC) nasa_sparse_fill$O  $@
+
+$(OD)\nasa_sparse_loadpass$O : nasa_sparse_loadpass.f
+	$(FOR) /O3   /c nasa_sparse_loadpass.f
+	$(MVC) nasa_sparse_loadpass$O  $@
+
+$(OD)\nasa_sparse_reorder_a$O : nasa_sparse_reorder_a.f
+	$(FOR) /O3   /c nasa_sparse_reorder_a.f
+	$(MVC) nasa_sparse_reorder_a$O  $@
+
+$(OD)\nasa_sparse_reorder_b$O : nasa_sparse_reorder_b.f
+	$(FOR) /O3   /c nasa_sparse_reorder_b.f
+	$(MVC) nasa_sparse_reorder_b$O  $@
+
+$(OD)\nasa_sparse_sym_fact$O : nasa_sparse_sym_fact.f
+	$(FOR) /O3   /c nasa_sparse_sym_fact.f
+	$(MVC) nasa_sparse_sym_fact$O  $@
+
 $(OD)\ndpts1$O : ndpts1.f
 	$(FOR) /O3   /c ndpts1.f
 	$(MVC) ndpts1$O $@
@@ -932,7 +990,6 @@ $(OD)\newmrk$O : newmrk.f $(OD)\mod_main$O param_def
 #
 #       --- o --
 #
-
 $(OD)\ouddpa$O : ouddpa.f $(OD)\mod_main$O param_def
 	$(FOR) /O3   /c ouddpa.f
 	$(MVC) ouddpa$O $@
@@ -1136,7 +1193,7 @@ $(OD)\reopen$O : reopen.f param_def $(OD)\mod_main$O $(OD)\mod_eleblocks$O \
 	$(FOR)  /$(PRE) /D$(OSNAME) /O3   /c reopen.f
 	$(MVC) reopen$O $@
 
-$(OD)\rknifv$O : rknifv.f $(OD)\mod_main$O param_def include_sig_up \
+$(OD)\rknifv$O : rknifv.f $(OD)\mod_main$O param_def $(OD)\mod_sig_eps_work_def$O  \
                    $(OD)\mod_crack_growth$O $(OD)\mod_segmental_curves$O \
                    $(OD)\mod_damage$O
 	$(FOR) /O3   /c rknifv.f
@@ -1147,17 +1204,17 @@ $(OD)\rknmas$O : rknmas.f param_def
 	$(MVC) rknmas$O $@
 
 $(OD)\rknstr$O : rknstr.f param_def \
-                   include_sig_up $(OD)\mod_segmental_curves$O \
+                   $(OD)\mod_sig_eps_work_def$O  $(OD)\mod_segmental_curves$O \
                    $(OD)\mod_main$O $(OD)\mod_crystals$O
 	$(FOR) /O3   /c rknstr.f
 	$(MVC) rknstr$O $@
 
-$(OD)\rktstf$O : rktstf.f param_def include_tan_ek \
+$(OD)\rktstf$O : rktstf.f param_def $(OD)\mod_tan_ek_work_def$O  \
                  $(OD)\mod_main$O $(OD)\mod_crystals$O
 	$(FOR) /O3   /c rktstf.f
 	$(MVC) rktstf$O $@
 
-$(OD)\rplstr$O : rplstr.f $(OD)\mod_main$O param_def include_sig_up \
+$(OD)\rplstr$O : rplstr.f $(OD)\mod_main$O param_def $(OD)\mod_sig_eps_work_def$O  \
                    $(OD)\mod_eleblocks$O $(OD)\mod_segmental_curves$O
 	$(FOR) /O3   /c rplstr.f
 	$(MVC) rplstr$O $@
@@ -1167,7 +1224,7 @@ $(OD)\rscmp1$O : rscmp1.f param_def
 	$(MVC) rscmp1$O $@
 
 $(OD)\rstgp1$O : rstgp1.f param_def $(OD)\mod_crystals$O \
-                   include_sig_up $(OD)\mod_segmental_curves$O \
+                   $(OD)\mod_sig_eps_work_def$O  $(OD)\mod_segmental_curves$O \
                    $(OD)\mod_main$O $(OD)\mod_eleblocks$O
 	$(FOR) /O3   /c rstgp1.f
 	$(MVC) rstgp1$O $@
@@ -1231,7 +1288,7 @@ $(OD)\stpdrv$O : stpdrv.f $(OD)\mod_main$O param_def $(OD)\mod_damage$O
 #       --- t --
 #
 $(OD)\tanstf$O : tanstf.f $(OD)\mod_eleblocks$O $(OD)\mod_segmental_curves$O \
-                   $(OD)\mod_crack_growth$O include_tan_ek \
+                   $(OD)\mod_crack_growth$O $(OD)\mod_tan_ek_work_def$O  \
                    $(OD)\mod_damage$O $(OD)\mod_main$O \
                    param_def $(OD)\mod_main$O
 	$(FOR) /O3   /c tanstf.f
@@ -1308,12 +1365,12 @@ $(OD)\user_routines_other_Abaqus$O : user_routines_other_Abaqus.f  \
 	$(FOR) /O3  /heap-arrays /c user_routines_other_Abaqus.f
 	$(MVC) user_routines_other_Abaqus$O $@
 
-$(OD)\user_routines_warp3d$O : user_routines_warp3d.f  include_usr_parm \
+$(OD)\user_routines_warp3d$O : user_routines_warp3d.f  $(OD)\mod_user_parms_def$O \
                                $(OD)\user_routines_module$O
 	$(FOR) /O3  /heap-arrays /c user_routines_warp3d.f
 	$(MVC) user_routines_warp3d$O $@
 
-$(OD)\user_routines_support$O : user_routines_support.f  include_usr_parm \
+$(OD)\user_routines_support$O : user_routines_support.f  $(OD)\mod_user_parms_def$O \
                                 $(OD)\user_routines_module$O
 	$(FOR) /O3  /c user_routines_support.f
 	$(MVC) user_routines_support$O $@
@@ -1428,3 +1485,28 @@ $(OD)\mod_trlist$O : mod_trlist.f param_def $(OD)\mod_main$O \
 $(OD)\user_routines_module$O : user_routines_module.f
 	$(FOR) /O3   /c user_routines_module.f
 	$(MVC) user_routines_module$O $@
+	
+	
+	
+$(OD)\mod_sig_eps_work_def$O : mod_sig_eps_work_def.f param_def 
+	$(FOR) /O3   /c mod_sig_eps_work_def.f
+	$(MVC) mod_sig_eps_work_def$O $@
+
+$(OD)\mod_tan_ek_work_def$O : mod_tan_ek_work_def.f param_def 
+	$(FOR) /O3   /c mod_tan_ek_work_def.f
+	$(MVC) mod_tan_ek_work_def$O $@
+
+$(OD)\mod_damage_values_def$O : mod_damage_values_def.f
+	$(FOR) /O3   /c mod_damage_values_def.f
+	$(MVC) mod_damage_values_def$O $@
+
+$(OD)\mod_mm10_working$O : mod_mm10_working.f param_def  \
+                             $(OD)\mod_main$O $(OD)\mod_crystals$O
+	$(FOR) /O3   /c mod_mm10_working.f
+	$(MVC) mod_mm10_working$O $@
+
+$(OD)\mod_user_parms_def$O : mod_user_parms_def.f param_def 
+	$(FOR) /O3   /c mod_user_parms_def.f
+	$(MVC) mod_user_parms_def$O $@
+
+	

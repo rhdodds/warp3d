@@ -25,7 +25,6 @@ cls
 ::
 ::   usage:     Makewarp.bat
 ::
-::   This set up works *only* for Intel ifort compiler.
 ::
 :: ****************************************************************************
 ::
@@ -49,7 +48,7 @@ set build_mode=64
   echo    ******************************************************
   echo    *                                                    *
   echo    *       Makewarp batch file for Windows              *
-  echo    *             (64-bit architectures)                 *
+  echo    *             (x86-64 processors)                    *
   echo    *                                                    *
   echo    ******************************************************
   echo.

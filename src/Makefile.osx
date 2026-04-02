@@ -5,19 +5,39 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: MArch 10, 2026  (build number 5000)
-#                       ** MPI support deprecated **
-#                          continued use of ifort on OSX
-#                       extensive cleanup for all the code
-#                       that gfortran 10.2 complains about
-#                       add MUMPS solver
+#   Last modifications: March 21, 2026  (build number 5000)
 #
-#   How to run:
+#       Builds executables for:
 #
-#       make -f Makefile.osx
+#       -  Apple silicon computers using gfortran, Accelerate framework
+#       -  Apple Intel computers using ifort, MKL (Ventura and earlier)
+#       -  Apple Intel computers using gfortran, MKL (Ventura and earlier)
+#
+#          gfortran 15.2 using for current builds
+#
+#    Invoke this makefile with (# = number of concurrent compiles):
+#
+#          make -j # f  Makefile.osx PLATFORM=silicon
+#          make -j # f  Makefile.osx PLATFORM=Intel_ifort
+#          make -j # f  Makefile.osx PLATFORM=Intel_gfortran
+#
+#    WARP3D no longer supports MPI on any platform (from January 2026) 
+#
+#    The MUMPS and NASA-VSS solvers are now also available on all
+#    platforms (from January 2026).
+#         On Intel, MUMPS and other parts of WARP3D use the 
+#             LAPACK/BLAS routines in MKL
+#          On Apple silicon, MUMPS and and other parts of WARP3D use 
+#             the LAPACK/BLAS routines in the Accelerate framework
+#
+#    The Intel builds use Ventura 13.6 with Intel ifort 2021.10.0
+#        and Intel MKL 2023.1 20230303 
+#    The Silicon builds on Tahoe 2026. 
 #
 #
-#   Description:
+#     
+#    Notes for Intel platform w/ ifort (Fortran Classic)
+#    ===================================================
 #
 #     Build OMP version of WARP3D (64-bit) running on
 #     macOS Ventura, Intel processors.
@@ -25,6 +45,7 @@
 #     Build with Intel (Classic) Fortran: ifort
 #     Links with the (free) Intel MKL library to access the PARDISO
 #     solver and LAPACK/BLAS routines
+#     Includes MUMPS solver with Intel MKL library to access LAPACK/BLAS routines
 #
 #     Build tested with: macOS Ventura 13.6
 #     Intel ifort 2021.10.0
@@ -73,63 +94,244 @@
 #       3. We build a static executable including MKL and threads
 #          support libraries.
 #
+#       We ** strongly ** recommend you re-build the executable to leverage
+#       all features of newer x86-64 processors: use the 
+#       HARDWARE_SPECIFIC option set rather than the ALL_PROCESSORS set
+#       defined below.
+#
+#    Notes for Apple Silicon
+#    =======================
+#
+#     Build OMP version of WARP3D (64-bit) running on
+#     macOS Apple Silicon processors.
+#
+#     Use gfortran targeted to M1 processors which will work
+#     on M2, M3, M4, M5...  
+#     You can build a processor specific version by adjusting
+#     the HARDWARE_SPECIFIC and MACHINE_TYPE variables.
+#
+#     Current (March 2026) built with gfortran 15.2 which recognizes
+#     M1, M2 and M3.
+#
+#     We use thew MUMPS solver compiled with gfortran for M1. 
+#     Benchmarking shows no advantage of M2, M3.
+#
+#     MUMPS relies on BLAS routines for performance. We link 
+#     with the Apple provided veclib in Accelerate to use that
+#     BLAS library.
 #
 # ***********************************************************************
 #
 OSNAME   := OSX
-BUILDNUM := 5000  #   removal of MPI 
+BUILDNUM := 5000 
+NO_INLINE = 
 #
-ODIR = ././../obj_macOS
-EXE_NAME = warp3d.omp
-BUILD_FLAG :=  
-KMP_ERROR  := KMP_ERROR  # temp fix for MKL 
-MKL := MKL  # include MKL routines
+#              setup for macOS, Intel x86-64, ifort
+#              ====================================
+# 
+ifeq ($(PLATFORM),Intel_ifort)
+    ODIR = ././../obj_macOS_ifort
+    EXE_NAME = warp3d_Intel.exe
+    BUILD_FLAG :=  
+    KMP_ERROR  := KMP_ERROR  # temp fix for MKL 
+    MKL := MKL  # include MKL routines
+    PARDISO := PARDISO
+    O        = .o
+    OD       = $(ODIR)
+    RMC      = rm -f
+    MVC      = mv -f
+    COMPILER = ifort 
+    OPENMP   = -qopenmp -reentrancy 
+    FTRAP    =
+    OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
+    OPT_REPORT =
+    NO_INLINE   = -inline-level=0
+    INLINE   = -no-inline-factor
+    PROFILE  = -pg
+    PROFILE  = 
+    CHECKFLOAT = -init=snan,arrays -fp-speculation=safe 
+    CHECKFLOAT = -fp-speculation=safe
+    CHECKOTHER = -check bounds,pointers,uninit
+    CHECKOTHER = 
 #
-#                Define extension for relocatable object code files,
-#                macros for the remove command and the move command.
-#
-O        = .o
-OD       = $(ODIR)
-RMC      = rm -f
-MVC      = mv -f
-#
-#
-COMPILER = ifort 
-OPENMP   = -qopenmp -reentrancy 
-FTRAP    =
-OPT_REPORT = -qopt-report-annotate=html  -qopt-report-file=zz -qopt-report=5
-OPT_REPORT =
-INLINE   = -inline-level=0
-INLINE   = -no-inline-factor
-PROFILE  = -pg
-PROFILE  = 
-CHECKFLOAT = -init=snan,arrays -fp-speculation=safe 
-CHECKFLOAT = -fp-speculation=safe
-CHECKOTHER = -check bounds,pointers,uninit
-CHECKOTHER = 
-#
-OSX_LIBDIR = ../OSX_MKL_files
-MUMPS_LIBDIR = ../MUMPS_ifort_ifx_lib
-LINKOPS2  = -static-intel -qopenmp-link=static \
-            ${OSX_LIBDIR}/libiomp5.a \
-            ${OSX_LIBDIR}/libmkl_intel_lp64.a \
-            ${OSX_LIBDIR}/libmkl_intel_thread.a \
-            ${OSX_LIBDIR}/libmkl_core.a
-LINKOPS   = $(LINKOPS2) $(MUMPS_LIBDIR)/libmumps_all.a #-Wl,-ld_classic  # classic loader 
-ALL_PROCESSORS = -axAVX,CORE-AVX2,COMMON-AVX512 -xIVYBRIDGE \
+    OSX_LIBDIR = ../OSX_MKL_files
+    MUMPS_LIB  = ../MUMPS_libs/libmumps_all_ifort_osx_Intel.a
+    LINKOPS2  = -static-intel -qopenmp-link=static \
+                ${OSX_LIBDIR}/libiomp5.a \
+                ${OSX_LIBDIR}/libmkl_intel_lp64.a \
+                ${OSX_LIBDIR}/libmkl_intel_thread.a \
+                ${OSX_LIBDIR}/libmkl_core.a
+    LINKOPS   = $(LINKOPS2) $(MUMPS_LIB) #-Wl,-ld_classic  # classic loader 
+    ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
                        -align array64byte  -qopt-zmm-usage=high
-ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
-                       -align array64byte  -qopt-zmm-usage=high
-HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
-MACHINE_TYPE =  $(HARDWARE_SPECIFIC) #  $(ALL_PROCESSORS) 
+    HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
+    MACHINE_TYPE = $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC)
 #
-FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
-            $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
-            $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT) $(CHECKOTHER) \
-            -mmacosx-version-min=11.5
+    FCOPTS   =  -O3 -fpp -fpconstant -fixed -72 -traceback $(PROFILE) \
+                $(OPT_REPORT) -module $(ODIR) -ftz  $(MACHINE_TYPE) \
+                $(FTRAP) $(INLINE) $(OPENMP) $(CHECKFLOAT) $(CHECKOTHER) \
+                -mmacosx-version-min=11.5
 #
-FOR      = $(COMPILER) $(FCOPTS) -D$(MKL)-D$(KMP_ERROR) -D$(OSNAME) 
-LINK     = $(COMPILER) $(FCOPTS)
+    FOR      = $(COMPILER) $(FCOPTS) -D$(MKL) -D$(KMP_ERROR) -D$(OSNAME) \
+               -D$(PARDISO)
+    LINK     = $(COMPILER) $(FCOPTS)  $(OBJ)  $(LINKOPS)
+#
+endif
+#
+#              setup for macOS, Intel x86-64, gfortran
+#              =======================================
+# 
+ifeq ($(PLATFORM),Intel_gfortran)
+#
+    ODIR = ././../obj_macOS_Intel_gfortran
+    OD   = ././../obj_macOS_Intel_gfortran
+    EXE_NAME = warp3d_Intel_gfortran.exe
+    MKL := MKL  # include MKL routines
+    PARDISO := 
+    O        = .o
+    RMC      = rm -f
+    MVC      = mv -f
+#
+    COMPILER = gfortran
+#
+    OSX_LIBDIR = ../OSX_MKL_files
+    MUMPS_LIB  = ../MUMPS_libs/libmumps_all_gfort_osx_Intel.a
+    MKL_THREADED_LIST=   $(OSX_LIBDIR)/libiomp5.a \
+                         $(OSX_LIBDIR)/libmkl_intel_lp64.a \
+                         $(OSX_LIBDIR)/libmkl_intel_thread.a \
+                         $(OSX_LIBDIR)/libmkl_core.a 
+                         
+    ALL_PROCESSORS = -march=x86-64-v3 -mtune=generic
+    HARDWARE_SPECIFIC = -march=native -mtune=native
+    MACHINE_TYPE =  $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC)
+        
+    PRODUCTION = -DOSX -DBuild=5100 -Dgfortran -DMKL -I$(OD) -J$(OD) \
+      -O3 -Wno-unused-dummy-argument  -Wno-argument-mismatch \
+      -fbacktrace -fmax-errors=1 \
+       -Wno-unused-variable -Wno-unused-parameter \
+      -Wline-truncation -Wno-unused-label\
+      -fno-range-check -Wno-compare-reals \
+      -ffpe-trap=overflow,zero -ffpe-summary=none \
+      -fallow-argument-mismatch  -fcray-pointer -fopenmp -cpp -fdec \
+      -fno-omit-frame-pointer -fcheck=do,mem,pointer \
+      $(MACHINE_TYPE)
+#   
+    DEBUG1 = -DOSX -DBuild=5100 -Dgfortran -DMKL -I$(OD) -J$(OD) \
+      -O0 -g -Wno-unused-dummy-argument  -Wno-argument-mismatch \
+      -fbacktrace -fmax-errors=1 \
+       -Wno-unused-variable -Wno-unused-parameter \
+      -Wline-truncation -Wno-unused-label\
+      -fno-range-check -Wno-compare-reals \
+      -ffpe-trap=invalid,zero,overflow -ffpe-summary=none \
+      -fallow-argument-mismatch  -fcray-pointer -fopenmp -cpp -fdec \
+      -fno-omit-frame-pointer -fcheck=do,mem,pointer \
+       -finit-real=snan -finit-integer=-999999  \
+       $(MACHINE_TYPE)
+#   
+    DEBUG2 = -DOSX -DBuild=5100 -Dgfortran -DMKL -I$(OD) -J$(OD) \
+      -O0 -g -Wno-unused-dummy-argument  -Wno-argument-mismatch \
+      -fbacktrace -fmax-errors=1 \
+       -Wno-unused-variable -Wno-unused-parameter \
+      -Wline-truncation -Wno-unused-label\
+      -fno-range-check -Wno-compare-reals \
+      -ffpe-trap=overflow,zero -ffpe-summary=none \
+      -fallow-argument-mismatch  -fcray-pointer -fopenmp -cpp -fdec \
+      -fno-omit-frame-pointer -fcheck=do,mem,pointer \
+       -finit-real=snan -finit-integer=-999999  \
+       $(MACHINE_TYPE)
+#
+    OPTS = $(PRODUCTION)  -D$(OSNAME)
+    FOR      = $(COMPILER) $(OPTS)
+    LDWARN = -Wl,-w
+    LDFLAGS += -Wl,-t
+    STATIC_LIBS = -static-libquadmath -static-libgfortran 
+    LINK = $(COMPILER) $(OPTS) $(OBJ) $(MUMPS_LIB)  $(MKL_THREADED_LIST) \
+        $(STATIC_LIBS) $(LDWARN) 
+#    
+endif
+#
+#              setup for macOS, Apple silicon, gfortran
+#              ========================================
+# 
+#              For GNU Fortran builds on macOS Apple Silicon, 
+#              the recommended portable target is an explicit Apple core 
+#              selection such as -mcpu=apple-m1 for distributed binaries. 
+#              Users rebuilding on a known local machine should set -mcpu 
+#              to the matching Apple family (apple-m1, apple-m2, apple-m3, 
+#              or apple-m4) rather than relying on -mcpu=native.
+#
+#              The MUMPS libraries are compiled with -mcpu=apple-m1
+#              to maintain compatibility with M2, M3, M4, M5, ...
+
+ifeq ($(PLATFORM),silicon)
+#   
+    ODIR = ././../obj_macOS_silicon
+    OD   = ././../obj_macOS_silicon
+    EXE_NAME = warp3d_silicon.exe
+    MKL :=     # do not include MKL routines
+    PARDISO := # do not include Pardiso in MKL
+    APPLE = -framework Accelerate 
+    #
+    #                Define extension for relocatable object code files,
+    #                macros for the remove command and the move command.
+    #
+    O        = .o
+    RMC      = rm -f
+    MVC      = mv -f
+#
+    COMPILER = gfortran
+#
+    MUMPS_LIB  = ../MUMPS_libs/libmumps_all_gfort_osx_arm64_NO_DGEMMT.a
+#
+    ALL_PROCESSORS = -mcpu=apple-m1
+    HARDWARE_SPECIFIC = -mcpu=apple-m3   #  for example !
+    MACHINE_TYPE =  $(ALL_PROCESSORS)  # $(HARDWARE_SPECIFIC) #$(ALL_PROCESSORS) 
+
+    PRODUCTION = -DOSX -DBuild=5100 -Dgfortran -I$(OD) -J$(OD) \
+      -O3 -Wno-unused-dummy-argument  -Wno-argument-mismatch \
+      -fbacktrace -fmax-errors=1 -fno-strict-overflow \
+       -Wno-unused-variable -Wno-unused-parameter \
+      -Wline-truncation -Wno-unused-label\
+      -fno-range-check -Wno-compare-reals \
+      -ffpe-trap=overflow,zero -ffpe-summary=none \
+      -fallow-argument-mismatch  -fcray-pointer -fopenmp -cpp -fdec \
+      -fno-omit-frame-pointer -fcheck=do,mem,pointer \
+      $(MACHINE_TYPE)
+    
+#   
+    DEBUG1 = -DOSX -DBuild=5100 -Dgfortran -I$(OD) -J$(OD) \
+      -O0 -g -Wno-unused-dummy-argument  -Wno-argument-mismatch \
+      -fbacktrace -fmax-errors=1 \
+       -Wno-unused-variable -Wno-unused-parameter \
+      -Wline-truncation -Wno-unused-label\
+      -fno-range-check -Wno-compare-reals \
+      -ffpe-trap=invalid,zero,overflow -ffpe-summary=none \
+      -fallow-argument-mismatch  -fcray-pointer -fopenmp -cpp -fdec \
+      -fno-omit-frame-pointer -fcheck=do,mem,pointer \
+       -finit-real=snan -finit-integer=-999999  \
+      $(MACHINE_TYPE)
+#   
+    DEBUG2 = -DOSX -DBuild=5100 -Dgfortran -I$(OD) -J$(OD) \
+      -O0 -g -Wno-unused-dummy-argument  -Wno-argument-mismatch \
+      -fbacktrace -fmax-errors=1 \
+       -Wno-unused-variable -Wno-unused-parameter \
+      -Wline-truncation -Wno-unused-label\
+      -fno-range-check -Wno-compare-reals \
+      -ffpe-trap=overflow,zero -ffpe-summary=none \
+      -fallow-argument-mismatch  -fcray-pointer -fopenmp -cpp -fdec \
+      -fno-omit-frame-pointer -fcheck=do,mem,pointer \
+       -finit-real=snan -finit-integer=-999999  \
+      $(MACHINE_TYPE)
+#
+    OPTS = $(PRODUCTION) -D$(OSNAME)
+    FOR      = $(COMPILER) $(OPTS)
+    LDWARN = -Wl,-w
+    LDFLAGS += -Wl,-t
+    STATIC_LIBS = -static-libquadmath -static-libgfortran 
+    LINK = $(COMPILER) $(PRODUCTION) $(OBJ) $(MUMPS_LIB) $(APPLE) \
+       $(STATIC_LIBS) $(LDWARN) 
+#
+endif
 #
 #               all system level module files that appear as separate *.f
 #               in WARP3D
@@ -407,7 +609,7 @@ OBJ =	 \
 	$(OD)/zero_vol.o
 #
 $(EXE_NAME) : $(OBJ)           # target is warp3d executable
-	$(LINK) $(OBJ) -o $@  $(LINKOPS)
+	$(LINK) -o $@  
 	$(MVC) $@ ./../run_macOS/$@
 	chmod ugo+rx  ./../run_macOS/$@
 #
@@ -428,43 +630,43 @@ $(OD)/%.o : %.f $(MODS) $(INCLUDES)
 #
 #
 $(OD)/main_program$O : main_program.f $(MODS) $(INCLUDES)
-	$(FOR) -DBuild=$(BUILDNUM) $(BUILD_FLAG)  $< -c -o $@
+	$(FOR)   $< -c -o $@
 #
 #       ---  any .f files that require non-std compile options ------
 #            =================================================
 #
  $(OD)/mm10_b$O : mm10_b.f  $(MODS) $(INCLUDES) 
 	$(RMC)  $@
-	$(FOR) -inline-level=1  $< -c -o $@  # ifort has inline bug - ugh!
+	$(FOR)  $(NO_INLINE) $< -c -o $@  
 #
 #       ---  Abaqus compatible user routines. Listed explicitly for clarity ------
 #            ==============================================================
 #
   $(ODIR)/user_routines_module$O : user_routines_module.f
 	$(RMC)  $@
-	$(FOR)  -inline-level=1 $< -c -o $@
+	$(FOR)  $(NO_INLINE) $< -c -o $@
 
   $(OD)/user_routines_umat$O : user_routines_umat.f \
               $(OD)/user_routines_module$O $(OD)/mod_user_parms_def$O
 	$(RMC)  $@
-	$(FOR)  -inline-level=1  $< -c -o $@
+	$(FOR) $(NO_INLINE)  $< -c -o $@
 
   $(OD)/user_routines_other_Abaqus$O : user_routines_other_Abaqus.f \
                                      $(OD)/user_routines_module$O
 	$(RMC)  $@
-	$(FOR) -inline-level=1 -heap-arrays $< -c -o $@
+	$(FOR) $(NO_INLINE) $< -c -o $@
 
   $(OD)/user_routines_warp3d$O : user_routines_warp3d.f  \
                                $(OD)/user_routines_module$O \
                                $(OD)/mod_user_parms_def$O
 	$(RMC)  $@
-	$(FOR) -inline-level=1 -heap-arrays  $< -c -o $@
+	$(FOR)  $(NO_INLINE)  $< -c -o $@
 
   $(OD)/user_routines_support$O : user_routines_support.f  \
                                 $(OD)/user_routines_module$O \
                                 $(OD)/mod_user_parms_def$O
 	$(RMC)  $@
-	$(FOR)  -inline-level=1 $< -c -o $@
+	$(FOR)  $(NO_INLINE) $< -c -o $@
 #
 #
 #
@@ -549,7 +751,7 @@ $(ODIR)/mod_trlist$O : mod_trlist.f param_def $(OD)/mod_main$O $(OD)/mod_scan$O
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
-$(ODIR)/mod_sigeps_work_def$O : mod_sigeps_work_def.f param_def 
+$(ODIR)/mod_sig_eps_work_def$O : mod_sig_eps_work_def.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
 
@@ -569,4 +771,6 @@ $(ODIR)/mod_mm10_working$O : mod_mm10_working.f param_def  \
 $(ODIR)/mod_user_parms_def$O : mod_user_parms_def.f param_def 
 	$(RMC)  $@
 	$(FOR) $< -c -o $@
+
+
 
