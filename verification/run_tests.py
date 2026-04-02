@@ -599,15 +599,20 @@ def initialize():
  if linux :
    continuation = ';'
    print(">>> Platform: Linux\n" )
-   warp_name = '$WARP3D_HOME"/run_linux/warp3d.omp" '
+   warp_name = '$WARP3D_HOME"/run_linux/warp3d.exe" '
    export_lib = 'export LD_LIBRARY_PATH=$WARP3D_HOME/linux_packages/lib:$LD_LIBRARY_PATH;'
 #
  if osx :
    continuation = ';'
-   print(">>> Platform: macOS\n" )
-   warp_name ='$WARP3D_HOME"/run_macOS/warp3d.omp" '
+   arch = platform.machine()
+   if arch == "arm64":
+     print(">>> Platform: macOS (Silicon)\n" )
+     warp_name ='$WARP3D_HOME"/run_macOS/warp3d_silicon.exe" '
+   else:
+      print(">>> Platform: macOS (Intel)\n" )
+      warp_name ='$WARP3D_HOME"/run_macOS/warp3d_Intel.exe" '
    export_lib = ""
-      
+#      
  if cygwin :
    continuation = ';'
    print(">>> Platform: Cygwin (Windows). Only Intel Fortran version supported\n" )
