@@ -1,5 +1,5 @@
 
-Updated November 2025
+Updated February 2026
 =====================
 
 
@@ -21,20 +21,17 @@ Files in this directory are:
 
 README -- this file
 
-compile_patwarp_osx -- script that compiles patwarp for MacOS
-                       Intel processors only. 
+compile_patwarp_osx -- script that compiles patwarp for ** MacOS
+                       Intel** processors only.
+                       Uses ifort to comoile.     
 
 compile_patwarp_linux -- script that compiles patwarp for Linux 
+                       uses ifx to compile
                          
 patwarp.f -- patwarp source code all 3 platforms
 
-compile_patwarp_windows.bat --compile script Windows W10
-
-Note:
-
-  Building patwarp on each platform requires the Intel Fortran
-  compiler ifort.  It likely will compile with Intel ifx
-  and gfortran
+compile_patwarp_windows.bat --compile script Windows W10/11
+                        uses ifx to compile
 
 Running patwarp
 ---------------

@@ -15,7 +15,7 @@ hash ifx 2>&- || { echo >&2 "The Intel fortran compiler is required (ifx).  Abor
 # Now proceed.
 echo "Compiling patwarp on Linux ..."
 ifx -O2 -static-intel -fixed -traceback -fpe0 patwarp.f \
-       -o $WARP3D_HOME/run_linux/patwarp.go
+       -o $WARP3D_HOME/run_linux/patwarp.exe
 #
 echo "Executable is in run_linux"
 /bin/rm patwarp_data.mod

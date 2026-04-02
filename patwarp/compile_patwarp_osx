@@ -1,23 +1,52 @@
 #!/bin/bash
 #
-# Script to compile patwarp
+# Script to compile patwarp on macOS
 #
-# Check to make sure WARP3D_HOME is set
+#   Silicon :  use gfortran
+#   Intel :    use ifort
+#
+#              Check to make sure WARP3D_HOME is set
 #
 [ -z "$WARP3D_HOME" ] && echo "Need to set WARP3D_HOME before proceeding." && exit 1
 #
 cd $WARP3D_HOME/patwarp
 #
-# Compiler must be installed
+#              set the platform: Intel or silicon
 #
-hash ifort 2>&- || { echo >&2 "The Intel fortran compiler is required (ifort).  Aborting."; exit 1;}
+if [[ "$(uname -m)" == "arm64" ]]; then
+    platform="silicon"
+else
+    platform="intel"
+fi
 #
-# Now proceed.
+if [[ "$platform" == "silicon" ]]; then
+   hash gfortran 2>&- || { echo >&2 \
+       "The gfortran compiler is required.  Aborting."; exit 1;} 
+   echo "Compiling patwarp on macOS ... Silicon (gfortran)"
+   gfortran  -O2 -Wno-unused-dummy-argument  -Wno-argument-mismatch \
+      -fbacktrace -fmax-errors=1 \
+       -Wno-unused-variable -Wno-unused-parameter \
+      -Wline-truncation -Wno-unused-label\
+      -fno-range-check -Wno-compare-reals \
+      -ffpe-trap=overflow,zero -ffpe-summary=none \
+      -fallow-argument-mismatch  -fcray-pointer -fopenmp -cpp -fdec \
+      -fno-omit-frame-pointer -fcheck=do,mem,pointer \
+      -static-libquadmath -static-libgfortran  \
+       patwarp.f \
+      -o $WARP3D_HOME/run_macOS/patwarp_silicon.exe
+      echo -e "\nExecutable is in run_macOS:  patwarp_silicon.exe"
+      echo " "
+      /bin/rm patwarp_data.mod
+      exit
+fi
 #
-echo "Compiling patwarp on macOS ..."
+#              Intel. must use ifort  
+hash ifort 2>&- || { echo >&2 \
+   "The Intel fortran compiler is required (ifort).  Aborting."; exit 1;} 
+echo "Compiling patwarp on macOS ... Intel (ifort)"
 ifort -O2 -xAVX -static-intel -w -traceback -fixed -fpe0 patwarp.f \
-      -o $WARP3D_HOME/run_macOS/patwarp.go
-#
-echo "Executable is in run_macOS ..."
+      -o $WARP3D_HOME/run_macOS/patwarp_Intel.exe
+echo -e "\nExecutable is in run_macOS: patwarp_Intel.exe"
+echo " "
 /bin/rm patwarp_data.mod
 exit

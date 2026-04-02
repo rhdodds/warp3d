@@ -9,7 +9,7 @@ cls
 ::   Build executable for patwarp utility program on Windows (64-bit mode)
 ::   and put it into the run_windows_64 directory
 ::
-::   This set up works for Intel ifort compiler
+::   This set up works for Intel ifx compiler
 ::
 :: ****************************************************************************
 ::
@@ -26,10 +26,10 @@ cls
 ::   ==================================================================
 ::
 ::
-set fopts1=/O2 /fpconstant /fixed /traceback /QaxAVX /heap-arrays /static
+set fopts1=/O2 /fpconstant /fixed /traceback /QaxAVX /static
 set fopts2=/F4000000
 set files=patwarp.f
-ifort %fopts1% %fopts2% %files% /o patwarp.exe
+ifx %fopts1% %fopts2% %files% /o patwarp.exe
 ::
   echo.
   echo ... Build done
@@ -37,8 +37,8 @@ ifort %fopts1% %fopts2% %files% /o patwarp.exe
   echo.
 ::
 del .\patwarp_data.mod
-del .\patwarp_module.obj
 del .\patwarp.obj
+del .\patwarp.pdb
 copy patwarp.exe ..\run_windows\patwarp_windows.exe
 del patwarp.exe
   echo.

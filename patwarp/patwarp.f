@@ -1,6 +1,7 @@
 c *                                                                          *
-c *    Modifications  11/15/2025 rhd                                         *
+c *    Modifications  3/22/2026 rhd                                          *
 c *    Domain decomposition support deprecated.                              * 
+c *    Cleanup to make gfortran happy                                        *
 c *                                                                          *
 c ****************************************************************************
 c ****************************************************************************
@@ -1679,7 +1680,8 @@ c
      &        /,8x,'              during mpc processing')
  9050 format( /,8x,'>>>> warning -- rotational dofs are not supported',
      &        /,8x,'                this mpc equation will be skipped')
- 9060 format( /,8x,'>>>> warning -- ', a12,'is not a supported mpc type',
+ 9060 format( /,8x,'>>>> warning -- ', a12,
+     & 'is not a supported mpc type',
      &        /,8x,'                this mpc equation will be skipped')
  9090 format( /,8x,'>> begin processing multipoint constraints' )
       end
@@ -3168,7 +3170,7 @@ c
 c
       use patwarp_data
       implicit integer (a-z)
-      integer nodes_20(1), nodes_tr(1)
+      integer nodes_20(*), nodes_tr(*)
 c
 c     local variables
 c
@@ -3472,7 +3474,7 @@ c
      &                     freq)
       use patwarp_data
       implicit integer (a-z)
-      integer list(1), num_data, sort_list(1), freq(1)
+      integer list(*), num_data, sort_list(*), freq(*)
       logical local_debug
 
       local_debug = .false.
