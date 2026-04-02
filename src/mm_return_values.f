@@ -87,6 +87,7 @@ c
 c
 c              average of integration point stresses
 c
+      sig = zero
       do gp = 1, ngp    
         do j = 1, 6                                                     
          sig(j) = sig(j) + urcs_n(sigoffset+j)  
@@ -130,6 +131,7 @@ c
         call die_gracefully
       end if
 c
+      sig = zero
       do gp = 1, ngp    
         do j = 1, 6                                                     
          sig(j) = sig(j) + urcs_n(sigoffset+j)  

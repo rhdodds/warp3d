@@ -101,7 +101,7 @@ c
       return
 c                                                                    
  9000 format('>>>>> output file is:',a)    
- 9010 format('>>>>> existing file for output deleted: 'a) 
+ 9010 format('>>>>> existing file for output deleted: ',a) 
  9020 format('>>>>> *output command ignored. stdout set to a file',
      & /,    '       on startup. stdout must be the interactive',
      & /,    '       window for this command to work....',//)                                      

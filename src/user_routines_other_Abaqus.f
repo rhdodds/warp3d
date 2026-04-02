@@ -115,7 +115,7 @@ c      if( local_debug ) write(iout,9000) active_profile_up
       return                                                                    
 c                                                                               
  9000 format(".... uexternaldb_store ...",                                      
-     & /,10x"active_profile_up: ",i6,// )                                       
+     & /,10x,"active_profile_up: ",i6,// )                                       
       end                                                                       
 c                                                                               
 c     ****************************************************************          
@@ -148,7 +148,7 @@ c     &  computed_profile_from_restart
       return                                                                    
 c                                                                               
  9000 format(".... uexternaldb_reopen ...",                                     
-     & /,10x"computed_profile_from_restart: ",i6,// )                           
+     & /,10x,"computed_profile_from_restart: ",i6,// )                           
       end   
                                                                    
 c     ****************************************************************          

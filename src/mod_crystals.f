@@ -2328,7 +2328,7 @@ c
      &       /1x,'       for other missing elements.',
      &       /1x,'       Reading file: ',a,
      &       /1x,'       Job terminated', // )
- 9000 format(">> FATAL ERROR: read_defs @ location: "i2,
+ 9000 format(">> FATAL ERROR: read_defs @ location: ",i2,
      &  /,   '                job terminated' )
 c
       end subroutine

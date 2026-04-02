@@ -3977,13 +3977,13 @@ c
  9130 format(5x,'sse, spd, scd: ',3e14.6)
  9140 format(5x,'symd 1-4: ',4e14.6)
  9200 format(5x,'... FATAL ERROR: ',
-     & /10x,'umat state variable vector is too large.',
-     & /,10x'current max is: ', i4,
-     & /,10x'first element in block: ',i8,
-     & /,10x,'aborting exectuion....' )
+     & /,10x,'umat state variable vector is too large.',
+     & /,10x,'current max is: ', i4,
+     & /,10x,'first element in block: ',i8,
+     & /,10x,'aborting execution....' )
  9210 format(5x,'... FATAL ERROR: ',
-     & /10x,'umat overwrote state variable vector',
-     & /,10x'element, gpn: ',i8,i4,
+     & /,10x,'umat overwrote state variable vector',
+     & /,10x,'element, gpn: ',i8,i4,
      & /,10x,'aborting exectuion....' )
  9300 format("....  s1, s2: ", 2e14.6)
  9310 format("....  ps: ", 3e14.6)

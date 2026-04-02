@@ -1650,7 +1650,7 @@ c
 
  9000 format(1x,'.... entered  mnralg_release_con_forces ....' )
  9010 format(1x,'.... leaving  mnralg_release_con_forces ....' )
- 9100 format(1x,'inode',3x'idof',2x,'n1',3x,
+ 9100 format(1x,'inode',3x,'idof',2x,'n1',3x,
      & 'n2',2x,'sdof',4x,'reaction',4x,'found',4x,'factor',7x,
      & 'load before', 4x,'load after',4x,'dload before', 4x,
      &  'dload after')

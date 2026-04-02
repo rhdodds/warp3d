@@ -32,7 +32,7 @@ c
       double precision, external :: omp_get_wtime                               
       logical, parameter :: local_debug = .false.                                                    
       integer :: blk, now_thread                                                
-      integer, external :: omp_get_thread_num                                   
+      integer, external :: omp_get_thread_num, OMP_GET_NUM_THREADS                                   
 
 c                                                                               
 c                                                                               
@@ -81,7 +81,8 @@ c$OMP&                    now_step )
          if( elblks(2,blk) .ne. myid ) cycle                                    
          now_thread = omp_get_thread_num() + 1                                  
          call do_nlek_block( blk, first, now_iter, now_step )                   
-      end do                                                                    
+!         write(*,*)".... omp threads: ",OMP_GET_NUM_THREADS()                                                                 
+      end do   
 c$OMP END PARALLEL DO                                                           
 c                                                                               
       if( local_debug ) then                                                    
