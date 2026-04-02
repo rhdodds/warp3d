@@ -1315,7 +1315,7 @@ c
  9050 format(5x,'constraints only. loading ratio: ',f10.5)
  9055 format(5x,'cons_sum, flag: ',d14.6,l3)
  9060 format(/,5x,'this step constraints ratio to step 1:  ',f10.5,
-     &     /,5x   'does not match pattern ratio to step 1: ',f10.5,//)  
+     &     /,5x, 'does not match pattern ratio to step 1: ',f10.5,//)  
  9100 format(/,5x,'pattern: ',a8,' has 0.0 factor in step 1 and',
      &     ' cannot be changed to maintain proportional loading',// ) 
  9110 format(5x,'pattern: ',a8,' factor: ',f10.5,2x,

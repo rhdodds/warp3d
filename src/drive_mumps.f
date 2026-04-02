@@ -399,15 +399,20 @@ c              mkl threads to use during MUMPS.
 c
 c              Turn off mkl dynamic so it cannot change # threads
 c
+      mkl_solver = 0
       save_omp_threads = omp_get_max_threads()
+#ifdef MKL      
       save_mkl_threads = mkl_get_max_threads()
+#endif    
 c
       call get_mumps_thread_split( save_omp_threads, omp_solver,
      &                             mkl_solver )
 c
+#ifdef MKL      
       call mkl_set_num_threads( mkl_solver )
-      call omp_set_num_threads( omp_solver )
       call mkl_set_dynamic( 0 )
+#endif      
+      call omp_set_num_threads( omp_solver )
       if( prn ) write(out,9404) omp_solver, mkl_solver
 c
 c              Build triplet storage format from WARP3D 
@@ -455,6 +460,7 @@ c
       end if         
 c
       if( prn ) write(out,9200) wwalltime( 1 )
+      call mumps_check_diagonals( 0 )
 c
 c              initialize MUMPS for first solve of these equations
 c
@@ -476,9 +482,12 @@ c
         id%ICNTL(2) = -1  !
         id%ICNTL(3) = -1  !
         id%ICNTL(4) = 0   !
-        id%ICNTL(7) = 4    ! force PORD
+        id%ICNTL(7) = 0   ! force AMD
+        if( neq > 1000 ) id%ICNTL(7) = 4    ! force PORD
         id%ICNTL(14) = 0   ! increase working memory n%
         id%ICNTL(24) = 1   ! null pivot row detection
+        if( prn .and. id%ICNTL(7)==0 ) write(out,9202)  
+        if( prn .and. id%ICNTL(7)==4 ) write(out,9204)  
 c
 c              Phase 1: Analysis (ordering, symbolic factorization)
 c
@@ -498,7 +507,6 @@ c              Numeric factorization & solve
 c
       num_calls = num_calls + 1
       call thyme( 26, 1 )
-      call mumps_check_diagonals( 0 )
       id%JOB = 2
       call DMUMPS( id )
       if( id%INFO(1) /= 0 ) then
@@ -540,12 +548,16 @@ c
 c              reset the number of omp, mkl threasds to values
 c              before MUMPS solve
 c      
+#ifdef MKL
       call mkl_set_num_threads( save_mkl_threads )
+#endif      
       call omp_set_num_threads( save_omp_threads )
 c      
       return
       
  9200 format(15x,'VSS map -> MUMPS completed    @ ',f10.2 )
+ 9202 format(15x,'reordering by : AMD')
+ 9204 format(15x,'reordering by : PORD')
  9210 format(15x,'reorder + symbolic fact done  @ ',f10.2 )
  9220 format(15x,'factorization done            @ ',f10.2 )
  9230 format(15x,'forward/backward done         @ ',f10.2 )

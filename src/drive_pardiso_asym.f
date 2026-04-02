@@ -144,7 +144,7 @@ c             if previously sovled a set of equations,release memory.
 c
       if( pardiso_mat_defined ) then
         phase = -1
-#ifdef MKL        
+#ifdef PARDISO        
         call pardiso( pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &       k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
      &       u_vec, error )
@@ -157,7 +157,7 @@ c
      &                         cpu_stats, iparm )
 c
       phase = 11 ! reordering and symbolic factorization
-#ifdef MKL
+#ifdef PARDISO
       call pardiso( pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &     k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
      &     u_vec, error )
@@ -184,7 +184,7 @@ c
      &      call warp3d_pardiso_mess( 7, out, error, mkl_ooc_flag,
      &                               cpu_stats, iparm)
       phase = -1
-#ifdef MKL      
+#ifdef PARDISO      
       call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &       k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
      &       u_vec, error)
@@ -207,7 +207,7 @@ c
       num_calls = num_calls + 1
       phase = 23
       call thyme( 26, 1 )
-#ifdef MKL
+#ifdef PARDISO
       call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &     k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
      &     u_vec, error)
@@ -235,7 +235,7 @@ c
       phase = 23 ! solve with iterative refinement
       call warp3d_pardiso_mess( 9, out, error, mkl_ooc_flag,
      &                          cpu_stats, iparm )
-#ifdef MKL
+#ifdef PARDISO
       call pardiso(pt, maxfct, mnum, mtype, phase, n, k_coeffs,
      &     k_ptrs, k_indexes, perm, nrhs, iparm, msglvl, p_vec,
      &     u_vec, error)

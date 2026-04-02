@@ -138,12 +138,13 @@ c
       integer, parameter :: local_pkt_type(5) = (/ 20, 0, 21, 10, 0 / )                   
       logical :: blk_killed, killed_this_time, distortion_killed,           
      &           kill_the_elem, ldummy1, ldummy2,
-     &           local_debug, stop_solution, standard_kill, 
+     &           stop_solution, standard_kill, 
      &           elements_have_been_killed, porosity_is_critical,
      &           fgm_cohes, ext_gurson, option_exponential,                        
      &           option_ppr, local_write_packets, do_kill_in_order,                
      &           found_exponential, found_ppr, found_cavit,                        
-     &           option_cavit, elem_deleted, get_princ_values                                                    
+     &           option_cavit, elem_deleted, get_princ_values       
+      logical, parameter ::  local_debug = .false.                                           
       logical, external :: scan_entry_in_list, chkcrack_is_elem_deleted                                                                                                                       
       double precision ::                                                        
      &   d_old, d_new,           
@@ -155,7 +156,6 @@ c
       type(values_T) :: smcs_elem_values, gt_elem_values
 
 c        
-      local_debug = .false.
       if( local_debug ) then      
          write(out,*) '... entered chk_elem_kill ...'                                                    
          write(out,*) '    ... no_killed_elems:',no_killed_elems
@@ -453,11 +453,10 @@ c
 c
       implicit none
 c
-      logical :: local_debug, kill_by_Oddy, kill_immediately,
-     &           kill_by_plastic_limit
+      logical :: kill_by_Oddy, kill_immediately, kill_by_plastic_limit
+      logical, parameter :: local_debug = .false.
       double precision :: plastic_strain, max_Oddy
 c
-      local_debug = .false.
       if( local_debug ) write(out,9000) elem
 c
 c              current plastic strain
@@ -506,11 +505,11 @@ c
 c
       implicit none
 c
-      logical :: local_debug, kill_by_Oddy, kill_immediately,
+      logical :: kill_by_Oddy, kill_immediately,
      &           kill_by_plastic_limit
+      logical, parameter :: local_debug = .false.
       double precision :: plastic_strain, max_Oddy
 c
-      local_debug = .false.
       if( local_debug ) write(out,9000) elem
 c
 c              current plastic strain
@@ -567,14 +566,14 @@ c              upon triggering deletion. When d >=1, the
 c              element is to be fully deleted as in the standard
 c              killing process.
 c
-      logical :: local_debug, kill_by_Oddy, kill_by_d_value, 
+      logical :: kill_by_Oddy, kill_by_d_value, 
      &           kill_immediately, kill_by_plastic_limit
       double precision ::  avg_eps_plas, avg_sig_mises, d_now, d_old,
      &                     deps_plas, stress_at_death, avg_sig_1,
      &                     max_Oddy, total_plastic_strain, max_eps_plas
       character(len=50) :: distortion_msg
+      logical, parameter :: local_debug = .false.
 c
-      local_debug = .false.
       if( local_debug ) write(out,9000) elem
 c
       if( dam_state(elem_ptr) == 100 ) then ! element previously removed
@@ -661,7 +660,7 @@ c
 c               
       return
 c
- 9000 format(5x"... entered chk_elem_kill_upmr. elem: ",i8)
+ 9000 format(5x,"... entered chk_elem_kill_upmr. elem: ",i8)
  9010 format(10x,'avg eps pls, deps_pls, eps_pls @ death: ',3f12.8)
  
  9020 format(10x,'d_old: ',f6.3,'d_now: ',f6.3,' sig_1 @ death:',f8.3)
@@ -714,12 +713,10 @@ c
       integer :: elem_type, ngp
       logical :: threed_solid_elem, l1, l2, l3, l4, l5, l6, l7, l8,
      &           l9, l10
-      logical :: ldebug 
+      logical, parameter :: ldebug = .false.
       double precision :: workvec(27)
 c
-      ldebug = .false. ! elem .eq. 4 .and. step > 57
-      if( ldebug ) 
-     &    write(out,9000) elem
+      if( ldebug ) write(out,9000) elem
 c
       elem_type = iprops(1,elem)
       ngp       = iprops(6,elem)    
@@ -741,12 +738,10 @@ c
       avg_sig_mises = workvec(1)
       call mm_return_values( "avg_princ_stress", elem, workvec, ngp )
       avg_sig_1 = workvec(1) ! maximum value
-      if( ldebug ) then
-        write(out,9010) avg_eps_plas, avg_sig_mises
-      end if
+      if( ldebug ) write(out,9010) avg_eps_plas, avg_sig_mises
       return
 c
- 9000 format(5x"... enter chk_get_ele_vals. elem: ",i8)
+ 9000 format(5x,"... enter chk_get_ele_vals. elem: ",i8)
  9010 format(10x,'... leave chk_get_ele_vals with:',
      &   /,10x,'avg eps pls:',f12.8,' avg_sig_mises:',f8.3)
  9100 format('>> FATAL ERROR: routine ',
@@ -1478,9 +1473,9 @@ c
 c
       integer, intent(in) :: step, iter  
 c
-      logical :: doprint, local_debug
+      logical :: doprint
+      logical, parameter :: local_debug = .false.
 c
-      local_debug = .false.
       if( local_debug ) write(out,*) '... entered dam_print'                                                   
 c                                                                               
 c           confirm crack growth is on and some type of
@@ -2021,10 +2016,10 @@ c
       integer :: now_step, now_iter
 c                                       
       integer :: elem, elem_ptr, dowhat, nthreads
-      logical :: local_debug, process   
+      logical :: process   
+      logical, parameter :: local_debug = .false.
       integer, external ::  omp_get_num_threads                                             
 c        
-      local_debug = .false.
       if( local_debug ) write(out,*) '... entered damage_update ...'                                                    
 c 
 c              only damage model using SMCS requires this update
@@ -2126,10 +2121,8 @@ c
 c
       integer :: num_edof, i, blk, rel_elem                                                     
       integer, dimension(:,:), pointer :: edest
-      logical :: ldebug                                 
+      logical, parameter :: ldebug = .false.                               
 c     
-      ldebug = .false.
-c                                                                          
       if( ldebug ) write (*,*) '>>>>> Entering chk_store_ifv'      
 c
 c            initialize state of release for element                            
@@ -2522,9 +2515,8 @@ c
       double precision :: u_plastic, u_normed, Gf, m, up, uf, T0,
      &                    T1, T2, Gtilde, Gratio, alpha, beta,
      &                    numer, denom
-      logical :: local_debug
+      logical, parameter :: local_debug = .false.
 c
-      local_debug = elem == -31
       u_plastic = regular_length * deps_plas
 c
       select case( regular_type )
@@ -3048,9 +3040,9 @@ c
 c              local declarations                                               
 c       
       integer :: do_what
-      logical :: local_debug, get_princ
+      logical ::  get_princ
+      logical, parameter :: local_debug = .false.
 c      
-      local_debug = .false.
       if( local_debug ) write(out,9000)               
       do_what = 1 ! don't update values. get values, set
 c                    set kill flag
@@ -3103,11 +3095,11 @@ c
 c              local declarations                                               
 c       
       integer :: mat_model
-      logical :: kill_now_local, local_debug
+      logical :: kill_now_local
+      logical, parameter :: local_debug = .false.
       double precision :: porosity, sig_mean_local, sig_mises_local,
      &    eps_plas_local, ebarp_local, sigma_bar_local
 c   
-      local_debug = .false.
       if( crack_growth_type /= 1 ) then  ! only gurson handled here                         
          write(out,9100) 2; write(out,9120)                                                      
          call die_gracefully           
@@ -3184,10 +3176,9 @@ c              locals
 c
       integer :: i, snode
       integer, parameter :: num_face_nodes = 4
-      logical :: local_debug
+      logical, parameter :: local_debug = .false.
       double precision :: sum, node_displ(3), dbar_now_local        
 c        
-      local_debug = .false.                                                                       
       if( local_debug ) write (out,*) '>>>> in growth_set_dbar'                      
 c                                                                               
       sum = zero       

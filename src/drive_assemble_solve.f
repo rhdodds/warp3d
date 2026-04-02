@@ -163,9 +163,11 @@ c
       case( 2 ) ! MUMPS symmetric sparse. direct only
 c
        if( local_debug ) write(*,*) '... drive_assem_solve  @ 5a'
+#ifdef OSX       
        call drive_mumps( neqns, ncoeff, k_diag, p_vec, 
      &                   u_vec, k_coeffs, k_ptrs, k_indexes,
      &                   cpu_stats, itype, out )
+#endif     
        if( local_debug ) write(*,*) '... drive_assem_solve @ 5b'
 
       case( 7 ) ! symmetric pardiso
@@ -177,7 +179,7 @@ c
             write(out,9120)
             call die_gracefully
         end if            
-#ifdef MKL
+#ifdef PARDISO
        call pardiso_symmetric( neqns, ncoeff, k_diag, p_vec,
      &                          u_vec, k_coeffs, k_ptrs, k_indexes,
      &                          cpu_stats, itype, out,
@@ -192,7 +194,7 @@ c
           write(out,9110); call die_gracefully
         end if
         if( local_debug ) write(*,*) '... drive_assem_solve  @ 5c'
-#ifdef MKL
+#ifdef PARDISO
         call pardiso_unsymmetric( neqns, nnz, k_ptrs, k_indexes,
      &            k_coeffs,  p_vec, u_vec, cpu_stats, itype, out,
      &            solver_mkl_iterative )
@@ -346,17 +348,25 @@ c
       if( cpu_stats .and. show_details ) then
           num_omp_thrds = omp_get_max_threads()
           mkl_num_thrds = 0
+c          
 #ifdef MKL
           mkl_num_thrds = mkl_get_max_threads()
           call mkl_get_version_string( mkl_string )
 #endif
+c
+#ifdef PARDISO
           if( mkl_solve )
      &         write(out,9400) mkl_num_thrds, mkl_string(45:50),
      &                       mkl_string(66:73), wcputime(1)   
+#endif
+c     
 #ifdef MKL
-          if( mumps_solve )
-     &        write(out,9404)  wcputime(1)   
+          if( mumps_solve ) then
+             write(out,9403) mkl_string(45:50), mkl_string(66:73)
+             write(out,9404)  wcputime(1) 
+          end if     
 #endif              
+c
 #ifndef MKL
           if( mumps_solve )
      &        write(out,9406) num_omp_thrds, wcputime(1)   
@@ -519,9 +529,9 @@ c
  9402  format (
      &  10x, '>> solver wall time statistics (secs):'
      & /,15x,'starting work: NASA-VSS       @ ',f10.2 )
+ 9403  format(15x,'MKL version, build: ',5x,a6,1x,a8)
  9404  format (
-     &  10x, '>> solver wall time statistics (secs):'
-     & /,15x,'starting work: MUMPS          @ ',f10.2 )
+     & 15x,'starting work: MUMPS          @ ',f10.2,' secs)' )
  9406  format (
      &  10x, '>> solver wall time statistics (secs):'
      & /,15x,'number of OMP threads used      ',i10,
@@ -1233,7 +1243,7 @@ c           plan is to convert to CSR (with existing fn)
 c           and write out in
 c           the format specified above.
 c
-#ifdef MKL
+#ifdef PARDISO
       call pardiso_symmetric_map( n, nnz, diagonal, rhs,values,
      &                   row_ptrs, col_indexes )
 #endif     

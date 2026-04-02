@@ -259,7 +259,7 @@ c
      &  call warp3d_pardiso_mess( 7, out,
      &        error, mkl_ooc_flag, print_cpu_stats, iparm )
         phase = -1 ! release internal memory
-#ifdef MKL
+#ifdef PARDISO
         call pardiso( pt, maxfct, mnum, mtype, phase, neq, ddum,
      &                idum, idum, idum, nrhs, iparm, msglvl,
      &                ddum, ddum, error)
@@ -287,7 +287,7 @@ c
       call thyme( 23, 1 )
       if ( pardiso_mat_defined ) then
         phase = -1 ! release internal memory
-#ifdef MKL
+#ifdef PARDISO
         call pardiso( pt, maxfct, mnum, mtype, phase, neq, ddum, idum,
      &                idum, idum, nrhs, iparm, msglvl, ddum, ddum,
      &                error )
@@ -349,8 +349,8 @@ c                     Try iparm(13) = 1 in case of inappropriate accuracy
 c                    necessary for first call to pardiso.
 c
       phase = 11 ! reordering and symbolic factorization
-#ifdef MKL
-      call pardiso( pt, maxfct, mnum, mtype, phase, neq, eqn_coeffs,
+#ifdef PARDISO
+      call pardiso_( pt, maxfct, mnum, mtype, phase, neq, eqn_coeffs,
      &              k_pointers, k_indices, idum, nrhs, iparm, msglvl,
      &              ddum, ddum, error )
 #endif     
@@ -387,7 +387,7 @@ c
       iparm(4)  = 52
       call warp3d_pardiso_mess( 9, out,  error, mkl_ooc_flag,
      &                         print_cpu_stats, iparm )
-#ifdef MKL
+#ifdef PARDISO
       call pardiso( pt, maxfct, mnum, mtype, phase, neq,
      &   eqn_coeffs, k_pointers, k_indices, idum, nrhs, iparm,
      &   msglvl, rhs, sol_vec, error )
@@ -413,7 +413,7 @@ c
       call thyme( 26, 1 )
       iparm(8) = 0 ! max numbers of iterative refinement steps
       phase = 23   ! only forward/backward solve
-#ifdef MKL
+#ifdef PARDISO
       CALL pardiso( pt, maxfct, mnum, mtype, phase, neq,
      &              eqn_coeffs, k_pointers, k_indices, idum, nrhs,
      &              iparm, msglvl, rhs, sol_vec, error )
@@ -428,7 +428,28 @@ c
 c
       end subroutine pardiso_symmetric
 c
-
+c
+#ifndef PARDISO
+c     ****************************************************************
+c     *                                                              *
+c     *  Messages during equation solving with Pardiso               *
+c     *                                                              *
+c     *  last modified: 1/12/2016 rhd                                *
+c     *                                                              *
+c     ****************************************************************
+c
+      subroutine warp3d_pardiso_mess( mess_no, iout, ier, ooc_flag,
+     &                                cpu_stats, iparm )
+      implicit none
+c
+      logical::  cpu_stats
+      real, external :: wcputime
+      integer :: iparm(*), mess_no, iout, ier, ooc_flag
+c
+      real :: start_factor_cpu_time
+      return
+      end
+#endif
 c
 c     ****************************************************************
 c     *                                                              *
@@ -438,6 +459,7 @@ c     *  last modified: 1/12/2016 rhd                                *
 c     *                                                              *
 c     ****************************************************************
 c
+#ifdef PARDISO
       subroutine warp3d_pardiso_mess( mess_no, iout, ier, ooc_flag,
      &                                cpu_stats, iparm )
       implicit none
@@ -460,6 +482,10 @@ c
          if( ier .ne. 0 ) then
            write(iout,9470)
            write(iout,*) '       >> @ phase 11, ier: ',ier
+           if( ier == -8 ) then
+             write(iout,9470)
+             write(iout,2013) 
+           end if  
            write(iout,9900)
            call die_abort
          end if
@@ -467,7 +493,7 @@ c
            write(iout,9482) wcputime(1)
            if( iparm(18) < 0 ) then
              write(iout,2012)
-           else
+           else  
              write(iout,2010) dble(iparm(18))/1000.d0/1000.d0
            end if
            write(iout,2020) dble(iparm(19))/1000.d0
@@ -477,6 +503,7 @@ c
         case( 3 )
          if( ier .ne. 0 ) then
             write(iout,9470)
+            if( ier == -8 )   write(iout,2013) 
             if( ier .eq. -2 ) write(iout,9700) 
             if( ier .eq. -4 ) write(iout,9710)
             write(iout,9900)
@@ -498,6 +525,7 @@ c
         case( 5 )
          if( ier .ne. 0 ) then
            write(iout,9470)
+           if( ier == -8 )   write(iout,2013) 
            if( ier .eq. -2 ) write(iout,9700)
            if( ier .eq. -4 ) write(iout,9710)
            write(iout,9900)
@@ -562,6 +590,9 @@ c
      &  15x,'terms in factored matrix (M):    ', f9.2)
  2012 format(
      &  15x,'terms in factored matrix:          > 2.15B')
+ 2013 format(
+     &  15x,'the # terms in the factored matrix exceeds the limit',
+     &/,15x,'for 32-bit integer version of Pardiso')
  2020 format(
      &  15x,'factorization op count (GFlop):  ', f9.2)
  2022 format(
@@ -610,20 +641,20 @@ c
      &   10x, '>>>>>>> FATAL ERRROR: iterative solver cannot be',
      &     ' used with',
      & /,10x, '              out-of-core option',
-     & /,10x  '              Job aborted.')
+     & /,10x,  '              Job aborted.')
  9730  format(/,
      &   10x, '>>>>>>> FATAL ERRROR: invalid message condition in',
      & /,10x, '              warp3d_pardiso_mess',
-     & /,10x  '              Job aborted.')
+     & /,10x, '              Job aborted.')
  9740  format(/,
      &   10x, '>>>>>>> FATAL ERRROR: invalid itype in',
      &   ' pardiso_symmetric',
-     & /,10x  '              or pardiso_unsymmetric. Job aborted.')
+     & /,10x, '              or pardiso_unsymmetric. Job aborted.')
  9900 format(/,
      &   10x, '>>>>>>> Job terminated.....',//)
 c
       end
-
+#endif
 c
 c     ****************************************************************
 c     *                                                              *

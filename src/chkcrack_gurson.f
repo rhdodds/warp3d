@@ -373,7 +373,7 @@ c
  9020 format(1x,'element     inital f     current f       Ep    ',              
      &       '        sigma bar      mean stress    ',                          
      &       'mises stress     delta f    eps_plastic  Oddy ratio',                         
-     &  /,1x '-------     --------     ---------       --    ',                 
+     &  /,1x,'-------     --------     ---------       --    ',                 
      &       '        ---------      -----------    ',                          
      &       '------------     -------    -----------  ----------')                                
  9030 format(1x,'element     inital f     current f       Ep    ',              

@@ -32,6 +32,7 @@ c
      &                        smcs_states, smcs_stream, smcs_text,
      &                        smcs_states_intlst, smcs_type,
      &                        use_weighted, use_distortion_metric
+      use damage_elem_vals, only : values_T     
       use constants
 c                                                        
       implicit none                                                    
@@ -53,7 +54,6 @@ c
       character(len=1) :: cflag  
       character(len=5) :: Oddy_char    
 c
-      include 'include_damage_values'
       type(values_T) :: values
 c
       debug = .false.
@@ -471,7 +471,7 @@ c     *           subroutine dam_param_smcs_get_values               *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 5/18/23 rhd                *          
+c     *                   last modified : 3/14/22026 rhd              *          
 c     *                                                              *          
 c     *             SMCS compute values for this element w/ optional *
 c     *             update of values                                 *
@@ -504,6 +504,7 @@ c
      &                              smcs_weighted_T,
      &                              smcs_weighted_zeta,
      &                              smcs_weighted_bar_theta
+      use damage_elem_vals, only : values_T     
 c
       use constants
 c                                                                               
@@ -523,7 +524,6 @@ c
       integer, intent(in) :: elem, dowhat       
       logical, intent(in) :: get_princ                                       
 c
-      include 'include_damage_values'
       type(values_T), intent(out) :: values
 c                                                                               
 c               local declarations                                               
@@ -679,7 +679,7 @@ c
 c
       if( use_weighted .and. update )
      &    call dam_param_smcs_get_values_weighted
-      if( use_weighted ) then ! history avg values
+      if( use_weighted .and. eps_plas > small_plastic_strain ) then ! history avg values
          triaxiality = smcs_weighted_T(elem_ptr) / eps_plas
          zeta        = smcs_weighted_zeta(elem_ptr) / eps_plas
          omega       = one - zeta*zeta 
