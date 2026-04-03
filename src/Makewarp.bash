@@ -157,8 +157,7 @@ function linux_simple
 #
 #   Is this really a Linux system?
 #
-      match=`uname | grep Linux | wc -l`
-      if [ $match = "0" ]; then
+      if [ "$(uname -s)" != "Linux" ]; then 
             printf "[ERROR]\n"
             printf "This is not a Linux system.\n Quitting...\n\n"
             exit 1
@@ -195,7 +194,20 @@ function compile_linux_Intel {
       printf " \n"
       read -p "Number of concurrent compile processes allowed? (default 1): " JCOMP
       [ -z "$JCOMP" ] && JCOMP=1
-#
+case "$JCOMP" in
+    ''|*[!0-9]*)
+        printf "\n[ERROR]\n"
+        printf "... JCOMP must be an integer >= 1.\n\n" >&2
+        exit 1
+        ;;
+esac
+
+if [ "$JCOMP" -lt 1 ]; then
+    printf "\n[ERROR]\n"
+    printf "... JCOMP must be >= 1.\n\n" >&2
+    exit 1
+fi
+##
 #   touch main program so it will always be re-compiled (will include compile
 #   date & time in warp3d hearder block)
 #
@@ -222,8 +234,7 @@ printf ".... Intel processors, ifort comoiler, MKL + Pardsio solver.\n"
 #
 # Is this really a macOS system?
 #
-match=`uname | grep Darwin | wc -l`
-if [ $match = "0" ]; then
+if [ "$(uname -s)" != "Darwin" ]; then
    printf "[ERROR]\n"
    printf "This is not a macOS system.\n Quitting...\n\n"
    exit 1
@@ -276,7 +287,21 @@ mkdir ../obj_macOS_ifort 2> /dev/null
 printf " \n"
 read -p "... Number of concurrent compile processes allowed? (default 1): " JCOMP
 [ -z "$JCOMP" ] && JCOMP=1
+case "$JCOMP" in
+    ''|*[!0-9]*)
+        printf "\n[ERROR]\n"
+        printf "... JCOMP must be an integer >= 1.\n\n" >&2
+        exit 1
+        ;;
+esac
+
+if [ "$JCOMP" -lt 1 ]; then
+    printf "\n[ERROR]\n"
+    printf "... JCOMP must be >= 1.\n\n" >&2
+    exit 1
+fi
 #
+
 touch main_program.f   # so the compile date is always current
 #
 #
@@ -340,7 +365,7 @@ fi
 if [ ! -f "$WARP3D_HOME/MUMPS_libs/libmumps_all_gfort_osx_Intel.a" ]; then
 printf "\n[ERROR]\n"
 printf "... The file MUMPS_libs/libmumps_all_gfort_osx_Intel.a\n"
-printf "     exist in the WARP3D distribution directory. Run this shell command to\n" 
+printf "     does not exist in the WARP3D distribution directory. Run this shell command to\n" 
 printf "    download:  install_MUMPS_libs_from_remote\n  "
 printf "Quitting...\n\n"
 exit 1
@@ -366,7 +391,20 @@ mkdir ../obj_macOS_Intel_gfortran 2> /dev/null
 printf " \n"
 read -p "... Number of concurrent compile processes allowed? (default 1): " JCOMP
 [ -z "$JCOMP" ] && JCOMP=1
-#
+case "$JCOMP" in
+    ''|*[!0-9]*)
+        printf "\n[ERROR]\n"
+        printf "... JCOMP must be an integer >= 1.\n\n" >&2
+        exit 1
+        ;;
+esac
+
+if [ "$JCOMP" -lt 1 ]; then
+    printf "\n[ERROR]\n"
+    printf "... JCOMP must be >= 1.\n\n" >&2
+    exit 1
+fi
+##
 touch main_program.f   # so the compile date is always current
 #
 # run the makefile for macOS Intel gfortran
@@ -389,12 +427,14 @@ function compile_mac_silicon
 #
 # Is this really an maxOS system?
 #
-match=`uname | grep Darwin | wc -l`
-if [ $match = "0" ]; then
+if [ "$(uname -s)" != "Darwin" ]; then
    printf "[ERROR]\n"
    printf "This is not a Mac OS X system.\n Quitting...\n\n"
    exit 1
 fi
+#
+arch=$(uname -m)
+[[ "$arch" == "arm64" ]] || error_exit "This option requires Apple Silicon (arm64)."
 #
 MAKEFILE=Makefile.osx
 #
@@ -420,7 +460,7 @@ exit 1
 if [ ! -f "$WARP3D_HOME/MUMPS_libs/libmumps_all_gfort_osx_arm64_NO_DGEMMT.a" ]; then
 printf "\n[ERROR]\n"
 printf "... The file MUMPS_libs/libmumps_all_gfort_osx_arm64_NO_DGEMMT.a\n"
-printf "     exist in the WARP3D distribution directory. Run this shell command to\n" 
+printf "     does not exist in the WARP3D distribution directory. Run this shell command to\n" 
 printf "    download:  install_MUMPS_libs_from_remote\n  "
 printf "Quitting...\n\n"
 exit 1
@@ -446,7 +486,20 @@ mkdir ../obj_macOS_silicon 2> /dev/null
 printf " \n"
 read -p "... Number of concurrent compile processes allowed? (default 1): " JCOMP
 [ -z "$JCOMP" ] && JCOMP=1
-#
+case "$JCOMP" in
+    ''|*[!0-9]*)
+        printf "\n[ERROR]\n"
+        printf "... JCOMP must be an integer >= 1.\n\n" >&2
+        exit 1
+        ;;
+esac
+
+if [ "$JCOMP" -lt 1 ]; then
+    printf "\n[ERROR]\n"
+    printf "... JCOMP must be >= 1.\n\n" >&2
+    exit 1
+fi
+##
 touch main_program.f   # so the compile date is always current
 #
 # run the makefile for macOS gfortran
