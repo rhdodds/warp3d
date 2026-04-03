@@ -323,7 +323,7 @@ ifeq ($(PLATFORM),silicon)
        -finit-real=snan -finit-integer=-999999  \
       $(MACHINE_TYPE)
 #
-    OPTS = $(PRODUCTION) -D$(OSNAME)
+    OPTS = $(PRODUCTION) -D$(OSNAME) -Darm64
     FOR      = $(COMPILER) $(OPTS)
     LDWARN = -Wl,-w
     LDFLAGS += -Wl,-t

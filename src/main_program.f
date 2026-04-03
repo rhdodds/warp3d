@@ -81,6 +81,9 @@ c
 #ifdef gfortran
       build_sys = 0  ! gfortran
 #endif
+#ifdef arm64
+      build_sys = 2  ! Apple silicon arm64
+#endif
 c
       os_ok = windows_os .or. linux_os .or. osx_os
       if( .not. os_ok ) then
@@ -96,6 +99,7 @@ c
       lastc = len_trim( char_os ) + 1
       if( build_sys == 0 ) char_os(lastc:) = ' (gfortran)'
       if( build_sys == 1 ) char_os(lastc:) = ' (Intel Fortran)'
+      if( build_sys == 2 ) char_os(lastc:) = ' (Apple arm64)'
 c
       write (*,9000) char_os, build_number, compile_date,
      &               compile_time, sdate_ 
