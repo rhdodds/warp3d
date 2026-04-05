@@ -208,7 +208,43 @@ c
                                                                                 
                                                                                 
                                                                                 
-                                                                                
+c ********************************************************************          
+c *                                                                  *          
+c *    write a long vector on unformatted file using                 *          
+c *    multiple physical records. last record may not have full      *          
+c *    length                                                        *          
+c *                                                                  *          
+c ********************************************************************          
+c                                                                               
+      subroutine wrtbk_i4( fileno, vector, nvalues )                                
+      implicit none
+c                                                          
+      integer :: fileno, nvalues, vector(nvalues)
+c   
+      integer :: nrecs, blkfm1, uaddr, recno, laddr                                                      
+      integer, parameter :: max_rec_size = 10000                                                               
+c                                                                               
+c        fileno       -- unformatted sequential file no.                        
+c        vector       -- data vectors of length nvalues to be                    
+c                        written                              
+c        max_rec_size -- maximum number of single precision words               
+c                        allocated per logical record. generally                
+c                        hardware dependent. some machines allow                
+c                        any length and sub-divide the logical record           
+c                        as required. others have maximum size.                 
+c                                                                               
+      nrecs  = (nvalues-1) / max_rec_size + 1                                    
+      blkfm1 = max_rec_size - 1                                                 
+      uaddr  = 0                                                                
+      do recno = 1, nrecs                                                       
+          laddr = uaddr + 1                                                     
+          uaddr = min( nvalues, laddr+blkfm1 )                                   
+          write(fileno) vector(laddr:uaddr)                       
+      end do                                                                    
+c                                                                               
+      return                                                                    
+      end                                                                       
+                                                          
                                                                                 
                                                                                 
                                                                                 
