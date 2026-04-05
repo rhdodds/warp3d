@@ -210,26 +210,26 @@ c
 c                       write out integer arrays.
 c
       call wrt2d( fileno, outmap,mxlbel,nlibel,mxelmp )
-      call wrtbk( fileno, matlst, mxmat )
-      call wrtbk( fileno, invdst, nodof )
-      call wrtbk( fileno, stprng, mxlc*2 )
-      call wrtbk( fileno, incmap, noelem )
-      call wrtbk( fileno, crdmap, nonode )
-      call wrtbk( fileno, dstmap, nonode )
-      call wrtbk( fileno, cstmap, nodof )
-      call wrtbk( fileno, incid,  inctop )
-      call wrtbk( fileno, lodlst, mxlc )
+      call wrtbk_i4( fileno, matlst, mxmat )
+      call wrtbk_i4( fileno, invdst, nodof )
+      call wrtbk_i4( fileno, stprng, mxlc*2 )
+      call wrtbk_i4( fileno, incmap, noelem )
+      call wrtbk_i4( fileno, crdmap, nonode )
+      call wrtbk_i4( fileno, dstmap, nonode )
+      call wrtbk_i4( fileno, cstmap, nodof )
+      call wrtbk_i4( fileno, incid,  inctop )
+      call wrtbk_i4( fileno, lodlst, mxlc )
       write (fileno) check_data_key
       call store_cmplx_int( fileno, 1 )
       call store_cmplx_int( fileno, 2 )
       call store_cmplx_int( fileno, 3 )
       call wrt2d( fileno, elblks(0,1) , 4, 4, mxnmbl  )
-      call wrtbk( fileno, cp, mxedof )
-      call wrtbk( fileno, dcp, mxedof )
+      call wrtbk_i4( fileno, cp, mxedof )
+      call wrtbk_i4( fileno, dcp, mxedof )
       call wrt2d( fileno, icp, mxutsz, mxutsz, 2  )
-      call wrtbk( fileno, num_seg_points, max_seg_curves )
-      call wrtbk( fileno, seg_curves_type, max_seg_curves )
-      call wrtbk( fileno, seg_curve_table, (max_seg_curves+1)*
+      call wrtbk_i4( fileno, num_seg_points, max_seg_curves )
+      call wrtbk_i4( fileno, seg_curves_type, max_seg_curves )
+      call wrtbk_i4( fileno, seg_curve_table, (max_seg_curves+1)*
      &            max_seg_curve_sets )
       call wrt2d( fileno, imatprp, mxmtpr, mxmtpr, mxmat )
       write (fileno) check_data_key
@@ -242,9 +242,9 @@ c                       see some sizes set in main, param_def
 c
 c
       write(fileno) convrg, trace                  ! short logical vecs
-      call wrtbk( fileno, trn, nonode)             ! logical vec
-      call wrtbk( fileno, stpchk, max_step_limit ) ! logical vec
-      call wrtbk( fileno, repeat_incid, noelem )   ! logical vec
+      call wrtbk_i4( fileno, trn, nonode)             ! logical vec
+      call wrtbk_i4( fileno, stpchk, max_step_limit ) ! logical vec
+      call wrtbk_i4( fileno, repeat_incid, noelem )   ! logical vec
       write(fileno) seg_curves_pchip(1:max_seg_curves) ! logical vec 
 c
       write(fileno) lodnam, lodtyp, matnam, elelib ! short char vecs
@@ -256,8 +256,8 @@ c                       write out real arrays.
 c
       call wrt2d( fileno, props, mxelpr, mxelpr, noelem )
       call wrt2d( fileno, matprp, mxmtpr, mxmtpr, mxmat )
-      call wrtbk( fileno, user_cnstrn_stp_factors, max_step_limit )
-      call wrtbk( fileno, actual_cnstrn_stp_factors, max_step_limit )
+      call wrtbk_i4( fileno, user_cnstrn_stp_factors, max_step_limit )
+      call wrtbk_i4( fileno, actual_cnstrn_stp_factors, max_step_limit )
       write (fileno) check_data_key
       if ( fgm_node_values_defined )
      &  call wrt2d( fileno, fgm_node_values, nonode, nonode,
@@ -377,7 +377,7 @@ c
          write(fileno) node_count, how_defined
          write(fileno) node_load_defs(i)%user_file_name
          if ( node_count .gt. 0 ) then
-          call wrtbk( fileno, node_load_defs(i)%nodal_loads(1,1),
+          call wrtbk_i4( fileno, node_load_defs(i)%nodal_loads(1,1),
      &                2*node_count )
          end if
         end do
@@ -386,7 +386,7 @@ c
 c
       write(fileno) num_loddat_blks, next_loddat_col
       do i = 1, num_loddat_blks
-        call wrtbk( fileno, loddat_blocks(i)%block(1,1),
+        call wrtbk_i4( fileno, loddat_blocks(i)%block(1,1),
      &              mxndldcm*sizeof_loddat_blks )
       end do
       write (fileno) check_data_key
@@ -398,9 +398,9 @@ c
          if ( elem_loads(i)%size .gt. 0 ) then
             call wrt2d( fileno, elem_loads(i)%data(1,1),
      &           elem_loads(i)%size, elem_loads(i)%size, 3 )
-            call wrtbk( fileno, elem_loads(i)%vals(1),
+            call wrtbk_i4( fileno, elem_loads(i)%vals(1),
      &           elem_loads(i)%size )
-            call wrtbk( fileno, elem_loads(i)%piston_tabnum(1),
+            call wrtbk_i4( fileno, elem_loads(i)%piston_tabnum(1),
      &           elem_loads(i)%size )
          endif
       end do
@@ -412,7 +412,7 @@ c                       for applied body forces, surface tractions,
 c                       pressures.
 c
       if ( eq_node_force_len .gt. 0 ) then
-         call wrtbk( fileno, eq_node_force_indexes, noelem )
+         call wrtbk_i4( fileno, eq_node_force_indexes, noelem )
          call wrtbk( fileno, eq_node_forces,
      &               eq_node_force_len*prec_fact )
       end if
@@ -491,7 +491,7 @@ c
       write(fileno) smcs_deleted_list_file_name, 
      &              smcs_removed_list_file_name
       write (fileno) check_data_key
-      call wrtbk( fileno, dam_ptr, noelem )
+      call wrtbk_i4( fileno, dam_ptr, noelem )
       write (fileno) check_data_key
       write(out,9120)
 c
@@ -502,7 +502,7 @@ c
          standard_kill_method = .true.
          if( use_mesh_regularization ) standard_kill_method = .false. 
 c
-         call wrtbk( fileno, dam_state, num_kill_elem )
+         call wrtbk_i4( fileno, dam_state, num_kill_elem )
          call wrt2d( fileno, dam_ifv, prec_fact*mxedof,
      &                    prec_fact*mxedof, num_kill_elem )
 c
@@ -520,9 +520,10 @@ c
      &             smcs_states_intlst(1:isize)
                if( use_weighted ) then
                   isize = num_kill_elem * prec_fact 
-                  call wrtbk( fileno, smcs_weighted_T, isize )
-                  call wrtbk( fileno, smcs_weighted_zeta, isize )
-                  call wrtbk( fileno, smcs_weighted_bar_theta, isize )
+                  call wrtbk_i4( fileno, smcs_weighted_T, isize )
+                  call wrtbk_i4( fileno, smcs_weighted_zeta, isize )
+                  call wrtbk_i4( fileno, smcs_weighted_bar_theta, 
+     &                           isize )
                 end if
          end if
          write(fileno) check_data_key
@@ -534,7 +535,7 @@ c
      &              prec_fact * num_kill_elem )
                call wrtbk( fileno, smcs_stress_at_death,
      &              prec_fact * num_kill_elem )
-               call wrtbk( fileno, smcs_start_kill_step, 
+               call wrtbk_i4( fileno, smcs_start_kill_step, 
      &                     num_kill_elem )
                write(out,9250)
          end if
@@ -545,27 +546,29 @@ c
 c
          isize = stop_killed_elist_length
          if(  isize > 0 ) then
-           call wrtbk( fileno, deleted_elist_to_stop, isize )
+           call wrtbk_i4( fileno, deleted_elist_to_stop, isize )
          end if
 c
          if( print_status ) then
-            call wrtbk( fileno, dam_print_list, num_print_list )
+            call wrtbk_i4( fileno, dam_print_list, num_print_list )
          end if
          write (fileno) check_data_key
 c
          if( kill_order ) then
-            call wrtbk( fileno, kill_order_list, num_kill_order_list )
+            call wrtbk_i4( fileno, kill_order_list, 
+     &       num_kill_order_list )
          end if
          write (fileno) check_data_key
 c
          if ( .not. no_killed_elems ) then
-            call wrtbk( fileno, dam_node_elecnt, nonode )
+            call wrtbk_i4( fileno, dam_node_elecnt, nonode )
          end if
          write (fileno) check_data_key
 c
          if ( release_type .eq. 2  ) then
             if ( .not. no_killed_elems ) then
-               call wrtbk( fileno, dam_face_nodes, 4*num_kill_elem )
+               call wrtbk_i4( fileno, dam_face_nodes,
+     &                        4*num_kill_elem )
                call wrtbk( fileno, dam_dbar_elems,
      &              (2*prec_fact)*num_kill_elem )
             end if
@@ -600,12 +603,14 @@ c                             save node release variables
 c
       else if ( growth_by_release ) then
 c
-         call wrtbk( fileno, crack_plane_nodes, num_crack_plane_nodes )
-         call wrtbk( fileno, inv_crkpln_nodes, nonode )
-         call wrtbk( fileno, num_neighbors, num_crack_plane_nodes )
+         call wrtbk_i4( fileno, crack_plane_nodes,
+     &                  num_crack_plane_nodes )
+         call wrtbk_i4( fileno, inv_crkpln_nodes, nonode )
+         call wrtbk_i4( fileno, num_neighbors, 
+     &                  num_crack_plane_nodes )
          call wrt2d( fileno, neighbor_nodes, mxconn, mxconn,
      &        num_crack_plane_nodes )
-         call wrtbk( fileno, crkpln_nodes_state,
+         call wrtbk_i4( fileno, crkpln_nodes_state,
      &        num_crack_plane_nodes )
          call wrtbk( fileno, crkpln_nodes_react,
      &        num_crack_plane_nodes * prec_fact )
@@ -623,7 +628,7 @@ c
          write (fileno) check_data_key
 
          if ( const_front ) then
-           call wrtbk( fileno, master_nodes, num_crack_fronts )
+           call wrtbk_i4( fileno, master_nodes, num_crack_fronts )
            call wrt2d( fileno, crack_front_list, num_crack_fronts*
      &                 num_nodes_grwinc,num_crack_fronts*
      &                 num_nodes_grwinc,num_nodes_thick )
@@ -635,7 +640,7 @@ c
 c  
          isize = stop_released_nlist_length
          if(  isize > 0 ) then
-           call wrtbk( fileno, released_nlist_to_stop, isize )
+           call wrtbk_i4( fileno, released_nlist_to_stop, isize )
          end if
 c
       end if
@@ -647,8 +652,8 @@ c
 c
       if (use_contact) then
          write (fileno) num_contact
-         call wrtbk( fileno, contact_shape, num_contact)
-         call wrtbk( fileno, contact_outside, num_contact)
+         call wrtbk_i4( fileno, contact_shape, num_contact)
+         call wrtbk_i4( fileno, contact_outside, num_contact)
          call wrt2d( fileno, contact_cause, maxcontact, maxcontact,
      &        nonode)
          call wrtbk( fileno, contact_stiff, num_contact* prec_fact)
@@ -679,10 +684,12 @@ c
             ntrm = user_mpc_table(mpc)%num_terms
             write (fileno) ntrm
             write (fileno) user_mpc_table(mpc)%constant
-            call wrtbk( fileno, user_mpc_table(mpc)%node_list, ntrm )
-            call wrtbk( fileno, user_mpc_table(mpc)%dof_list, ntrm )
-            call wrtbk( fileno, user_mpc_table(mpc)%multiplier_list,
-     &                  ntrm )
+            call wrtbk_i4( fileno, user_mpc_table(mpc)%node_list,
+     &                     ntrm )
+            call wrtbk_i4( fileno, user_mpc_table(mpc)%dof_list, 
+     &                     ntrm )
+            call wrtbk_i4( fileno, user_mpc_table(mpc)%multiplier_list,
+     &                     ntrm )
             write (fileno) check_data_key
          end do
          write(out,9160)
@@ -695,10 +702,13 @@ c
             ntrm = tied_con_mpc_table(mpc)%num_terms
             write (fileno) ntrm
             write (fileno) tied_con_mpc_table(mpc)%constant
-            call wrtbk( fileno, tied_con_mpc_table(mpc)%node_list, ntrm)
-            call wrtbk( fileno, tied_con_mpc_table(mpc)%dof_list, ntrm )
-            call wrtbk( fileno, tied_con_mpc_table(mpc)%multiplier_list,
-     &                  ntrm )
+            call wrtbk_i4( fileno, tied_con_mpc_table(mpc)%node_list,
+     &                     ntrm)
+            call wrtbk_i4( fileno, tied_con_mpc_table(mpc)%dof_list, 
+     &                     ntrm )
+            call wrtbk_i4( fileno,
+     &                     tied_con_mpc_table(mpc)%multiplier_list,
+     &                     ntrm )
             write (fileno) check_data_key
          end do
          write(out,9170)
@@ -736,7 +746,7 @@ c
          ulen =  user_lists(ilist)%length_list
          write(fileno) ulen
          if ( ulen .ne. 0 ) then
-           call wrtbk(fileno,user_lists(ilist)%list(1),ulen)
+           call wrtbk_i4(fileno,user_lists(ilist)%list(1),ulen)
          endif
       end do
       write(out,9190)
