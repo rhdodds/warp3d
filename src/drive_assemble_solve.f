@@ -1,4 +1,4 @@
-c
+
 c     ****************************************************************
 c     *                                                              *
 c     *  assemble & solve linear equations for a Newton iteration    *
@@ -983,7 +983,7 @@ c     *                      subroutine store_solver                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/7/25 rhd                *
+c     *                   last modified : 4/5/2026 rhd               *
 c     *                                                              *
 c     *     write a binary file of key structure data after assembly *
 c     *     and before solve by sparse solver. this file is used to  *
@@ -1011,7 +1011,7 @@ c
 c 
 c              local variable declarations
 c
-      integer :: prec_fact, open_result, i, fileno
+      integer :: open_result, i, fileno
       integer, allocatable ::  ele_info(:)
       integer, intrinsic :: size
       integer, external :: warp3d_get_device_number
@@ -1035,7 +1035,6 @@ c
          return
       end if
 c
-      prec_fact = 2
       open(unit=fileno, file=file_name,
      &       status='old', access='sequential', form='unformatted',
      &       iostat=open_result, position='append'  )
@@ -1053,31 +1052,31 @@ c
 c
 c                       write out integer vectors
 c
-      call wrtbk( fileno, invdst, nodof )
-      call wrtbk( fileno, incmap, noelem )
-      call wrtbk( fileno, dstmap, nonode )
-      call wrtbk( fileno, cstmap, nodof )
-      call wrtbk( fileno, incid,  inctop )
+      call wrtbk_si4( fileno, invdst, nodof )
+      call wrtbk_si4( fileno, incmap, noelem )
+      call wrtbk_si4( fileno, dstmap, nonode )
+      call wrtbk_si4( fileno, cstmap, nodof )
+      call wrtbk_si4( fileno, incid,  inctop )
       allocate( ele_info(noelem) )
       do i = 1, noelem
         ele_info(i) = iprops(2,i)
       end do
-      call wrtbk( fileno, ele_info, noelem )
+      call wrtbk_si4( fileno, ele_info, noelem )
       deallocate( ele_info )
       write (fileno) check_data_key
 c
 c                       write more integer vectors, arrays
 c
-      call wrt2d( fileno, elblks(0,1) , 4, 4, nelblk  )
-      call wrtbk( fileno, cp, mxedof )
-      call wrtbk( fileno, dcp, mxedof )
-      call wrt2d( fileno, icp, mxutsz, mxutsz, 2  )
+      call wrt2d_si4( fileno, elblks(0,1) , 4, 4, nelblk  )
+      call wrtbk_si4( fileno, cp, mxedof )
+      call wrtbk_si4( fileno, dcp, mxedof )
+      call wrt2d_si4( fileno, icp, mxutsz, mxutsz, 2  )
       write (fileno) check_data_key
       write(out,9010)
 c
 c                       constraint data (double)
 c
-      call wrtbk( fileno, cnstrn, prec_fact*nodof )
+      call wrtbk_sr8( fileno, cnstrn, nodof )
       write (fileno) check_data_key
       write(out,9040)
 c
@@ -1106,7 +1105,7 @@ c
       close( fileno, status='keep' )
       write(out,9060)
 c
-c
+      return
 c
  1000 format ( 3x, e16.6 )
  9000 format(17x,'> scalars written...')
@@ -1117,8 +1116,7 @@ c
  9070 format('>> WARNING: could not open file to save sparse [K]',
      & /     '            action skipped...',/)
  9080 format(17x,'> element stiffness and destinations written...')
-
-      return
+c
       end
 c
 c     ****************************************************************
@@ -1360,3 +1358,122 @@ c     All done algorithm is O(nnz), do not think we can do better
 c
       return
       end
+c ********************************************************************          
+c *                                                                  *          
+c *    write a long vector on unformatted file using                 *          
+c *    multiple physical records. last record may not have full      *          
+c *    length                                                        *          
+c *                                                                  *          
+c ********************************************************************          
+c                                                                                                                                                          
+      subroutine wrtbk_si4( fileno, vector, nvalues )                                
+      implicit none
+c                                                          
+      integer :: fileno, vector(nvalues), nvalues  
+c   
+      integer :: nrecs, blkfm1, uaddr, recno, laddr                                                      
+      integer, parameter :: max_rec_size = 10000                                                               
+c                                                                               
+c        fileno       -- unformatted sequential file no.                        
+c        vector       -- data vectors of length nwords to be                    
+c                        written,\.
+c        max_rec_size -- maximum number of single precision words               
+c                        allocated per logical record. generally                
+c                        hardware dependent. some machines allow                
+c                        any length and sub-divide the logical record           
+c                        as required. others have maximum size.                 
+c                                                                               
+      nrecs  = (nvalues-1) / max_rec_size + 1                                    
+      blkfm1 = max_rec_size - 1                                                 
+      uaddr  = 0                                                                
+      do recno = 1, nrecs                                                       
+          laddr = uaddr + 1                                                     
+          uaddr = min( nvalues, laddr+blkfm1 )                                   
+          write(fileno) vector(laddr:uaddr)                       
+      end do                                                                    
+c                                                                               
+      return                                                                    
+      end  subroutine wrtbk_si4
+c ********************************************************************          
+c *                                                                  *          
+c *    write a long vector on unformatted file using                 *          
+c *    multiple physical records. last record may not have full      *          
+c *    length                                                        *          
+c *                                                                  *          
+c ********************************************************************          
+c                                                                                                                                                         
+      subroutine wrtbk_sr8( fileno, vector, nvalues )                                
+      implicit none
+c                                                          
+      integer :: fileno, nvalues  
+      double precision :: vector(nvalues)
+c   
+      integer :: nrecs, blkfm1, uaddr, recno, laddr                                                      
+      integer, parameter :: max_rec_size = 5000
+c                                                                               
+c        fileno       -- unformatted sequential file no.                        
+c        vector       -- data vectors of length values to be                    
+c                        written 
+c        max_rec_size -- maximum number of values
+c                        allocated per logical record. generally                
+c                        hardware dependent. some machines allow                
+c                        any length and sub-divide the logical record           
+c                        as required. others have maximum size.                 
+c                                                                               
+      nrecs  = (nvalues-1) / max_rec_size + 1                                    
+      blkfm1 = max_rec_size - 1                                                 
+      uaddr  = 0                                                                
+      do recno = 1, nrecs                                                       
+          laddr = uaddr + 1                                                     
+          uaddr = min( nvalues, laddr+blkfm1 )                                   
+          write(fileno) vector(laddr:uaddr)                       
+      end do                                                                    
+c                                                                               
+      return                                                                    
+      end  subroutine wrtbk_sr8
+c ********************************************************************          
+c *                                                                  *          
+c *    write a long 2d array on unformatted file using               *          
+c *    multiple physical records. each column of array is written    *          
+c *    as a logical record - integers                                *          
+c *                                                                  *          
+c ********************************************************************          
+c                                                                               
+      subroutine wrt2d_si4( fileno, array, dimrow, numrows, numcols )               
+c
+      implicit none
+      integer :: fileno, array(dimrow,numcols), dimrow, numrows,
+     &           numcols      
+c
+      integer :: col                                                  
+c                                                                               
+      do col = 1, numcols                                                       
+          call wrtbk_si4( fileno, array(1,col), numrows )                           
+      end do                                                                    
+c                                                                               
+      return                                                                    
+      end  subroutine wrt2d_si4                                                                    
+c ********************************************************************          
+c *                                                                  *          
+c *    write a long 2d array on unformatted file using               *          
+c *    multiple physical records. each column of array is written    *          
+c *    as a logical record - double precision                        *          
+c *                                                                  *          
+c ********************************************************************          
+c                                                                                                                                                              
+      subroutine wrt2d_sr8( fileno, array, dimrow, numrows, numcols )               
+c
+      implicit none
+      integer :: fileno, dimrow, numrows, numcols
+      double precision :: array(dimrow,numcols)                                                   
+c
+      integer :: col
+c                                                                                     
+      do col = 1, numcols                                                       
+          call wrtbk_sr8( fileno, array(1,col), numrows )                           
+      end do                                                                    
+c                                                                               
+      return                                                                    
+      end  subroutine wrt2d_sr8                                                                    
+c                
+c      
