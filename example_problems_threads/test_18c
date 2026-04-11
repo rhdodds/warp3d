@@ -3926,13 +3926,14 @@ c
   nonlinear analysis parameters
    solution technique direct sparse
    adaptive solution on
+   line search on
    maximum iterations 5
    minimum iterations 2
    convergence test norm res tol 0.005
    time step 1000000
    trace solution on
    extrapolate off
-   consistent q-matrix on
+   consistent q-matrix off
    bbar stabilization factor 0.0
    batch messages off
    cpu time limit off
@@ -3953,8 +3954,6 @@ c
 c
    compute displacements for loading bend step 50
    *input test_18_get_j
-   compute displacements for loading bend step 200
-   *input test_18_get_j
-   compute displacements for loading bend step 300
+   compute displacements for loading bend step 100
    *input test_18_get_j
   stop

@@ -6545,8 +6545,8 @@ c
    critical porosity 0.1
    adaptive load control on maximum porosity change 0.05
 c
- compute displacements for loading remote_KI steps 1-50
-   output stresses 1-5
+ compute displacements for loading remote_KI steps 40
+    output stresses 1-5
    output strains 1-5
 
 stop

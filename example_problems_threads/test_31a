@@ -20,12 +20,15 @@ c
 c
 structure sent
 c
-stress-strain curve 1 temperature    0 e 30000 nu 0.3 alpha 7.5e-06
- 0.0  10000
-stress-strain curve 2 temperature  500 e 20000 nu 0.2 alpha 5.5e-06
- 0.0  10000
-stress-strain curve 3 temperature 1000 e 10000 nu 0.1 alpha 3.5e-06
- 0.0  10000
+  stress-strain curve 1 temperature    0 e 30000 nu 0.3 alpha 7.5e-06
+   0.0  10000
+   0.1  10000
+  stress-strain curve 2 temperature  500 e 20000 nu 0.2 alpha 5.5e-06
+   0.0  10000
+   0.1  10000
+  stress-strain curve 3 temperature 1000 e 10000 nu 0.1 alpha 3.5e-06
+   0.0  10000
+   0.1  10000
 c
 material temp_steel
  properties linear curves  1-3

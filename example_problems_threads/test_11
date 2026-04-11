@@ -3101,7 +3101,8 @@ nonlinear analysis parameters
    extrapolate on
    batch messages on
    adaptive solution on
-   nonconvergence solutions continue
+   nonconvergence solutions stop
+   line search on
 c
    compute displacements for loading crunch step 1-5
    output patran binary displacements

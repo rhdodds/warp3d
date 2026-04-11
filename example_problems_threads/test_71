@@ -27,7 +27,7 @@ c
 structure ramp_panel
 c
 material panel $ linear elastic
-    properties bilinear e 30000 nu 0.3 yld_pt 1.0e50 rho 7.7e-10,
+    properties bilinear e 30000 nu 0.3 yld_pt 1.0e10 rho 7.7e-10,
                tan_e 100 alphax 1.0e-06 alphay 1.0e-06 alphaz 1.0e-06
 number of nodes 63 elements 24
 coordinates

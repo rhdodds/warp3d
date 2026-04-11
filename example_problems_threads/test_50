@@ -2769,6 +2769,7 @@ c
    trace solution on
    extrapolate off   $ recommended for growing crack
    binary packets on file 'fatigue_packets'
+   line search on
 c
  crack growth parameters
   type of crack growth node_release

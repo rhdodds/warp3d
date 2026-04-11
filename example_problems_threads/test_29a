@@ -62,6 +62,7 @@ c
    time step 1.0e06
    trace solution on 
    extrapolate on
+   line search on
 c 
 c 
  compute displacements for loading test step 20

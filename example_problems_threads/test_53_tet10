@@ -15599,7 +15599,7 @@ c
 c
  loading test
   nonlinear
-    step 1 unit 50.0 unit_temp 2000
+    step 1 unit 50.0 unit_temp 50
     step 2-5 unit 5.0 unit_temp 1000
 c
  nonlinear analysis parameters
@@ -15613,7 +15613,8 @@ c
    cpu time limit off
    material messages off
    bbar stabilization factor 0.0
-   consistent q-matrix on
+   consistent q-matrix off
+   line search on
    time step 1.0e06
    trace solution on
    extrapolate off
