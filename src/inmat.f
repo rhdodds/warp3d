@@ -645,7 +645,7 @@ c **********************************************************************
 c
 c
  260  continue
-      call inmat_fgm( status, 'yld_pt'  )
+      call inmat_fgm( status, 'yld_pt' )
       if ( status  .eq. 0 ) then
           matprp(5,matnum) = fgm_mark
           go to 210
@@ -1756,7 +1756,7 @@ c
       double precision :: dumd
 c
       status = -1
-      if( .not. string(idummy) ) return
+      if( .not. string(dumr) ) return
       call entits( text, ncstring )
 c
       if( ncstring .lt. 3 ) then

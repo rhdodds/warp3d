@@ -391,7 +391,7 @@ c     *                 subroutine set_up_h_prime                    *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 04/3/00                    *
+c     *                   last modified : 4/8/26 rhd                 *
 c     *                                                              *
 c     *     set up h-prime for this gauss point for all elements     *
 c     *     in the block. use the first 2 points on the segemetnal   *
@@ -402,22 +402,22 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine set_up_h_prime( span, h_block, sigyld_vec, felem )
+c
       use segmental_curves, only : sigma_curves, curve_plseps_values
 c
-      implicit integer (a-z)
+      implicit none
       include 'param_def'
 c
 c                      parameter declarations
 c
-      double precision
-     & h_block(*), sigyld_vec(*)
+      integer :: span, felem
+      double precision :: h_block(*), sigyld_vec(*)
 c
 c                      local declarations
 c
-      double precision
-     &  dsigma, depspls
-      logical local_debug
-      data local_debug / .false. /
+      integer :: i
+      double precision ::  dsigma, depspls
+      logical, parameter ::  local_debug = .false.
 c
       do i = 1, span
        dsigma        = sigma_curves(2,i) - sigma_curves(1,i)

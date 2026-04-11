@@ -97,6 +97,8 @@ c
      8 bott_nonlocal_vars, top_solid_matl,
      9 bott_solid_matl )
 c
+      use constants, only : zero, one, three, forty, half
+c      
       implicit none
 c
 c                   parameter declarations. arrays have sizes
@@ -104,10 +106,10 @@ c                   dimensioned to the maximum allowable elements
 c                   per block during execution (mxvl) typically
 c                   set to 128 or 256.
 c
-      integer step, iter, span, felem, gpn, iout, mxvl,
+      integer :: step, iter, span, felem, gpn, iout, mxvl,
      1        numthreads, now_thread, c_type
 c
-      double precision
+      double precision ::
      1 intfprps(mxvl,*), trac_n(mxvl,*), delrlds(mxvl,*),
      2 trac_n1(mxvl,*), reladis(mxvl,*),
      3 history(span,15), history1(span,15),
@@ -116,9 +118,9 @@ c
      6 top_surf_eps_n(mxvl,6), bott_surf_eps_n(mxvl,6),
      7 temp_ref(span), dtemp(span), temp_n(span),
      8 top_nonlocal_vars(mxvl,*), bott_nonlocal_vars(mxvl,*)
-      integer top_surf_elems(span), bott_surf_elems(span),
-     1        top_solid_matl(span), bott_solid_matl(span)
-      logical nonlocal
+      integer :: top_surf_elems(span), bott_surf_elems(span),
+     1           top_solid_matl(span), bott_solid_matl(span)
+      logical :: nonlocal
 c
 c                stress updating for cohesive material models.
 c                routine is called with data for a full block of
@@ -358,24 +360,20 @@ c ------------------------------------------------------------------
 c
 c                   locally defined
 c
-      integer i, history_length, info_vector(10)
-      double precision
-     & half, zero, one, three, e, tol, forty, initial,
+      integer  :: i, history_length, info_vector(10)
+      double precision :: 
+     & e, tol, initial,
      & ds1, ds2, dn, tn_n1, dn_n1, tshear,
      & intfmat(mxvl,3), ppr_support(mxvl,30),
      & top_surf_mean_stress, top_surf_mean_eps,
      & bott_surf_mean_stress, bott_surf_mean_eps, comp_multiplier
-       logical elem_killed(mxvl), local_debug
-       data zero, e, tol, one, three, forty, initial, half
-     &  / 0.0d0, 2.71828182845904523536d0, 0.1d0, 1.0d0, 3.0d0,
-     &    40.0d0, 1.d-14, 0.5d00 /
+       logical :: elem_killed(mxvl)
+       logical, parameter :: local_debug = .false.
+       data e, tol, initial
+     &  /  2.71828182845904523536d0, 0.1d0, 1.d-14 /
 c
 c ------------------------------------------------------------------
 c
-      local_debug = intfprps(1,29) .gt. zero
-      local_debug = .false.
-c      local_debug = .true.
-c 
       call mm04_set_sizes( info_vector ) 
       history_length = info_vector(1)  !  note this so we avoid bugs
 c                                         if history changes size
@@ -649,14 +647,16 @@ c
       subroutine mm04_cavit_driver
 c      
       use mod_mm04_cavity, only : props_for_cavit
+      use constants, only : one, third
 c      
       implicit none
 c
 c             variables declared here are local to this routine.
 c      
-      logical :: here_debug, debug_set_props
+      logical, parameter :: here_debug = .false., 
+     &                      debug_set_props = .false.
 c
-      double precision :: third, one, dword
+      double precision :: dword
       integer :: iword(2)
       equivalence (dword, iword)
 c 
@@ -665,17 +665,11 @@ c             automatic allocate/deallocate
 c
       type( props_for_cavit), dimension(:) :: bcp(mxvl)
 c
-      data one, third / 1.0d00, 0.33333333d00 /      
-c  
 c             see mm04_init for intfprps definition. fill the
 c             bcp data structure with material property values for
 c             each element of the block -- from user input
 c             or external data file.
 c
-      here_debug = felem .eq. 59 .and. gpn .eq. 4
-      here_debug = .false.
-      debug_set_props = .false.
-c      
       if( here_debug ) write(iout,9000)
 c      
       call mm04_cavit_set_props( intfprps, mxvl, span, felem, gpn,
@@ -786,7 +780,7 @@ c    *                                                              *
 c    *          subroutine mm04_cavit_set_props                     *
 c    *                                                              *
 c    *            written by : rhd   4/14/2016 rhd                  *
-c    *            updated: 4/20/2016 kbc                            *      
+c    *            updated: 4/8/2026 rhd                             *      
 c    *                                                              *
 c    *     set up properties for cavity cohesive option based on    *
 c    *     values defined in the user's input file (not an          *
@@ -798,6 +792,8 @@ c
      &                                 gpn, bcp, iout, here_debug )
 c     
       use mod_mm04_cavity, only : props_for_cavit
+      use constants, only : zero, one, pi, half, three, four, 
+     &                      onept5, two, oneeighty
 c      
       implicit none
 c
@@ -812,14 +808,8 @@ c
 c             locals
 c
       integer :: i
-      double precision ::
-     & pi, one_eighty, zero, one, three, four, x, half,
-     & onept5, user_input_n_power, two
+      double precision :: x,  user_input_n_power
 c      
-      data  zero, one,  pi, one_eighty, half, three, four, onept5, two
-     &     / 0.d00, 1.0d00, 3.141592653589793d00, 180.0d00, 0.5d00, 
-     &       3.0d00, 4.0d00, 1.5d00, 2.0d00 /
-c
 c             We have 2 cases for material properties for interface 
 c             elements in the block.
 c
@@ -863,7 +853,7 @@ c
           bcp(i)%b_0                    = intfprps(1,45) 
           x                             = intfprps(1,46)
           bcp(i)%psi_angle_degrees      = x
-          bcp(i)%psi_angle_radians      = x * pi / one_eighty
+          bcp(i)%psi_angle_radians      = x * pi / oneeighty
           x = bcp(i)%psi_angle_radians 
                                     ! makes next stm simpler to read
           bcp(i)%hpsi = ( one/(one+cos(x)) - half*cos(x) ) / sin(x)
@@ -948,6 +938,8 @@ c
       use mod_mm04_cavity, only : element_to_GB_map, gb_properties,
      &                            gb_ext_data_present,
      &                            props_for_cavit
+      use constants, only : one, pi, oneeighty, half, three, four, 
+     &                      onept5
 c      
       implicit none
 c
@@ -960,18 +952,11 @@ c
 c
 c             locals
 c
-
-      double precision ::
-     & pi, one_eighty, one, three, four, x, half,
-     & onept5
+      double precision :: x
       integer :: i, gb_no, abs_elem
-      logical :: here_debug, debug_this_elem
+      logical, parameter :: here_debug = .false. 
+      logical :: debug_this_elem
 c      
-      data  one,  pi, one_eighty, half, three, four, onept5
-     &     / 1.0d00, 3.141592653589793d00, 180.0d00, 0.5d00, 
-     &       3.0d00, 4.0d00, 1.5d00 /
-c
-      here_debug = .false.
       ok = .false.
       if( .not. gb_ext_data_present ) return
 c
@@ -1009,7 +994,7 @@ c
         bcp(i)%b_0     = gb_properties(gb_no)%b_0 
         x = gb_properties(gb_no)%psi_angle ! in degrees
         bcp(i)%psi_angle_degrees = x
-        bcp(i)%psi_angle_radians = x * pi / one_eighty
+        bcp(i)%psi_angle_radians = x * pi / oneeighty
         x = bcp(i)%psi_angle_radians ! makes next stm simpler to read
 c        
         bcp(i)%hpsi = ( one/(one+cos(x)) - half*cos(x) ) / sin(x)
@@ -1167,6 +1152,8 @@ c
      & history_len )
 c
       use mod_mm04_cavity, only : props_for_cavit
+      use constants, only : zero, one, three, third, two, half,
+     &                      four,six, onept5
 c      
       implicit none
 c
@@ -1189,9 +1176,7 @@ c
       integer :: i, abs_elem, iword(2), 
      &           new_state, current_state, ielem
       double precision ::
-     & dword, zero, three, one, toler, six, 
-     & half, four, two, third, onept5,
-     & sigma_e, sigma_m, term1,term3, triax,
+     & dword,  toler, sigma_e, sigma_m, term1,term3, triax,
      & v2_dot, pi, c_0, c_1, f_0, q,
      & d_strain, c_strain,
      & delta_c_dot, oldreldis, Tn_solid,
@@ -1216,11 +1201,9 @@ c
      &           include_cavity_growth, small_new_cavities,
      &           cavities_nucleated_t0    
 c
-      data zero, one, three, third, two, half, four,
-     &  six, onept5, toler, pi, max_ab_ratio, mark, LNR_toler, 
+      data toler, max_ab_ratio, mark, LNR_toler, 
      &  ab_sd_ratio, v_toler, min_c1
-     & / 0.0d0, 1.0d0, 3.0d0, 0.3333333333333333d0, 2.0d0, 0.5d0,
-     &   4.0d0, 6.0d0, 1.5d00, 1.0d-10, 3.14159265d0, 0.9999d00,
+     & /  1.0d-10, 0.9999d00,
      &   1.0d40, 1.0d-06, 0.5d0, 1.0d-20, 1.0d-10 /
 c
 c      
@@ -1504,8 +1487,7 @@ c
 c
 c             locals
 c
-      double precision ::
-     & work(6), rotate(3,3)
+      double precision :: work(6), rotate(3,3)
 c
       work(1:6) = half * ( sig_top(1:6) + sig_bott(1:6) )
 c      
@@ -1565,12 +1547,9 @@ c    ****************************************************************
 c
       subroutine mm04_cavit_std_update
       implicit none
-      double precision ::
-     & a_new_temp, T_new_nuc 
-      double precision, parameter ::
-     & local_tol_a_0 = 0.90d0
-      logical :: 
-     & add_linear_stiffness
+      double precision :: a_new_temp, T_new_nuc 
+      double precision, parameter :: local_tol_a_0 = 0.90d0
+      logical :: add_linear_stiffness
 c
        add_linear_stiffness = .true.
 c
@@ -1867,10 +1846,9 @@ c     input params
 c                         = 1 if H (v_dot_H)
 c
 c     local parameters
-      double precision ::
-     & f_bar_i, f_bar_j, q_i,dq_i, q_j, dq_j,
-     & del, N1, M1, N2, M2,
-     & q_min
+c
+      double precision :: f_bar_i, f_bar_j, q_i,dq_i, q_j, dq_j,
+     &                    del, N1, M1, N2, M2, q_min
 c
 c              these are values Kristine developed in April 2016
 c              to accelerate failure from cavity growth at
@@ -2042,7 +2020,10 @@ c    ****************************************************************
 c
 c
       double precision function mm04_cavit_mises( sig )
-       implicit none
+c
+      use constants, only : six, root_half
+c             
+      implicit none
 c
 c             parameters
 c
@@ -2050,16 +2031,14 @@ c
 c
 c             locals
 c
-      double precision ::
-     & t1, t2, t3, t4, t5, roothalf, six
-      data roothalf, six / 0.70710678119d0, 6.0d00 /
+      double precision :: t1, t2, t3, t4, t5
 c
       t1 = sig(1) - sig(2)
       t2 = sig(3) - sig(2)
       t3 = sig(3) - sig(1)
       t4 = t1*t1 + t2*t2 + t3*t3
       t5 = sig(4)*sig(4) + sig(5)*sig(5) + sig(6)*sig(6)
-      mm04_cavit_mises = roothalf * sqrt( t4 + six*t5 )
+      mm04_cavit_mises = root_half * sqrt( t4 + six*t5 )
 c
       return
       end
@@ -2156,6 +2135,9 @@ c
      &                      props, iprops,
      &                      cohes_type, intfprps, matprp,
      &                      global_to_element_rot )
+c
+      use constants, only : zero, one
+     
       implicit none
 c
       include 'param_def'
@@ -2167,20 +2149,18 @@ c          mxvl typically 128 or 256
 c          mxelpr typically 200
 c
 c
-      integer iout, span, first_elem_in_blk, cohes_type
-      real props(mxelpr,*)      ! note it is single precision !!!
-      integer iprops(mxelpr,*)  ! same space as props
-      real matprp(*)            ! note it is single precision !!!
-      double precision
-     &    intfprps(mxvl,*), global_to_element_rot(mxvl,3,3)
+      integer :: iout, span, first_elem_in_blk, cohes_type
+      real ::props(mxelpr,*)       ! note it is single precision !!!
+      integer :: iprops(mxelpr,*)  ! same space as props
+      real :: matprp(*)            ! note it is single precision !!!
+      double precision:: intfprps(mxvl,*), 
+     &                   global_to_element_rot(mxvl,3,3)
 c
 c                     locals
 c
-      integer i, j, iand, cavit_loc, start_col, nvalues
-      logical is_ppr, local_debug, is_cavit, bad
-      double precision
-     &    zero, one, value
-      data zero, one / 0.0d00, 1.0d00 /
+      integer :: i, j, iand, cavit_loc, start_col, nvalues
+      logical :: is_ppr, local_debug, is_cavit, bad
+      double precision :: value
 c
 c
 c             original cohesive material options had their
@@ -2329,26 +2309,28 @@ c
       subroutine mm04_exp1_secant( span, intfprps, dis,
      &                             history, history1, cohmat,
      &                             elem_killed, mxvl )
+c
+      use constants, only : zero, one      
       implicit integer (a-z)
 c
 c                   parameter declarations
 c
-      double precision
+      double precision ::
      & intfprps(mxvl,*), cohmat(mxvl,3), dis(mxvl,*),
      & history(span,*), history1(span,*)
        logical elem_killed(*)
 c
 c                   locally defined
 c
-      double precision
-     & zero, tol, dtol, d_eff_at_peak, beta, dt1, dt2, dn, b2,
+      double precision ::
+     & tol, dtol, d_eff_at_peak, beta, dt1, dt2, dn, b2,
      & effdis(mxvl), efftrac(mxvl), e, maxeffdis(mxvl),
      & prior_max_d_eff, d_eff_at_n, peak_intf_stress, comp_multiplier
-       logical compression(mxvl), small_effdis(mxvl), loading(mxvl),
-     &         local_debug
+      logical :: compression(mxvl), small_effdis(mxvl), 
+     &           loading(mxvl)
+      logical, parameter :: local_debug = .false.
 c
-       data zero, e, one, dtol
-     & / 0.0d0, 2.71828182845904523536d0, 1.0d0, 0.000001d0 /
+       data e, dtol / 2.71828182845904523536d0,  0.000001d0 /
 c
 c         explanation of logical variables
 c
@@ -2381,8 +2363,6 @@ c                   1 - effective jump displacement
 c                   2 - prior maximum effective displacement
 c
 c         see also file cnst4.f
-c
-      local_debug = .false.
 c
       do i = 1, span
         if( elem_killed(i) ) cycle
@@ -2682,17 +2662,17 @@ c   ppr_support( ,20) - compression multiplier
 c
       subroutine mm04_init_ppr( span, intfprps, ppr_support,
      &                          elem_killed, iout, mxvl )
-      implicit none
-      double precision
-     &      intfprps(mxvl,*), ppr_support(mxvl,*)
-      logical elem_killed(*)
-      integer :: i, span, mxvl, iout
 c
-      double precision
-     &      Gn, Gt, Tn_m, Tt_m, alph, beta, ln, lt, m, n, dn, dt,
-     &      dnb, dtb, Gam_n, Gam_t, dGnt, dGtn, zero, one,
-     &      comp_multiplier
-      data zero, one / 0.0d00, 1.0d00 /
+      use constants, only : zero, one
+c      
+      implicit none
+      integer :: i, span, mxvl, iout
+      double precision :: intfprps(mxvl,*), ppr_support(mxvl,*)
+      logical :: elem_killed(span)
+c
+      double precision :: Gn, Gt, Tn_m, Tt_m, alph, beta, ln, lt, m, 
+     &                    n, dn, dt, dnb, dtb, Gam_n, Gam_t, dGnt, 
+     &                    dGtn, comp_multiplier
 c
 c             The user defined material properties are:
 c                  Gn             = intfprps(,23)
@@ -2708,7 +2688,6 @@ c
       Gam_n = zero; Gam_t = zero
 c
       do i = 1, span
-c
       if ( elem_killed(i) ) cycle
       Gn   = intfprps(i,23)
       Gt   = intfprps(i,24)
@@ -2996,12 +2975,13 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm04_states_values( itype, elem_states_output,
-     &                                 nrow_states, num_states  )
+     &                               nrow_states, num_states  )
 c
 c                       access some global data structures
 c
       use elem_block_data, only: history_blocks, history_blk_list
       use main_data, only: elems_to_blocks, cohesive_ele_types
+      use constants, only : zero
 c      
       use global_data ! old common.main
       implicit none
@@ -3013,14 +2993,13 @@ c
 c
 c                       locals
 c
-      double precision, 
-     & allocatable :: history_dump(:,:,:), one_elem_states(:)
+      double precision, allocatable :: history_dump(:,:,:), 
+     &                                 one_elem_states(:)
       integer :: relem, elnum, hist_size, blockno, cohesive_elem,
      &           cohesive_type
       integer :: elem_type, felem, mat_type, int_points, span
-      logical :: do_a_block, local_debug
-      double precision :: zero
-      data zero / 0.0d00 /
+      logical :: do_a_block
+      logical, parameter :: local_debug = .false.
 c      
 c           build cohesive states values output.
 c
@@ -3040,7 +3019,6 @@ c
          blockno = elems_to_blocks(elnum,1)
       end if          
 c
-      local_debug = .false.
       felem       = elblks(1,blockno)
       elem_type   = iprops(1,felem)
       mat_type    = iprops(25,felem)
@@ -3114,10 +3092,10 @@ c
 c                       locals
 c
       integer :: ipt   
-      double precision :: 
-     & N_ratio, a_ratio, b_ratio, V_ratio, lambda_4, a_b_ratio,
-     & a_bar, b_bar, a_L_ratio, T_n, T_nmax, T_shear, T_shr_max,
-     & vdot_ratio
+      double precision :: N_ratio, a_ratio, b_ratio, V_ratio, 
+     &                    lambda_4, a_b_ratio, a_bar, b_bar, 
+     &                    a_L_ratio, T_n, T_nmax, T_shear, 
+     &                    T_shr_max, vdot_ratio
 c
       N_ratio   = zero
       a_ratio   = zero
@@ -3248,13 +3226,11 @@ c
       subroutine mm04_tn_solid( rotate, gsig, tn_solid )
       implicit none
 c
-      double precision :: 
-     & rotate(3,3), gsig(6), tn_solid
+      double precision :: rotate(3,3), gsig(6), tn_solid
 c
 c                       locals
 c
-      double precision :: 
-     & nx, ny, nz, tx, ty, tz   
+      double precision :: nx, ny, nz, tx, ty, tz   
 c
 c      global(1,1) = gsig(1)   !  comments for reference to ordering
 c      global(2,1) = gsig(4) ! xy
@@ -3306,17 +3282,18 @@ c
      &   top_nonlocal_vars, bott_nonlocal_vars, top_solid_matl,
      &   bott_solid_matl )
 c
+      use constants, only : zero, three, one
+c     
       implicit none
 c
 c                   parameter declarations
 c
-      integer step, iter, felem, gpn, iout, span, mxvl, numthreads,
-     a        now_thread, c_type, top_surf_elems(span),
-     b        bott_surf_elems(span), top_solid_matl(span),
-     c        bott_solid_matl(span)
+      integer :: step, iter, felem, gpn, iout, span, mxvl, numthreads,
+     a           now_thread, c_type, top_surf_elems(span),
+     b           bott_surf_elems(span), top_solid_matl(span),
+     c           bott_solid_matl(span)
 c
-      double precision
-     a reladis(mxvl,*), history(span,*),
+      double precision :: reladis(mxvl,*), history(span,*),
      b history1(span,*), cep(mxvl,6,6),
      c intfprps(mxvl,*), time_n, dtime,
      d temp_ref(*), dtemp(*), temp_n(*),
@@ -3324,7 +3301,7 @@ c
      f top_surf_eps(mxvl,6), bott_surf_eps(mxvl,6),
      g top_nonlocal_vars(mxvl,*), bott_nonlocal_vars(mxvl,*)
 c
-      logical nonlocal
+      logical :: nonlocal
 c
 c
 c                [D] updating for cohesive material models.
@@ -3493,20 +3470,19 @@ c ------------------------------------------------------------------
 c
 c                   locally defined
 c
-      integer i, info_vector(20), history_length
-      double precision
-     & zero, e, tol, three, initial,
-     & intfmat(mxvl,3,3), ppr_support(mxvl,20), one,
+ 
+      integer :: i, info_vector(20), history_length
+      double precision :: tol, initial, e, 
+     & intfmat(mxvl,3,3), ppr_support(mxvl,20), 
      & top_surf_mean_stress, top_surf_mean_eps,
      & bott_surf_mean_stress, bott_surf_mean_eps,
      & dn, comp_multiplier
 c
-      logical elem_killed(mxvl), local_debug, debug_ppr,
-     &        debug_exp1
+      logical :: elem_killed(mxvl), local_debug, debug_ppr,
+     &           debug_exp1
 c
-      data zero, e, tol, one, three, initial
-     &  / 0.0d0, 2.71828182845904523536d0, 0.1d0, 1.0d0, 3.0d0,
-     &  1.d-14 /
+      data e, tol, initial /  2.71828182845904523536d0, 0.1d0, 
+     &                        1.d-14 /
 c
 c
       local_debug = intfprps(1,29) .gt. zero
@@ -3736,27 +3712,28 @@ c
       subroutine cnst4_exp1_tan( span, mxvl, felem, elem_killed,
      &                           intfprps, dis, history,
      &                           tanmat, local_debug, iout )
-      implicit integer (a-z)
+c
+      use constants, only : zero, one    
+c
+      implicit integer (a-z)       
 c
 c                   parameter declarations
 c
-      double precision
-     & intfprps(mxvl,*), tanmat(mxvl,3,3), dis(mxvl,*),
-     & history(span,*)
-       logical local_debug, elem_killed(*)
+      double precision :: intfprps(mxvl,*), tanmat(mxvl,3,3), 
+     &                    dis(mxvl,*), history(span,*)
+      logical :: local_debug, elem_killed(*)
 c
 c                   locally defined
 c
-      double precision
-     & zero, tol, dtol, one, t11, t12, t13, t21, t22, t23, t31, t32,
+      double precision :: 
+     & tol, dtol, t11, t12, t13, t21, t22, t23, t31, t32,
      & t33, effdis(mxvl), efftrac, e, maxeffdis(mxvl),
      & dtd1, dtd2, dtd3, b2, b4, eff3,
      & dn, dt1, dt2, beta, prior_max_d_eff, d_eff_at_n,
      & d_eff_at_peak, peak_intf_stress, comp_multiplier
-       logical compression(mxvl), small_effdis(mxvl), loading(mxvl)
+      logical :: compression(mxvl), small_effdis(mxvl), loading(mxvl)
 c
-       data zero, one, e, dtol
-     & / 0.0d0, 1.0d0, 2.71828182845904523536d0, 0.000001d0  /
+      data e, dtol / 2.71828182845904523536d0, 0.000001d0 /
 c
       tanmat = zero !  entire array
 c
@@ -3927,9 +3904,12 @@ c
       subroutine cnst4_ppr( span, ppr_support, del, history,
      &                      tanmat, elem_killed,
      &                      local_debug, felem, iout, mxvl )
+c
+      use constants, only : zero, one, two, half
+c            
       implicit none
       integer :: i, span, mxvl, felem, iout
-      double precision
+      double precision ::
      &        ppr_support(mxvl,*), del(mxvl,*), tanmat(mxvl,3,3),
      &        history(span,*)
       logical elem_killed(*), local_debug
@@ -3938,10 +3918,9 @@ c
      &        Gam_n, Gam_t, Tn_m, Tt_m, dn, dt, alph, beta, m, n,
      &        dGtn, dGnt, dnb, dtb, comp_multiplier,
      &        deln, delt, deln_max, delt_max, Dnn, Dnt, Dtn, Dtt, Tt,
-     &        zero, tol, t(3,3), half, one, two, dtol
+     &        tol, t(3,3), dtol
       logical :: compression
-      data zero, tol, one, two, half
-     & / 0.0d00, 0.00001d00, 1.0d00, 2.0d00, 0.5d00 /
+      data tol/ 0.00001d00 /
 c
       do i = 1, span
         if( .not. elem_killed(i) ) cycle
@@ -4165,21 +4144,21 @@ c
       subroutine lcnst4(
      &   step, cohes_type, span, mxvl, nstr, gpn, felem, iout, time_n,
      &   dtime, cep, intfprps )
+c
+      use constants, only : zero, one
       implicit none
 c
-      integer step, cohes_type, span, mxvl, nstr, gpn, felem, iout
+      integer :: step, cohes_type, span, mxvl, nstr, gpn, felem, iout
 c
-      double precision
-     & cep(mxvl,6,6), intfprps(mxvl,*), time_n, dtime
+      double precision :: cep(mxvl,6,6), intfprps(mxvl,*), 
+     &                    time_n, dtime
 c
 c                   locally defined. some are automatic arrays
 c
       integer :: i
-      double precision ::
-     & zero, e, one, ppr_support(mxvl,20)
+      double precision :: e, ppr_support(mxvl,20)
       logical :: elem_killed(mxvl), local_debug
-c
-      data zero, e, one / 0.0d0, 2.7182818284d0, 1.0d0 /
+      data e/ 2.7182818284d0 /
 c
 c
 c (input)     step:  global solution is advancing analysis from
@@ -4376,6 +4355,7 @@ c    *                                                              *
 c    *               subroutine lcnst4_ppr                          *
 c    *                                                              *
 c    *            written by : Kyoungsoo Park                       *
+c    *            updated:   4/8/26 rhd                             *
 c    *                                                              *
 c    *     computes the linear [D]                                  *
 c    *     for a  block of similar non conflicting cohesive         *
@@ -4388,27 +4368,26 @@ c    ****************************************************************
 c
       subroutine lcnst4_ppr( span, cep, intfprps, ppr_support,
      &                       elem_killed, iout, mxvl )
+c   
+      use constants, only : zero, one, two
+c      
       implicit none
 c
       integer :: i, span, mxvl, iout
-      double precision ::
-     &         cep(mxvl,6,6), intfprps(mxvl,*),
-     &         ppr_support(mxvl,20)
-      logical :: elem_killed(*)
+      double precision :: cep(mxvl,6,6), intfprps(mxvl,*),
+     &                    ppr_support(mxvl,20)
+      logical :: elem_killed(span)
 c
-      double precision ::
-     &  Dnn, Dtt, Gam_n, Gam_t, dn, dt, m, n, alph, beta, dGtn, dGnt,
-     &  zero, one, two
-      data zero,one,two / 0.0d00, 1.0d00, 2.0d00 /
+      double precision :: Dnn, Dtt, Gam_n, Gam_t, dn, dt, m, 
+     &                    n, alph, beta, dGtn, dGnt
 c
       call mm04_init_ppr( span, intfprps, ppr_support,
      &                    elem_killed, iout, mxvl )
 c
-c            the shear-sliding response is set to be isotropic
-c            (1,1) = (2,2). cep zeroed by caller. note that the linear
-c            [D] is diagonal.
-c
+      cep = zero
+c      
       do i = 1, span
+        if( elem_killed(i) ) cycle
         alph  = ppr_support(i,6)
         beta  = ppr_support(i,7)
         m     = ppr_support(i,10)
@@ -4436,7 +4415,7 @@ c    *                                                              *
 c    *               subroutine lcnst4_cavit                        *
 c    *                                                              *
 c    *                    written by rhd                            *
-c    *                    last modified: 4/15/2016 rhd              *
+c    *                    last modified: 4/8/2026 rhd               *
 c    *                                                              *
 c    *     computes the linear [D] (diagonal)                       *
 c    *     for a  block of interface-cohesive                       *
@@ -4446,40 +4425,35 @@ c    *     Ref. JMPS. 1998, Vol. 47, pp 99-139                      *
 c    *                                                              *
 c    ****************************************************************
 c
-
       subroutine lcnst4_cavit( span, cep, dtime, intfprps, 
      &                         iout, mxvl, gpn, felem )
 c     
       use mod_mm04_cavity, only : props_for_cavit
+      use constants, only : one, three, half, four, zero
 c      
       implicit none
 c
 c             parameters
 c
       integer :: span, mxvl, iout, gpn, felem
-      double precision ::
-     & cep(mxvl,6,6), dtime, intfprps(mxvl,*)
+      double precision :: cep(mxvl,6,6), dtime, intfprps(mxvl,*)
 c     
 c             locals
 c
       integer :: i, abs_elem
-      logical :: here_debug, debug_set_props
-      double precision ::
-     & three, one, half, four, zero, stiff_shear, stiff_normal, f_0, q,
-     & c_1_init, min_c1         
+      logical, parameter :: here_debug = .false., 
+     &                      debug_set_props = .false.
+      double precision :: stiff_shear, stiff_normal, f_0, q,
+     &                    c_1_init, min_c1         
 c
       type( props_for_cavit), dimension(:) :: bcp(mxvl)
 c
-      data one, three, half, four, zero, min_c1 
-     &    / 1.0d0, 3.0d0, 0.5d0, 4.0d0, 0.0d0, 1.0d-10/  
+      data min_c1 / 1.0d-10/  
 c
 c            get properties for the cavity cohesive material.
 c            use derivatives evaluated for zero stress and zero
 c            rates but with \Delta_t at t=0 known.
 c
-      here_debug = gpn .eq. 4
-      here_debug = .false.
-      debug_set_props = .false.
       call mm04_cavit_set_props( intfprps, mxvl, span, felem, gpn,
      &                           bcp, iout, debug_set_props )
 c  

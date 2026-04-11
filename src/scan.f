@@ -308,7 +308,7 @@ c
   100 continue                                                                  
       f = tenth                                                                 
       dvalue = flt                                                              
-      value = sngl( flt  )                                                              
+      value = sngl( dvalue )                                                              
       isig = 1                                                                  
       int = 0                                                                   
       flt = zero                                                                
@@ -1318,12 +1318,12 @@ c
       real :: dummy
       integer :: modstr                                                                       
       data modstr/7/                                                            
-c                                                                               
-      if(.not.next)go to 10                                                     
+c                 
+      if(.not.next) go to 10                                                     
       call scan                                                                 
       next = .false.                                                            
    10 string = .false.                                                          
-      if(mode.ne.modstr)go to 20                                                
+      if(mode.ne.modstr) go to 20                                                
       string = .true.                                                           
       next = .true.                                                             
    20 return                                                                    

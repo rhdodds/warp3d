@@ -553,6 +553,7 @@ c
      &   fifteen = 15.0d0,  
      &   sixteen = 16.d0,
      &   twentyseven = 27.0d0,
+     &   forty   = 40.0d0, 
      &   ninety  = 90.d0,
      &   ninety_nine = 99.d0,
      &   hundred = 100.d0,

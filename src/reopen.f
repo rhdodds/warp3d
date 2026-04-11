@@ -4,14 +4,14 @@ c     *                      subroutine reopen                       *
 c     *                                                              *
 c     *                      written by : bh                         *
 c     *                                                              *
-c     *                   last modified : 3/7/2026 rhd               *
+c     *                   last modified : 4/8/26 rhd                 *
 c     *                                                              *
 c     *          read restart file. get solution start up            *
 c     *                                                              *
 c     ****************************************************************
 c
-c
       subroutine reopen( resnam, resfil, sbflg1, sbflg2 )
+c
       use global_data
       use main_data
       use elem_block_data, only : nonlocal_flags, nonlocal_data_n,
@@ -43,7 +43,7 @@ c
 c
 c               locals
 c
-      integer :: dum, last, prec_fact, node, i, node_count, eload_size,
+      integer :: dum, last, node, i, node_count, eload_size,
      &           num_patterns, err, dumi, mpc, ntrm, fileno,
      &           how_defined, itab, num_rows, num_cols, ilist,
      &           ulen, nsize, local_length, isize
@@ -65,8 +65,8 @@ c                               if resfil set, resolve name.
 c                               if neither are set, error.
 c
       fileno = 11
-      if ( scanms( resfil, 'namenone', 8 ) ) then
-         if ( scanms( resnam, 'itsblank', 8 ) ) then
+      if( scanms( resfil, 'namenone', 8 ) ) then
+         if( scanms( resnam, 'itsblank', 8 ) ) then
             call errmsg( 148, dum, 'no name', dumr, dumd )
             go to 9999
          else
@@ -76,14 +76,14 @@ c
          end if
       else
          call tilde( resfil, dbname, nameok )
-         if (.not.nameok) then
+         if(.not.nameok) then
             call errmsg( 192, dum, dums, dumr, dumd )
             go to 9999
          end if
       end if
 c
 c                      find out if file exists.  if not, error.
-c                               if so, open it.
+c                      if so, open it.
 c
       inquire( file=dbname, exist=flexst )
       if( .not. flexst ) then
@@ -91,17 +91,8 @@ c
          go to 9999
       end if
 c
-c                       old code commented out.
-c                       trying to avoid using Intel's proprietary
-c                       segmented record type
-c#ifdef __INTEL_COMPILER
-c      open( fileno, file=dbname, status='old', access='sequential',
-c     &     form='unformatted', recordtype='segmented' )
-c#endif
-c#ifdef __GFORTRAN
       open( fileno, file=dbname, status='old', access='sequential',
      &     form='unformatted' )
-c#endif
 c
 c                       rewind the data base to insure positioning
 c                       before the first record.
@@ -116,12 +107,9 @@ c
 c
 c                       read error flags
 c
-c
       read(fileno) numnod,numel,fatal,coor,elprop,elinc,constr,block
 c
-c
-c                       read in integer (scalar) variables
-c
+c                        read in integer (scalar) variables
 c
       read(fileno) mathed, noelem, nonode, nodof, csthed, inctop,
      &              crdtop, nummat, numcol, histep,
@@ -141,10 +129,8 @@ c
       call chk_data_key( fileno, 1, 0 )
       call mem_allocate( 4 ) ! vectors based on # nodes
 c
-c
 c                       read in logical and character (scalar)
 c                       variables.
-c
 c
       read(fileno) halt,
      &              linmas,ifvcmp,zrocon,growth_k_flag,
@@ -193,9 +179,8 @@ c
      &              Kr_target_diff, Kr_min_limit 
       call chk_data_key( fileno, 1, 2 )
 c
-c
 c                       read in real variables -- also initialize the
-c                          time limit procedures
+c                       time limit procedures
 c
       read (fileno) time_limit
       call steptime(dum,1)
@@ -205,41 +190,41 @@ c
 c                       read in integer arrays.
 c
       call mem_allocate( 3 )
-      call rd2d( fileno, outmap,mxlbel,nlibel,mxelmp )
-      call rdbk( fileno, matlst, mxmat )
+      call rd2d_i4( fileno, outmap,mxlbel,nlibel,mxelmp )
+      call rdbk_i4( fileno, matlst, mxmat )
       call init_maps( fileno, 2 )
-      call rdbk( fileno, stprng, mxlc*2 )
+      call rdbk_i4( fileno, stprng, mxlc*2 )
       call mem_allocate( 9 )
-      call rdbk( fileno, incmap, noelem )
+      call rdbk_i4( fileno, incmap, noelem )
       call mem_allocate( 14 )
-      call rdbk( fileno, crdmap, nonode )
-      call rdbk( fileno, dstmap, nonode )
-      call rdbk( fileno, cstmap, nodof )
-      call rdbk( fileno, incid, inctop )
-      call rdbk( fileno, lodlst, mxlc )
+      call rdbk_i4( fileno, crdmap, nonode )
+      call rdbk_i4( fileno, dstmap, nonode )
+      call rdbk_i4( fileno, cstmap, nodof )
+      call rdbk_i4( fileno, incid, inctop )
+      call rdbk_i4( fileno, lodlst, mxlc )
       call chk_data_key( fileno, 2, 0 )
       call init_maps( fileno, 4 )
       call init_maps( fileno, 5 )
       call init_maps( fileno, 6 )
       call init_maps( fileno, 7 )
       call mem_allocate( 17 )
-      call rd2d( fileno, elblks(0,1) , 4, 4, mxnmbl )
-      call rdbk( fileno, cp, mxedof )
-      call rdbk( fileno, dcp, mxedof )
-      call rd2d( fileno, icp, mxutsz, mxutsz, 2 )
-      call rdbk( fileno, num_seg_points, max_seg_curves )
-      call rdbk( fileno, seg_curves_type, max_seg_curves )
-      call rdbk( fileno, seg_curve_table, (max_seg_curves+1)*
-     &           max_seg_curve_sets )
-      call rd2d( fileno, imatprp, mxmtpr, mxmtpr, mxmat )
+      call rd2d_i4( fileno, elblks(0,1) , 4, 4, mxnmbl )
+      call rdbk_i4( fileno, cp, mxedof )
+      call rdbk_i4( fileno, dcp, mxedof )
+      call rd2d_i4( fileno, icp, mxutsz, mxutsz, 2 )
+      call rdbk_i4( fileno, num_seg_points, max_seg_curves )
+      call rdbk_i4( fileno, seg_curves_type, max_seg_curves )
+      call rdbk_i4( fileno, seg_curve_table, (max_seg_curves+1)*
+     &              max_seg_curve_sets )
+      call rd2d_i4( fileno, imatprp, mxmtpr, mxmtpr, mxmat )
       call chk_data_key( fileno, 2, 1 )
       write(out,9010)
 c
 c                       read logical and character arrays.
 c
       read(fileno) convrg, trace                  ! short logical vecs
-      call rdbk( fileno, trn, nonode )            ! logical vec
-      call rdbk( fileno, stpchk, max_step_limit ) ! logical vec
+      call rdbk_l4( fileno, trn, nonode )            ! logical vec
+      call rdbk_l4( fileno, stpchk, max_step_limit ) ! logical vec
       call init_maps( fileno, 3 )
 c
       read(fileno) seg_curves_pchip(1:max_seg_curves ) ! logical vec   
@@ -251,51 +236,48 @@ c
 c
 c                       read real arrays.
 c
-      call mem_allocate( 11 )
-      call rd2d( fileno, props, mxelpr, mxelpr, noelem )
-      call rd2d( fileno, matprp, mxmtpr, mxmtpr, mxmat )
-      call rdbk( fileno, user_cnstrn_stp_factors, max_step_limit )
-      call rdbk( fileno, actual_cnstrn_stp_factors, max_step_limit )
+      call mem_allocate( 11 )     
+      call rd2d_r4( fileno, props, mxelpr, mxelpr, noelem )
+      call rd2d_r4( fileno, matprp, mxmtpr, mxmtpr, mxmat )
+      call rdbk_r4( fileno, user_cnstrn_stp_factors, max_step_limit )
+      call rdbk_r4( fileno, actual_cnstrn_stp_factors, max_step_limit )
       call chk_data_key( fileno, 3, 0 )
-      if ( fgm_node_values_defined ) then
+      if( fgm_node_values_defined ) then
         call mem_allocate( 20 )
-        call rd2d( fileno, fgm_node_values, nonode, nonode,
-     &             fgm_node_values_cols )
+        call rd2d_r4( fileno, fgm_node_values, nonode, nonode,
+     &               fgm_node_values_cols )
       end if
       call chk_data_key( fileno, 3, 1 )
       write(out,9030)
 c
 c                       read double precision vectors
 c
-c
-      prec_fact = 2
-      call rdbk( fileno, u, prec_fact*nodof )
-      call rdbk( fileno, c, prec_fact*nodof )
-      call rdbk( fileno, ifv, prec_fact*nodof )
-      call rdbk( fileno, load, prec_fact*nodof )
+      call rdbk_r8( fileno, u, nodof )
+      call rdbk_r8( fileno, c, nodof )
+      call rdbk_r8( fileno, ifv, nodof )
+      call rdbk_r8( fileno, load, nodof )
       call mem_allocate( 16 )
-      call rdbk( fileno, dload, prec_fact*nodof )
-      call rdbk( fileno, rload, prec_fact*nodof )
-      call rdbk( fileno, rload_nm1, prec_fact*nodof )
+      call rdbk_r8( fileno, dload, nodof )
+      call rdbk_r8( fileno, rload, nodof )
+      call rdbk_r8( fileno, rload_nm1, nodof )
       read(fileno) exist_flag ! for total_user_nodal_forces
       if( exist_flag ) then
         allocate( total_user_nodal_forces(nodof) )
-        call rdbk( fileno, total_user_nodal_forces, prec_fact*nodof )
+        call rdbk_r8( fileno, total_user_nodal_forces, nodof )
       end if
-      call rd2d( fileno, load_pattern_factors, mxlc*prec_fact,
-     &           numlod*prec_fact, 2 )
+      call rd2d_r8( fileno, load_pattern_factors, mxlc, numlod, 2 )
       call mem_allocate( 15 )
-      call rdbk( fileno, cnstrn_in, prec_fact*nodof )
+      call rdbk_r8( fileno, cnstrn_in, nodof )
       call chk_data_key( fileno, 4, 0 )
-      call rdbk( fileno, v, prec_fact*nodof )
-      call rdbk( fileno, a, prec_fact*nodof )
-      call rdbk( fileno, du, prec_fact*nodof )
+      call rdbk_r8( fileno, v, nodof )
+      call rdbk_r8( fileno, a, nodof )
+      call rdbk_r8( fileno, du, nodof )
       call mem_allocate( 1 )
-      call rdbk( fileno, temper_nodes, prec_fact*nonode )
-      call rdbk( fileno, temper_nodes_ref, prec_fact*nonode )
+      call rdbk_r8( fileno, temper_nodes, nonode )
+      call rdbk_r8( fileno, temper_nodes_ref, nonode )
       call mem_allocate( 2 )
-      call rdbk( fileno, temper_elems, prec_fact*noelem )
-      call rd2d( fileno, dmatprp, 2*mxmtpr, 2*mxmtpr, mxmat )
+      call rdbk_r8( fileno, temper_elems, noelem )
+      call rd2d_r8( fileno, dmatprp, mxmtpr, mxmtpr, mxmat )
       read(fileno) J_cutoff_Je_step_1(1:max_front_nodes)
       call chk_data_key( fileno, 4, 1 )
       write(out,9040)
@@ -326,34 +308,25 @@ c                          coordinate transformation matrices for
 c                          node coordinate systems for constraints
 c
       do node = 1, nonode
-         if (trn(node)) call allo_trnmat(node, 3, fileno)
+         if(trn(node)) call allo_trnmat(node, 3, fileno)
       end do
       call chk_data_key( fileno, 5, 5 )
 c
-      call rdbk( fileno, tol, prec_fact*mxcvtests )
+      call rdbk_r8( fileno, tol, mxcvtests )
       call mem_allocate( 12 )
-      call rdbk( fileno, mdiag, prec_fact*nodof )
+      call rdbk_r8( fileno, mdiag, nodof )
 c
-      call rd3d( fileno, seg_curves, prec_fact*max_seg_points,2,
-     &             prec_fact*max_current_pts, 2, max_current_curves )
-      call rdbk( fileno, seg_curves_min_stress,
-     &           prec_fact*max_current_curves )
-      call rdbk( fileno, seg_curves_value,
-     &           prec_fact*max_current_curves )
-      call rdbk( fileno, seg_curves_ym,
-     &           prec_fact*max_current_curves )
-      call rdbk( fileno, seg_curves_nu,
-     &           prec_fact*max_current_curves )
-      call rdbk( fileno, seg_curves_alpha,
-     &           prec_fact*max_current_curves )
-      call rdbk( fileno, seg_curves_gp_sigma_0,
-     &            prec_fact*max_current_curves )
-      call rdbk( fileno, seg_curves_gp_h_u,
-     &            prec_fact*max_current_curves )
-      call rdbk( fileno, seg_curves_gp_beta_u,
-     &            prec_fact*max_current_curves )
-      call rdbk( fileno, seg_curves_gp_delta_u,
-     &            prec_fact*max_current_curves )
+      call rd3d_r8( fileno, seg_curves, max_seg_points, 2,
+     &              max_current_pts, 2, max_current_curves )
+      call rdbk_r8( fileno, seg_curves_min_stress, max_current_curves )
+      call rdbk_r8( fileno, seg_curves_value, max_current_curves )
+      call rdbk_r8( fileno, seg_curves_ym, max_current_curves )
+      call rdbk_r8( fileno, seg_curves_nu, max_current_curves )
+      call rdbk_r8( fileno, seg_curves_alpha, max_current_curves )
+      call rdbk_r8( fileno, seg_curves_gp_sigma_0, max_current_curves )
+      call rdbk_r8( fileno, seg_curves_gp_h_u, max_current_curves )
+      call rdbk_r8( fileno, seg_curves_gp_beta_u, max_current_curves )
+      call rdbk_r8( fileno, seg_curves_gp_delta_u, max_current_curves )
       read(fileno) seg_curves_pchip_slopes! max_seg_pts x max_seg_curves
       call chk_data_key( fileno, 5, 6 )
       write(out,9100)
@@ -363,16 +336,16 @@ c                       two data structures and some scalars.
 c
       call mem_allocate( 5 )
       read(fileno) read_nod_load
-      if ( read_nod_load ) then
+      if( read_nod_load ) then
         do i = 1, mxlc
          read(fileno) node_count, how_defined
          read(fileno) string
          node_load_defs(i)%node_count = node_count
          node_load_defs(i)%how_defined = how_defined
          node_load_defs(i)%user_file_name = string
-         if ( node_count .gt. 0 ) then
+         if( node_count .gt. 0 ) then
           allocate(node_load_defs(i)%nodal_loads(1:node_count,1:2) )
-          call rdbk( fileno, node_load_defs(i)%nodal_loads(1,1),
+          call rdbk_i4( fileno, node_load_defs(i)%nodal_loads,
      &               2*node_count )
          end if
         end do
@@ -381,11 +354,11 @@ c
 c
       read(fileno) num_loddat_blks, next_loddat_col
       do i = 1, num_loddat_blks
-        if ( i .gt. 1 ) then
+        if( i .gt. 1 ) then
          allocate(
      &       loddat_blocks(i)%block(1:mxndldcm,1:sizeof_loddat_blks) )
         end if
-        call rdbk( fileno, loddat_blocks(i)%block(1,1),
+        call rdbk_r4( fileno, loddat_blocks(i)%block,
      &             mxndldcm*sizeof_loddat_blks )
       end do
       call chk_data_key( fileno, 6, 1 )
@@ -395,14 +368,14 @@ c
       do i = 1, mxlc
          read(fileno) eload_size
          call do_perm_allo( 1, i, eload_size, .false. )
-         if ( eload_size .gt.0 ) then
-            call rd2d( fileno, elem_loads(i)%data(1,1),
-     &           eload_size, eload_size, 3 )
-            call rdbk( fileno, elem_loads(i)%vals(1), eload_size )
-            call rdbk( fileno, elem_loads(i)%piston_tabnum(1),
-     &           eload_size )
-            call eloads_rebuild_thread_list( elem_loads(i)%data(1,1),
-     &           eload_size, elem_loads(i)%thread_number(1) )
+         if( eload_size .gt.0 ) then
+            call rd2d_i4( fileno, elem_loads(i)%data,
+     &                    eload_size, eload_size, 3 )
+            call rdbk_r4( fileno, elem_loads(i)%vals, eload_size )
+            call rdbk_i4( fileno, elem_loads(i)%piston_tabnum,
+     &                    eload_size )
+            call eloads_rebuild_thread_list( elem_loads(i)%data,
+     &           eload_size, elem_loads(i)%thread_number )
          end if
       end do
       call chk_data_key( fileno, 6, 2 )
@@ -410,24 +383,23 @@ c
 c                       retrieve the element equivalent nodal force
 c                       vectors for step just completed.
 c
-      if ( eq_node_force_len .gt. 0 ) then
+      if( eq_node_force_len .gt. 0 ) then
        call mem_allocate( 23 )
-       call rdbk( fileno, eq_node_force_indexes, noelem )
-       call rdbk( fileno, eq_node_forces,
-     &            eq_node_force_len*prec_fact )
+       call rdbk_i4( fileno, eq_node_force_indexes, noelem )
+       call rdbk_r8( fileno, eq_node_forces, eq_node_force_len )
       end if
       call chk_data_key( fileno, 6, 3 )
       write(out,9110)
 c
 c                       retrieve the nonlinear load step data
 c
-      if ( .not. allocated( step_load_data ) ) call mem_allocate( 19 )
+      if( .not. allocated( step_load_data ) ) call mem_allocate( 19 )
       do i = 1, max_step_limit
          read(fileno) step_load_data(i)%num_load_patterns
       end do
       do i = 1, max_step_limit
        num_patterns = step_load_data(i)%num_load_patterns
-       if ( num_patterns .gt. 0 ) then
+       if( num_patterns .gt. 0 ) then
         allocate( step_load_data(i)%load_patt_num(num_patterns),
      &            step_load_data(i)%load_patt_factor(num_patterns) )
         read(fileno) step_load_data(i)%load_patt_num(1:num_patterns)
@@ -439,7 +411,6 @@ c
 c                       retrieve the crack growth parameters, if
 c                       needed.  Also allocate the variables if they have
 c                       been set.
-c
 c
       read(fileno) crack_growth_type, max_dam_state, num_kill_elem,
      &              csttail, print_status, kill_order, no_killed_elems,
@@ -493,64 +464,64 @@ c
      &             smcs_removed_list_file_name
       call chk_data_key( fileno, 8, 1 )
       call allocate_damage( 12 ) ! only dam_ptr
-      call rdbk( fileno, dam_ptr, noelem )
+      call rdbk_i4( fileno, dam_ptr, noelem )
       call chk_data_key( fileno, 8, 2 )
       write(out,9120)
 c
 c                       allocate and read arrays for element
 c                       extinction
 c
-      if ( growth_by_kill ) then
+      if( growth_by_kill ) then
          standard_kill_method = .true.
          if( use_mesh_regularization ) standard_kill_method = .false. 
          call allocate_damage( 1 )
-         call read_damage( 1, fileno, prec_fact )
+         call read_damage( 1, fileno )
          call chk_data_key( fileno, 8, 3 )
 c
          if( crack_growth_type .eq. 3 ) then
             call allocate_damage( 13 )
-            call read_damage( 11, fileno, prec_fact )
+            call read_damage( 11, fileno )
          end if
          call chk_data_key( fileno, 8, 4 )
 c
          if( use_mesh_regularization ) then
             call allocate_damage( 14 )
-            call read_damage( 12, fileno, prec_fact )
+            call read_damage( 12, fileno )
             write(out,9250) 
          end if
          call chk_data_key( fileno, 8, 5 )
 c
-         call read_damage( 13, fileno, prec_fact )
+         call read_damage( 13, fileno )
          call chk_data_key( fileno, 8, 6 )
 c
          isize = stop_killed_elist_length
          if(  isize > 0 ) then
            allocate( deleted_elist_to_stop(isize) )
-           call rdbk( fileno, deleted_elist_to_stop, isize )
+           call rdbk_i4( fileno, deleted_elist_to_stop, isize )
          end if
 c
          if( print_status ) then
             call allocate_damage( 2 )
-            call read_damage( 2, fileno, prec_fact )
+            call read_damage( 2, fileno )
          end if
          call chk_data_key( fileno, 9, 0 )
 c
          if( kill_order ) then
             call allocate_damage( 3 )
-            call read_damage( 3, fileno, prec_fact )
+            call read_damage( 3, fileno )
          end if
          call chk_data_key( fileno, 9, 1 )
 c
          if( .not. no_killed_elems ) then
             call allocate_damage( 4 )
-            call read_damage( 4, fileno, prec_fact )
+            call read_damage( 4, fileno )
          end if
          call chk_data_key( fileno, 9, 2 )
 c
          if( release_type .eq. 2  ) then
           if( .not. no_killed_elems ) then
             call allocate_damage( 5 )
-            call read_damage( 5, fileno, prec_fact )
+            call read_damage( 5, fileno )
           end if
          end if
          call chk_data_key( fileno, 9, 3 )
@@ -558,7 +529,7 @@ c
 c
          if( load_size_control_crk_grth ) then
             call allocate_damage( 9 )
-            call read_damage( 9, fileno, prec_fact )
+            call read_damage( 9, fileno )
          endif
          call chk_data_key( fileno, 9, 4 )
          write(out,9130)
@@ -566,25 +537,25 @@ c
       else if( growth_by_release ) then
 c
          call allocate_damage( 6 )
-         call read_damage( 6, fileno, prec_fact )
+         call read_damage( 6, fileno )
          call chk_data_key( fileno, 9, 5 )
 
          if( release_type .eq.2 ) then
             call allocate_damage( 7 )
-            call read_damage( 7, fileno, prec_fact )
+            call read_damage( 7, fileno )
          end if
          call chk_data_key( fileno, 9, 6 )
 c
          if( overshoot_control_crk_grth ) then
             call allocate_damage( 8 )
-            call read_damage( 8, fileno, prec_fact )
+            call read_damage( 8, fileno )
          end if
          call chk_data_key( fileno, 9, 7 )
 c
          if( const_front ) then
             call allocate_damage( 10 )
             call allocate_damage( 11 )
-            call read_damage( 10, fileno, prec_fact )
+            call read_damage( 10, fileno )
          end if
          call chk_data_key( fileno, 9, 7 )
          write(out,9140)
@@ -592,7 +563,7 @@ c
          isize = stop_released_nlist_length
          if(  isize > 0 ) then
            allocate( released_nlist_to_stop(isize) )
-           call rdbk( fileno, released_nlist_to_stop, isize )
+           call rdbk_i4( fileno, released_nlist_to_stop, isize )
          end if
 
 c
@@ -607,24 +578,20 @@ c
       if( use_contact ) then
          call mem_allocate( 25 )
          read (fileno) num_contact
-         call rdbk( fileno, contact_shape, num_contact)
-         call rdbk( fileno, contact_outside, num_contact)
-         call rd2d( fileno, contact_cause, maxcontact, maxcontact,
-     &        nonode)
-         call rdbk( fileno, contact_stiff, num_contact*prec_fact)
-         call rdbk( fileno, contact_depth, num_contact*prec_fact)
-         call rdbk( fileno, contact_fric, num_contact*prec_fact)
+         call rdbk_i4( fileno, contact_shape, num_contact)
+         call rdbk_l4( fileno, contact_outside, num_contact)
+         call rd2d_i4( fileno, contact_cause, maxcontact, maxcontact,
+     &                 nonode)
+         call rdbk_r8( fileno, contact_stiff, num_contact )
+         call rdbk_r8( fileno, contact_depth, num_contact )
+         call rdbk_r8( fileno, contact_fric, num_contact )
          call chk_data_key( fileno, 10, 0 )
-         call rd2d( fileno, cshape_param, maxcntprm* prec_fact,
-     &        maxcntprm*prec_fact, num_contact)
-         call rd2d( fileno, cshape_rate, 3*prec_fact, 3*prec_fact,
-     &        num_contact)
-         call rd2d( fileno, cshape_pnt, 3*prec_fact, 3*prec_fact,
-     &        num_contact)
-         call rd2d( fileno, cshape_norm, 3*prec_fact, 3*prec_fact,
-     &        num_contact)
-         call rd3d( fileno, cplane_vec, 3*prec_fact, 2*prec_fact,
-     &        3*prec_fact, 2*prec_fact,  num_contact)
+         call rd2d_r8( fileno, cshape_param, maxcntprm,
+     &                 maxcntprm, num_contact)
+         call rd2d_r8( fileno, cshape_rate, 3, 3, num_contact )
+         call rd2d_r8( fileno, cshape_pnt, 3, 3, num_contact )
+         call rd2d_r8( fileno, cshape_norm, 3, 3, num_contact)
+         call rd3d_r8( fileno, cplane_vec, 3, 2, 3, 2, num_contact )
          write(out,9150)
       endif
       call chk_data_key( fileno, 10, 1 )
@@ -632,11 +599,11 @@ c
 c                       read data structures for mpcs
 c
       read (fileno) mpcs_exist
-      if (mpcs_exist) then
-         read (fileno) num_user_mpc
+      if( mpcs_exist ) then
+         read(fileno) num_user_mpc
          max_mpc = num_user_mpc
          allocate( user_mpc_table(num_user_mpc), stat=err)
-         if (err .ne. 0) then
+         if( err .ne. 0 )   then
             call errmsg2(64,dumi,dums,dumr,dumd)
             call die_abort
          end if
@@ -647,53 +614,56 @@ c
      &                 user_mpc_table(mpc)%dof_list(ntrm),
      &                 user_mpc_table(mpc)%multiplier_list(ntrm),
      &                 stat=err )
-            if (err .ne. 0) then
+            if( err .ne. 0)  then
                call errmsg2(64,dumi,dums,dumr,dumd)
                call die_abort
             end if
             read (fileno) user_mpc_table(mpc)%constant
-            call rdbk( fileno, user_mpc_table(mpc)%node_list, ntrm )
-            call rdbk( fileno, user_mpc_table(mpc)%dof_list, ntrm )
-            call rdbk( fileno, user_mpc_table(mpc)%multiplier_list,
+            call rdbk_i4( fileno, user_mpc_table(mpc)%node_list, ntrm )
+            call rdbk_i4( fileno, user_mpc_table(mpc)%dof_list, ntrm )
+            call rdbk_r4( fileno, user_mpc_table(mpc)%multiplier_list,
      &                    ntrm )
-            call chk_data_key( fileno, 11, 1)
+            call chk_data_key( fileno, 11, 1 )
          end do
          write(out,9160)
       end if
 c
-      read (fileno) tied_con_mpcs_constructed
-      if (tied_con_mpcs_constructed) then
-         read (fileno) num_tied_con_mpc
+      read(fileno) tied_con_mpcs_constructed
+      if( tied_con_mpcs_constructed ) then
+         read(fileno) num_tied_con_mpc
          max_mpc_tied = num_tied_con_mpc
-         allocate( tied_con_mpc_table(num_tied_con_mpc), stat=err)
-         if (err .ne. 0) then
+         allocate( tied_con_mpc_table(num_tied_con_mpc), stat=err )
+         if( err .ne. 0 ) then
             call errmsg2(64,dumi,dums,dumr,dumd)
             call die_abort
          end if
          do mpc = 1, num_tied_con_mpc
-            read (fileno) ntrm
+            read(fileno) ntrm
             tied_con_mpc_table(mpc)%num_terms = ntrm
-            allocate ( tied_con_mpc_table(mpc)%node_list(ntrm),
+            allocate( tied_con_mpc_table(mpc)%node_list(ntrm),
      &                 tied_con_mpc_table(mpc)%dof_list(ntrm),
      &                 tied_con_mpc_table(mpc)%multiplier_list(ntrm),
      &                 stat=err )
-            if (err .ne. 0) then
-               call errmsg2(64,dumi,dums,dumr,dumd)
+            if( err .ne. 0 ) then
+               call errmsg2( 64,dumi,dums,dumr,dumd )
                call die_abort
             end if
-            read (fileno) tied_con_mpc_table(mpc)%constant
-            call rdbk( fileno, tied_con_mpc_table(mpc)%node_list, ntrm )
-            call rdbk( fileno, tied_con_mpc_table(mpc)%dof_list, ntrm )
-            call rdbk( fileno, tied_con_mpc_table(mpc)%multiplier_list,
+            read(fileno) tied_con_mpc_table(mpc)%constant
+            call rdbk_i4( fileno, tied_con_mpc_table(mpc)%node_list,
+     &                    ntrm )
+            call rdbk_i4( fileno, tied_con_mpc_table(mpc)%dof_list,
+     &                    ntrm )
+            call rdbk_r4( fileno, 
+     &                    tied_con_mpc_table(mpc)%multiplier_list,
      &                    ntrm )
             call chk_data_key( fileno, 11, 2)
          end do
          write(out,9170)
       end if
-
+c
       if( mpcs_exist .or. tied_con_mpcs_constructed ) then
         allocate( total_lagrange_forces(nodof) )
-        call rdbk( fileno, total_lagrange_forces, nodof* prec_fact )
+        call rdbk_r8( fileno, total_lagrange_forces, nodof )
       end if
       call chk_data_key( fileno, 11, 3)
 c
@@ -705,11 +675,11 @@ c
          read(fileno) num_rows
          read(fileno) num_cols
          call do_table_allo( itab, num_rows, num_cols, .false. )
-         if ( num_rows .ne. 0 ) then
-            call rd2d( fileno, tables(itab)%table_values_sgl(1,1),
-     &           num_rows, num_rows, num_cols )
-            call rd2d( fileno, tables(itab)%table_values_dbl(1,1),
-     &           num_rows*prec_fact, num_rows*prec_fact, num_cols )
+         if( num_rows .ne. 0 ) then
+            call rd2d_r4( fileno, tables(itab)%table_values_sgl,
+     &                    num_rows, num_rows, num_cols )
+            call rd2d_r8( fileno, tables(itab)%table_values_dbl,
+     &                    num_rows, num_rows, num_cols )
          end if
       end do
       write(out,9180)
@@ -721,9 +691,9 @@ c
          read(fileno) user_lists(ilist)%name
          read(fileno) ulen
          user_lists(ilist)%length_list = ulen
-         if ( ulen .gt. 0 ) then
+         if( ulen .gt. 0 ) then
            allocate( user_lists(ilist)%list(ulen) )
-           call rdbk(fileno,user_lists(ilist)%list(1),ulen)
+           call rdbk_i4( fileno, user_lists(ilist)%list, ulen )
          endif
       end do
       write(out,9190)
@@ -735,9 +705,6 @@ c
       call read_alloc_cry( fileno )
       write(out,9200)
       call chk_data_key( fileno, 12, 1)
-c
-c
-c
 c
 c                       set structure name and flags.
 c
@@ -824,7 +791,7 @@ c                       get initial stress data
 c
       if( initial_stresses_exist ) then
         allocate( initial_stresses(6,noelem) )
-        call rdbk( fileno, initial_stresses, prec_fact*noelem*6 )
+        call rdbk_r8( fileno, initial_stresses, noelem*6 )
         write(out,9230)
       end if
       call chk_data_key( fileno, 18, 0 )
@@ -846,9 +813,7 @@ c
 c                       read final check variable -- check if correct.
 c                       if not, the restored data is corrupted.
 c
-c
       call chk_data_key( fileno, 20, 0 )
-c
 c
 c                       close the restart file. messages and applied
 c                       loading summary to this analysis time.
@@ -869,7 +834,7 @@ c
 c                       initialize the adaptive algorithm so that
 c                       it can operate immediately if needed.
 c
-      if ( adaptive_flag ) call adaptive_save
+      if( adaptive_flag ) call adaptive_save
 c
 c                        recalculate mass
 c
@@ -1016,7 +981,6 @@ c
       double precision :: dummy(1)
       logical :: myblk
 c
-c
 c            proc_type :  = 1, create data arrays only and zero
 c                         = 2, create and read from save file
 c            fileno:      = save file number. needed only for
@@ -1139,7 +1103,6 @@ c
         history_blk_list(blk)  = hist_size
         gausspts_blk_list(blk) = ngp
 c
-c
 c                      process [D] (i.e. cep) blocks
 c                      -----------------------------
 c
@@ -1194,7 +1157,7 @@ c
 c
       implicit integer (a-z)
       integer, dimension (:,:), pointer :: cdest
-      logical myblk
+      logical :: myblk
 c
 c            the data structure is a vector for each element
 c            block (dynamically allocated). the vectors are
@@ -1202,7 +1165,7 @@ c            hung from a dynamically allocated pointer vector
 c            of length nelblk.
 c
       allocate( cdest_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 1
            call die_abort
@@ -1210,7 +1173,7 @@ c
       end if
 c
       allocate( cdest_blk_list(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 5
            call die_abort
@@ -1231,8 +1194,8 @@ c                       if we are using the serial version:
 c                         the serial process is root, so allocate all blocks.
 c
          myblk = myid .eq. elblks(2,blk)
-         if (root_processor) myblk = .true.
-         if (.not. myblk) cycle
+         if(root_processor) myblk = .true.
+         if(.not. myblk) cycle
 c
          felem         = elblks(1,blk)
          span          = elblks(0,blk)
@@ -1242,7 +1205,7 @@ c
 c
          allocate( cdest_blocks(blk)%ptr(totdof,span),
      &             stat = alloc_stat )
-         if ( alloc_stat .ne. 0 ) then
+         if( alloc_stat .ne. 0 ) then
             write(out,9900)
             write(out,9910) 3
             call die_abort
@@ -1266,8 +1229,8 @@ c                         the serial process is root, so allocate all blocks.
 c
          blk            = elems_to_blocks(elem,1)
          myblk = myid .eq. elblks(2,blk)
-         if (root_processor) myblk = .true.
-         if (.not. myblk) cycle
+         if(root_processor) myblk = .true.
+         if(.not. myblk) cycle
 c
          rel_elem       = elems_to_blocks(elem,2)
          nnode          = iprops(2,elem)
@@ -1309,7 +1272,7 @@ c
       implicit integer (a-z)
 c
       integer, dimension (:,:), pointer :: edest
-      logical myblk
+      logical :: myblk
 c
 c            the data structure is a vector for each element
 c            block (dynamically allocated). the vectors are
@@ -1317,7 +1280,7 @@ c            hung from a dynamically allocated pointer vector
 c            of length nelblk.
 c
       allocate( edest_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 1
            call die_abort
@@ -1325,7 +1288,7 @@ c
       end if
 c
       allocate( edest_blk_list(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 5
            call die_abort
@@ -1346,8 +1309,8 @@ c                       if we are using the serial version:
 c                         the serial process is root, so allocate all blocks.
 c
          myblk = myid .eq. elblks(2,blk)
-         if (root_processor) myblk = .true.
-         if (.not. myblk) cycle
+         if(root_processor) myblk = .true.
+         if(.not. myblk) cycle
 c
          felem         = elblks(1,blk)
          span          = elblks(0,blk)
@@ -1357,7 +1320,7 @@ c
 c
          allocate( edest_blocks(blk)%ptr(totdof,span),
      &             stat = alloc_stat )
-         if ( alloc_stat .ne. 0 ) then
+         if( alloc_stat .ne. 0 ) then
             write(out,9900)
             write(out,9910) 3
             call die_abort
@@ -1381,8 +1344,8 @@ c                         the serial process is root, so allocate all blocks.
 c
          blk            = elems_to_blocks(elem,1)
          myblk = myid .eq. elblks(2,blk)
-         if (root_processor) myblk = .true.
-         if (.not. myblk) cycle
+         if(root_processor) myblk = .true.
+         if(.not. myblk) cycle
 c
          rel_elem       = elems_to_blocks(elem,2)
          nnode          = iprops(2,elem)
@@ -1423,9 +1386,8 @@ c
      &                            eps_blk_list
 c
       implicit integer (a-z)
-      double precision
-     &    dummy(1)
-      logical myblk
+      double precision :: dummy(1)
+      logical :: myblk
 c
 c
 c            proc_type :  = 1, create data arrays only and zero
@@ -1439,7 +1401,7 @@ c            hung from a dynamically allocated pointer vector
 c            of length nelblk.
 c
       allocate( eps_n_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 1
            call die_abort
@@ -1447,7 +1409,7 @@ c
       end if
 c
       allocate( eps_n1_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 2
            call die_abort
@@ -1455,7 +1417,7 @@ c
       end if
 c
       allocate( eps_blk_list(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 5
            call die_abort
@@ -1477,8 +1439,8 @@ c                       if we are using the serial version:
 c                         the serial process is root, so allocate all blocks.
 c
         myblk = myid .eq. elblks(2,blk)
-        if (root_processor) myblk = .true.
-        if (.not. myblk) cycle
+        if(root_processor) myblk = .true.
+        if(.not. myblk) cycle
 c
         felem      = elblks(1,blk)
         span       = elblks(0,blk)
@@ -1487,7 +1449,7 @@ c
 c
         allocate( eps_n_blocks(blk)%ptr(block_size),
      &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
+        if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 3
            call die_abort
@@ -1496,22 +1458,22 @@ c
 c
         allocate( eps_n1_blocks(blk)%ptr(block_size),
      &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
+        if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 4
            call die_abort
            stop
         endif
 c
-        if ( proc_type .eq. 1 ) then
-          call zero_vector( eps_n_blocks(blk)%ptr(1), block_size )
-          call zero_vector( eps_n1_blocks(blk)%ptr(1), block_size )
+        if( proc_type .eq. 1 ) then
+          call zero_vector( eps_n_blocks(blk)%ptr, block_size )
+          call zero_vector( eps_n1_blocks(blk)%ptr, block_size )
         end if
-        if ( proc_type .eq. 2 ) then
+        if( proc_type .eq. 2 ) then
                read(fileno) eps_n_blocks(blk)%ptr(1:block_size)
                call chk_data_key( fileno, 360, blk )
-               call vec_ops( eps_n1_blocks(blk)%ptr(1),
-     &                       eps_n_blocks(blk)%ptr(1), dummy,
+               call vec_ops( eps_n1_blocks(blk)%ptr,
+     &                       eps_n_blocks(blk)%ptr, dummy,
      &                       block_size, 5 )
         end if
 c
@@ -1546,9 +1508,8 @@ c
      &                            urcs_blk_list
 c
       implicit integer (a-z)
-      double precision
-     &    dummy(1)
-      logical myblk
+      double precision :: dummy(1)
+      logical :: myblk
 c
 c
 c            proc_type :  = 1, create data arrays only and zero
@@ -1562,7 +1523,7 @@ c            hung from a dynamically allocated pointer vector
 c            of length nelblk.
 c
       allocate( urcs_n_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 1
            call die_abort
@@ -1570,7 +1531,7 @@ c
       end if
 c
       allocate( urcs_n1_blocks(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 2
            call die_abort
@@ -1578,7 +1539,7 @@ c
       end if
 c
       allocate( urcs_blk_list(nelblk),stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 5
            call die_abort
@@ -1600,8 +1561,8 @@ c                       if we are using the serial version:
 c                         the serial process is root, so allocate all blocks.
 c
         myblk = myid .eq. elblks(2,blk)
-        if (root_processor) myblk = .true.
-        if (.not. myblk) cycle
+        if(root_processor) myblk = .true.
+        if(.not. myblk) cycle
 c
         felem      = elblks(1,blk)
         span       = elblks(0,blk)
@@ -1610,7 +1571,7 @@ c
 c
         allocate( urcs_n_blocks(blk)%ptr(block_size),
      &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
+        if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 3
            call die_abort
@@ -1619,22 +1580,22 @@ c
 c
         allocate( urcs_n1_blocks(blk)%ptr(block_size),
      &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
+        if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 4
            call die_abort
            stop
         endif
 c
-        if ( proc_type .eq. 1 ) then
-         call zero_vector( urcs_n_blocks(blk)%ptr(1), block_size )
-          call zero_vector( urcs_n1_blocks(blk)%ptr(1), block_size )
+        if( proc_type .eq. 1 ) then
+         call zero_vector( urcs_n_blocks(blk)%ptr, block_size )
+          call zero_vector( urcs_n1_blocks(blk)%ptr, block_size )
         end if
-        if ( proc_type .eq. 2 ) then
+        if( proc_type .eq. 2 ) then
                read(fileno) urcs_n_blocks(blk)%ptr(1:block_size)
                call chk_data_key( fileno, 370, blk )
-               call vec_ops( urcs_n1_blocks(blk)%ptr(1),
-     &                       urcs_n_blocks(blk)%ptr(1), dummy,
+               call vec_ops( urcs_n1_blocks(blk)%ptr,
+     &                       urcs_n_blocks(blk)%ptr, dummy,
      &                       block_size, 5 )
         end if
 c
@@ -1663,15 +1624,14 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine element_volumes_init( fileno, proc_type )
-      use global_data ! old common.main
 c
+      use global_data ! old common.main
       use elem_block_data, only : element_vol_blocks
+      use constants, only : zero 
 c
       implicit integer (a-z)
-      double precision
-     &    model_volume, zero
-      logical myblk
-      data zero / 0.0 /
+      double precision :: model_volume
+      logical :: myblk
 c
 c
 c            proc_type :  = 1, create data arrays only and zero
@@ -1685,7 +1645,7 @@ c            hung from a dynamically allocated pointer vector
 c            of length nelblk.
 c
       allocate( element_vol_blocks(nelblk), stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 1
            call die_abort
@@ -1716,17 +1676,17 @@ c
 c
         allocate( element_vol_blocks(blk)%ptr(block_size),
      &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
+        if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 3
            call die_abort
            stop
         endif
 c
-        if ( proc_type .eq. 1 ) then
-          call zero_vector( element_vol_blocks(blk)%ptr(1), block_size )
+        if( proc_type .eq. 1 ) then
+          call zero_vector( element_vol_blocks(blk)%ptr, block_size )
         end if
-        if ( proc_type .eq. 2 ) then
+        if( proc_type .eq. 2 ) then
            read(fileno) element_vol_blocks(blk)%ptr(1:block_size)
            call chk_data_key( fileno, 380, blk )
         end if
@@ -1816,7 +1776,7 @@ c     *                      subroutine rotation_init                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 02/1/98                    *
+c     *                   last modified : 4/8/26 rhd                 *
 c     *                                                              *
 c     *     create the blocked data structure for storage of element *
 c     *     rotation matrices at gauss points to support finite      *
@@ -1827,16 +1787,16 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine rotation_init( fileno, proc_type )
-      use global_data ! old common.main
 c
+      use global_data ! old common.main
       use elem_block_data, only : rot_n_blocks, rot_n1_blocks,
      &                            rot_blk_list
+      use constants, only : zero, one
       implicit integer (a-z)
-      double precision
-     &    zero, rot_init(9), dummy(1)
-      logical geo_non_flg, local_debug
-      data local_debug, zero, one / .false., 0.0, 1.0 /
-      logical myblk
+      double precision :: rot_init(9), dummy(1)
+      logical :: geo_non_flg
+      logical, parameter :: local_debug = .false.
+      logical :: myblk
 c
 c
 c            proc_type :  = 1, create data arrays only and zero
@@ -1855,9 +1815,9 @@ c            blocked data structures for material point rotation
 c            matrices. for a completely small strain analysis,
 c            nothing gets done here.
 c
-      if ( .not. allocated(rot_blk_list) ) then
+      if( .not. allocated(rot_blk_list) ) then
          allocate( rot_blk_list(nelblk),stat=alloc_stat )
-         if ( alloc_stat .ne. 0 ) then
+         if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 7
            call die_abort
@@ -1869,7 +1829,7 @@ c
       do blk = 1, nelblk
         felem       = elblks(1,blk)
         geo_non_flg = lprops(18,felem)
-        if ( geo_non_flg ) go to 100
+        if( geo_non_flg ) go to 100
       end do
 c
 c            no blocks with geometric nonlinear elements found.
@@ -1879,14 +1839,14 @@ c
 c
  100  continue
       allocate( rot_n_blocks(nelblk), stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 1
            call die_abort
            stop
       end if
       allocate( rot_n1_blocks(nelblk), stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 2
            call die_abort
@@ -1914,19 +1874,19 @@ c                       if we are using the serial version:
 c                         the serial process is root, so allocate all blocks.
 c
         myblk = myid .eq. elblks(2,blk)
-        if (root_processor) myblk = .true.
-        if (.not. myblk) cycle
+        if(root_processor) myblk = .true.
+        if(.not. myblk) cycle
 c
         felem       = elblks(1,blk)
         geo_non_flg = lprops(18,felem)
-        if ( .not. geo_non_flg ) cycle
+        if( .not. geo_non_flg ) cycle
         span       = elblks(0,blk)
         ngp        = iprops(6,felem)
         block_size = span * ngp * 9
 c
         allocate( rot_n_blocks(blk)%ptr(block_size),
      &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
+        if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 4
            call die_abort
@@ -1935,7 +1895,7 @@ c
 c
         allocate( rot_n1_blocks(blk)%ptr(block_size),
      &            stat = alloc_stat )
-        if ( alloc_stat .ne. 0 ) then
+        if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 5
            call die_abort
@@ -1944,7 +1904,7 @@ c
 c
         rot_blk_list(blk) = 1
 c
-        if ( proc_type .eq. 1 ) then
+        if( proc_type .eq. 1 ) then
           low = 1
           up  = 9
           do i = 1, span
@@ -1954,11 +1914,11 @@ c
                 up  = up + 9
              end do
           end do
-          call vec_ops( rot_n1_blocks(blk)%ptr(1),
-     &                  rot_n_blocks(blk)%ptr(1), dummy, block_size, 5 )
+          call vec_ops( rot_n1_blocks(blk)%ptr,
+     &                  rot_n_blocks(blk)%ptr, dummy, block_size, 5 )
         end if
 c
-        if ( proc_type .eq. 2 ) then
+        if( proc_type .eq. 2 ) then
                read(fileno) rot_n1_blocks(blk)%ptr
                call chk_data_key( fileno, 300, blk )
                rot_n_blocks(blk)%ptr = rot_n1_blocks(blk)%ptr
@@ -2006,14 +1966,14 @@ c            inverse dest mapping
 c
  200  continue
       allocate( invdst(nodof), stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 3
            call die_abort
            stop
       end if
-      if ( fileno .eq. 0 ) return
-      call rdbk( fileno, invdst, nodof )
+      if( fileno .eq. 0 ) return
+      call rdbk_i4( fileno, invdst, nodof )
       return
 c
 c            logical vector indicating if element has repeated nodes
@@ -2022,14 +1982,14 @@ c            crack modeling.
 c
  300  continue
       allocate( repeat_incid(noelem), stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 4
            call die_abort
            stop
       end if
-      if ( fileno .eq. 0 ) return
-      call rdbk( fileno, repeat_incid, noelem)
+      if( fileno .eq. 0 ) return
+      call rdbk_l4( fileno, repeat_incid, noelem)
       return
 c
 c            inverse incidences: list of elements connected to
@@ -2038,13 +1998,13 @@ c            read values from restart file if requested
 c
  400  continue
       allocate( inverse_incidences(nonode), stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 5
            call die_abort
            stop
       end if
-      if ( fileno .eq. 0 ) return
+      if( fileno .eq. 0 ) return
       read(fileno) (inverse_incidences(i)%element_count,i=1,nonode)
       return
 c
@@ -2057,13 +2017,13 @@ c
        ecount = inverse_incidences(i)%element_count
        allocate( inverse_incidences(i)%element_list(ecount),
      &           stat=alloc_stat )
-       if ( alloc_stat .ne. 0 ) then
+       if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 6
            call die_abort
            stop
        end if
-       if ( fileno .ne. 0 ) then
+       if( fileno .ne. 0 ) then
          read(fileno) (inverse_incidences(i)%element_list(j),
      &                 j = 1, ecount )
        end if
@@ -2076,7 +2036,7 @@ c            no values to read from file
 c
  600  continue
       allocate( inverse_dof_map(nonode), stat=alloc_stat )
-      if ( alloc_stat .ne. 0 ) then
+      if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 7
            call die_abort
@@ -2093,13 +2053,13 @@ c
        ecount = inverse_incidences(stnd)%element_count
        allocate( inverse_dof_map(stnd)%edof_table(ecount,3),
      &           stat=alloc_stat )
-       if ( alloc_stat .ne. 0 ) then
+       if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 7
            call die_abort
            stop
        end if
-       if ( fileno .ne. 0 ) then
+       if( fileno .ne. 0 ) then
          read(fileno) ((inverse_dof_map(stnd)%edof_table(j,k),
      &                 j = 1, ecount ), k = 1, 3 )
        end if
@@ -2132,7 +2092,7 @@ c
       use main_data
       implicit integer (a-z)
 
-      if ( allocated( elems_to_blocks ) ) then
+      if( allocated( elems_to_blocks ) ) then
            write(out,9900)
            write(out,9910) 1
            call die_abort
@@ -2140,7 +2100,7 @@ c
       end if
 c
       allocate( elems_to_blocks(noelem,2), stat = alloc_stat )
-         if ( alloc_stat .ne. 0 ) then
+         if( alloc_stat .ne. 0 ) then
            write(out,9900)
            write(out,9910) 2
            call die_abort
@@ -2182,14 +2142,12 @@ c
 c
 c
       subroutine allo_trnmat( node, status, fileno )
+c
       use global_data ! old common.main
-c
       use main_data
-c
+      use constants, only : zero
+c      
       implicit integer (a-z)
-      double precision
-     &  zero
-      data zero / 0.0 /
 c
 c              status values:
 c                1 -- allocate trnmat(node)%mat
@@ -2200,16 +2158,16 @@ c
 c              allocate 3x3 rotation matrix at node to
 c              support non-global constraints.
 c
-      if ( status .eq. 1 .or. status .eq. 3 ) then
+      if( status .eq. 1 .or. status .eq. 3 ) then
 c
          allocate( trnmat(node)%mat(3,3), stat = alloc_stat )
-         if ( alloc_stat .ne. 0 ) then
+         if( alloc_stat .ne. 0 ) then
            write(out,9900)
            call die_abort
            stop
          end if
 c
-         if ( status .eq. 3 ) then
+         if( status .eq. 3 ) then
             read (fileno) trnmat(node)%mat
          endif
 c
@@ -2217,7 +2175,7 @@ c
 c
 c              deallocate 3x3 rotation matrix at node if it exits.
 c
-      else if ( status .eq. 2 ) then
+      else if( status .eq. 2 ) then
 c
          deallocate( trnmat(node)%mat )
 c
@@ -2297,7 +2255,7 @@ c
 c
       subroutine ro_zero_vec( vec, isize )
 c
-      use constants
+      use constants, only : zero
       implicit none
 c
       integer, intent(in) :: isize

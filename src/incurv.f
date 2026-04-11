@@ -4,7 +4,7 @@ c     *                      subroutine incurv                       *
 c     *                                                              *          
 c     *                       written by : kck                       *          
 c     *                                                              *          
-c     *                   last modified : 3/17/2023 rhd              *          
+c     *                   last modified : 4/8/26 rhd                 *          
 c     *                                                              *          
 c     *     this subroutine supervises and conducts the input of     *          
 c     *     segmentally defined stress-strain curves including       *          
@@ -15,13 +15,13 @@ c
       subroutine incurv( sbflg1, sbflg2 )                                       
       use segmental_curves 
       use constants       
-      use global_data, only : out                                              
+      use global_data, only : out, num_error, num_fatal     
       implicit none                                                    
       include 'param_def'                                                       
 c                                                                               
 c                local declarations                                             
 c           
-      integer :: i, j, dum                                                                   
+      integer :: i, j, dum, dumi , lcount                                                                 
       logical :: sbflg1, sbflg2, new_line, local_debug, dopchip,       
      &           local_gp_model_flag, found_points                         
       logical, external :: matchs, numi, numd, endcrd
@@ -85,7 +85,7 @@ c
         go to 30                                                                
       end if                                                                    
 c                                                                               
-      call errmsg2( 3, dumr, dums, dumr, dumd )                                 
+      call errmsg2( 3, dumi, dums, dumi, dumd )                                 
 c                                                                               
 c                                                                               
 c             read in the strain,stress values to define the curve              
@@ -104,7 +104,8 @@ c
        write(out,*) '>> curve type value: ',seg_curves_value(num_curve)          
       end if                                                                    
 c                                                                               
-      found_points = .false.                                                    
+      found_points = .false.      
+      lcount = 0
  10   continue                                                                  
       call readsc                                                               
       new_line = .true.                                                         
@@ -112,7 +113,8 @@ c
       if( matchs(',',1) ) call splunj                                           
       if( numd(strain_pt) ) then                                                
          if( numd(stress_pt) ) then                                             
-            num_points = num_points + 1                                         
+            num_points = num_points + 1   
+            lcount = lcount + 1                                      
             if( num_points .gt. max_seg_points ) then                           
                num_points = max_seg_points                                      
                call errmsg(220,max_seg_points,dums,dumr,dumd)                   
@@ -135,7 +137,16 @@ c
       end if                                                                    
       go to 20                                                                  
 c                                                                               
- 9999 continue                                                                  
+ 9999 continue      
+c 
+      if( .not. local_gp_model_flag ) then
+         if( lcount < 2 ) then
+           write(out,9120) num_curve
+           num_error = num_error + 1
+           num_fatal= num_fatal + 1
+           return
+         end if    
+      end if                                                              
 c                                                                               
 c         if points are given for the gp_model, this is an error.               
 c         if correct input for gp_model is given (no points),                   
@@ -144,7 +155,7 @@ c         will pass. The values are never used in real processing
 c         routines for the gp option of the cyclic model                        
 c                                                                               
       if( local_gp_model_flag .and. (num_points .ne. 0) )                       
-     &       call errmsg2( 80, dumr, dums, dumr, dumd )                         
+     &       call errmsg2( 80, dumi, dums, dumi, dumd )                         
       if( local_gp_model_flag ) then                                            
             num_points = 1                                                      
             seg_curves(num_points,1,num_curve) = 0.0                            
@@ -172,7 +183,7 @@ c         plastic strain so that we know the yield stress
 c                                                                               
       if(  seg_curves_type(num_curve) .ne. 0 .and.                             
      &     seg_curves(1,1,num_curve) .ne. zero ) then                          
-        call errmsg2(21,num_points,dums,dumr,dumd)                              
+        call errmsg2(21,num_points,dums,dumi,dumd)                              
         do i = 1, num_points                                                    
           seg_curves(i,1,num_curve) = zero                                      
           seg_curves(i,2,num_curve) = zero                                      
@@ -185,7 +196,7 @@ c
       do i = 2, num_points                                                      
            if( seg_curves(i,1,num_curve) .le.                                  
      &         seg_curves(i-1,1,num_curve) ) then                              
-             call errmsg2( 15, num_points, dums, dumr, dumd )                   
+             call errmsg2( 15, num_points, dums, dumi, dumd )                   
              do j = 1, num_points                                               
                 seg_curves(i,1,num_curve) = zero                                
                 seg_curves(i,2,num_curve) = zero                                
@@ -254,6 +265,7 @@ c
  9000 format(3x,i3,f14.6,f15.4)                                                
  9100 format(3x,'min stress value: ',f15.4)    
  9110 format(3x,i4,f14.7,f14.5,f15.4)
+ 9120 format(/1x,'>>>>> error: curve: ',i3,' must have > 1 point',/)
 c
       contains
 c     ========
@@ -370,7 +382,7 @@ c                is stored as temperature independent
 c                                                                               
       seg_curves_type(num_curve)  = 1                                           
       if ( .not. numd(seg_curves_value(num_curve)) ) then                       
-         call errmsg2( 1, dumr, dums, dumr, dumd )                              
+         call errmsg2( 1, dumi, dums, dumi, dumd )                              
          seg_curves_type(num_curve)  = 0                                        
          return                                                                 
       end if                                                                    
@@ -411,7 +423,7 @@ c
              seg_curves_ym(num_curve) = value                                   
              cycle                                                              
            else                                                                 
-             call errmsg2( 16, dumr, dums, dumr, dumd )                         
+             call errmsg2( 16, dumi, dums, dumi, dumd )                         
            end if                                                               
         end if                                                                  
 c                                                                               
@@ -421,7 +433,7 @@ c
              seg_curves_nu(num_curve) = value                                   
              cycle                                                              
            else                                                                 
-             call errmsg2( 16, dumr, dums, dumr, dumd )                         
+             call errmsg2( 16, dumi, dums, dumi, dumd )                         
            end if                                                               
         end if                                                                  
 c                                                                               
@@ -431,7 +443,7 @@ c
              seg_curves_alpha(num_curve) = value                                
              cycle                                                              
            else                                                                 
-             call errmsg2( 16, dumr, dums, dumr, dumd )                         
+             call errmsg2( 16, dumi, dums, dumi, dumd )                         
            end if                                                               
         end if                                                                  
 c                                                                               
@@ -448,7 +460,7 @@ c
              gp_model_flag = .true.                                             
              cycle                                                              
            else                                                                 
-             call errmsg2( 16, dumr, dums, dumr, dumd )                         
+             call errmsg2( 16, dumi, dums, dumi, dumd )                         
            end if                                                               
         end if                                                                  
 c                                                                               
@@ -459,7 +471,7 @@ c
              gp_model_flag = .true.                                             
              cycle                                                              
            else                                                                 
-             call errmsg2( 16, dumr, dums, dumr, dumd )                         
+             call errmsg2( 16, dumi, dums, dumi, dumd )                         
            end if                                                               
         end if                                                                  
 c                                                                               
@@ -470,7 +482,7 @@ c
              gp_model_flag = .true.                                             
              cycle                                                              
            else                                                                 
-             call errmsg2( 16, dumr, dums, dumr, dumd )                         
+             call errmsg2( 16, dumi, dums, dumi, dumd )                         
            end if                                                               
         end if                                                                  
 c                                                                               
@@ -481,13 +493,13 @@ c
              gp_model_flag = .true.                                             
              cycle                                                              
            else                                                                 
-             call errmsg2( 16, dumr, dums, dumr, dumd )                         
+             call errmsg2( 16, dumi, dums, dumi, dumd )                         
            end if                                                               
         end if                                                                  
 c                                                                               
 c                property value not recognized                                  
 c                                                                               
-        call errmsg2( 17, dumr, dums, dumr, dumd )                              
+        call errmsg2( 17, dumi, dums, dumi, dumd )                              
         seg_curves_type(num_curve)  = 0                                         
         return                                                                  
 c                                                                               
@@ -501,7 +513,7 @@ c
 c                                                                               
       ok = ym_input .and. nu_input .and. alpha_input                            
       if ( .not. ok ) then                                                      
-        call errmsg2( 18, dumr, dums, dumr, dumd )                              
+        call errmsg2( 18, dumi, dums, dumi, dumd )                              
         seg_curves_type(num_curve)  = 0                                         
         return                                                                  
       end if                                                                    
@@ -513,7 +525,7 @@ c
         ok = gp_sigma_0_input .and. gp_h_u_input .and. gp_beta_u_input          
      &       .and. gp_delta_u_input                                             
         if( .not. ok ) then                                                     
-          call errmsg2( 79, dumr, dums, dumr, dumd )                            
+          call errmsg2( 79, dumi, dums, dumi, dumd )                            
           seg_curves_type(num_curve)  = 0                                       
         end if                                                                  
       end if                                                                    
@@ -574,7 +586,7 @@ c
       if ( matchs('-',1) )      call splunj                                     
       if ( matchs('rate',4) )   call splunj                                     
       if ( .not. numd(seg_curves_value(num_curve)) ) then                       
-         call errmsg2( 2, dumr, dums, dumr, dumd )                              
+         call errmsg2( 2, dumi, dums, dumi, dumd )                              
          seg_curves_type(num_curve)  = 0                                        
          return                                                                 
       end if                                                                    

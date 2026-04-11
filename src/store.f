@@ -4,15 +4,15 @@ c     *                      subroutine store                        *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/8/2026 rhd               *
+c     *                   last modified : 4/6/2026 rhd               *
 c     *                                                              *
 c     *                  writes analysis restart file                *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine store( savnam, savfil, sbflg1, sbflg2 )
-      use global_data ! old common.main
 c
+      use global_data 
       use elem_block_data, only: nonlocal_flags, nonlocal_data_n1
       use elem_extinct_data
       use node_release_data
@@ -40,7 +40,7 @@ c
 c
 c               locals
 c
-      integer :: dum, fileno, last, prec_fact, node, local_length,
+      integer :: dum, fileno, last, node, local_length,
      &           i,  how_defined, node_count, num_patterns, mpc,
      &           ntrm, itab, num_rows, num_cols, ilist, ulen, nsize,
      &           isize, np
@@ -60,10 +60,10 @@ c                       before a restart file is created.  if no load
 c                       steps have yet been computed, write and error
 c                       message and return.
 c
-      if ( ltmstp .eq. 0 ) then
+      if( ltmstp .eq. 0 ) then
          call errmsg (293, dum, dums, dumr, dumd )
          goto 9999
-      endif
+      end if
 c
 c                                 figure out filename:
 c                                       if savfil unset (no filename),
@@ -73,8 +73,8 @@ c                                       if neither are set, error.
 c
       fileno = 11
       dbname = ' '
-      if ( scanms(savfil,'namenone',8) ) then
-        if ( scanms(savnam,'itsblank',8) ) then
+      if( scanms(savfil,'namenone',8) ) then
+        if( scanms(savnam,'itsblank',8) ) then
           call errmsg( 151, dum, dums, dumr, dumd )
           dbname = 'default_db'
         else
@@ -84,50 +84,26 @@ c
         end if
       else
         call tilde( savfil, dbname, nameok )
-        if ( .not.nameok ) dbname = 'default_db'
+        if( .not.nameok ) dbname = 'default_db'
       end if
 c
 c                                 check file.  if file there, delete it
 c
       inquire( file = dbname, exist = delfil )
-      if ( delfil ) then
+      if( delfil ) then
          open( fileno, file=dbname, status='old', access='sequential',
      &     form='unformatted')
          close( fileno, status= 'delete' )
        end if
 c
-c                       open the file. old code commented out.
-c                       trying to avoid using Intel's proprietary
-c                       segmented record type
-c
-c#ifdef __INTEL_COMPILER
-c      open( fileno, file=dbname, status='new', access='sequential',
-c     &     form='unformatted', recordtype='segmented' )
-c#else
       open( fileno, file=dbname, status='new', access='sequential',
      &     form='unformatted' )
-c#endif
-
-c
-c                       MPI:
-c                         we need to gather all the stresses, strains,
-c                         element volumes, initial state arrays  back
-c                         to the root processor to store in the restart
-c                         database.
-c
-c
-c                       after each block of data written on the file,
-c                       we write a record containing a 'check' variable
-c                       to catch any inconsistencies between the save
-c                       here and reopen
 c
 c                       write error flags
 c
       write(fileno) numnod,numel,fatal,coor,elprop,elinc,constr,block
 c
-c
 c                       write out integer (scalar) variables
-c
 c
       write(fileno) mathed, noelem, nonode, nodof, csthed, inctop,
      &              crdtop, nummat, numcol, histep,
@@ -144,12 +120,10 @@ c
      &              J_cutoff_num_frnt_positions,
      &              J_cutoff_step_1_num_patterns,
      &              last_step_num_iters
-      write (fileno) check_data_key
-c
+      write(fileno) check_data_key
 c
 c                       write out logical and character (scalar)
 c                       variables.
-c
 c
       initial_stresses_exist = allocated( initial_stresses )
       write(fileno) halt,
@@ -177,11 +151,9 @@ c
      &              J_diff_at_2_set, use_weighted, gt_list_file_flag     
       write(fileno) sparse_stiff_file_name, packet_file_name,
      &              initial_stresses_file, gt_list_file_name
-      write (fileno) check_data_key
-c
+      write(fileno) check_data_key
 c
 c                       write out double precision (scalar) variables.
-c
 c
       write(fileno) dt,nbeta,emax,fmax,prdmlt,total_mass,ext_work,
      &              beta_fact,total_model_time,scaling_adapt,eps_bbar,
@@ -199,17 +171,16 @@ c
      &              J_cutoff_max_value, J_max_now_step,
      &              J_ratio_last_step, J_max_now_step, J_diff_at_2,
      &              Kr_target_diff, Kr_min_limit 
-      write (fileno) check_data_key
-c
+      write(fileno) check_data_key
 c
 c                       write out real  (scalar) variables.
 c
-      write (fileno) time_limit
+      write(fileno) time_limit
       write(out,9000)
 c
 c                       write out integer arrays.
 c
-      call wrt2d( fileno, outmap,mxlbel,nlibel,mxelmp )
+      call wrt2d_i4( fileno, outmap,mxlbel,nlibel,mxelmp )
       call wrtbk_i4( fileno, matlst, mxmat )
       call wrtbk_i4( fileno, invdst, nodof )
       call wrtbk_i4( fileno, stprng, mxlc*2 )
@@ -219,20 +190,20 @@ c
       call wrtbk_i4( fileno, cstmap, nodof )
       call wrtbk_i4( fileno, incid,  inctop )
       call wrtbk_i4( fileno, lodlst, mxlc )
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       call store_cmplx_int( fileno, 1 )
       call store_cmplx_int( fileno, 2 )
       call store_cmplx_int( fileno, 3 )
-      call wrt2d( fileno, elblks(0,1) , 4, 4, mxnmbl  )
+      call wrt2d_i4( fileno, elblks(0,1), 4, 4, mxnmbl )
       call wrtbk_i4( fileno, cp, mxedof )
       call wrtbk_i4( fileno, dcp, mxedof )
-      call wrt2d( fileno, icp, mxutsz, mxutsz, 2  )
+      call wrt2d_i4( fileno, icp, mxutsz, mxutsz, 2  )
       call wrtbk_i4( fileno, num_seg_points, max_seg_curves )
       call wrtbk_i4( fileno, seg_curves_type, max_seg_curves )
       call wrtbk_i4( fileno, seg_curve_table, (max_seg_curves+1)*
-     &            max_seg_curve_sets )
-      call wrt2d( fileno, imatprp, mxmtpr, mxmtpr, mxmat )
-      write (fileno) check_data_key
+     &               max_seg_curve_sets )
+      call wrt2d_i4( fileno, imatprp, mxmtpr, mxmtpr, mxmat )
+      write(fileno) check_data_key
       write(out,9010)
 c
 c                       write out logical and character arrays.
@@ -240,11 +211,10 @@ c                       use blocked store for large logical vectors.
 c                       write character variables/arrays directly.
 c                       see some sizes set in main, param_def
 c
-c
       write(fileno) convrg, trace                  ! short logical vecs
-      call wrtbk_i4( fileno, trn, nonode)             ! logical vec
-      call wrtbk_i4( fileno, stpchk, max_step_limit ) ! logical vec
-      call wrtbk_i4( fileno, repeat_incid, noelem )   ! logical vec
+      call wrtbk_l4( fileno, trn, nonode)             ! logical vec
+      call wrtbk_l4( fileno, stpchk, max_step_limit ) ! logical vec
+      call wrtbk_l4( fileno, repeat_incid, noelem )   ! logical vec
       write(fileno) seg_curves_pchip(1:max_seg_curves) ! logical vec 
 c
       write(fileno) lodnam, lodtyp, matnam, elelib ! short char vecs
@@ -254,48 +224,45 @@ c
 c
 c                       write out real arrays.
 c
-      call wrt2d( fileno, props, mxelpr, mxelpr, noelem )
-      call wrt2d( fileno, matprp, mxmtpr, mxmtpr, mxmat )
-      call wrtbk_i4( fileno, user_cnstrn_stp_factors, max_step_limit )
-      call wrtbk_i4( fileno, actual_cnstrn_stp_factors, max_step_limit )
-      write (fileno) check_data_key
-      if ( fgm_node_values_defined )
-     &  call wrt2d( fileno, fgm_node_values, nonode, nonode,
+      call wrt2d_r4( fileno, props, mxelpr, mxelpr, noelem )
+      call wrt2d_r4( fileno, matprp, mxmtpr, mxmtpr, mxmat )
+      call wrtbk_r4( fileno, user_cnstrn_stp_factors, max_step_limit )
+      call wrtbk_r4( fileno, actual_cnstrn_stp_factors, max_step_limit )
+      write(fileno) check_data_key
+      if( fgm_node_values_defined )
+     &  call wrt2d_r4( fileno, fgm_node_values, nonode, nonode,
      &              fgm_node_values_cols )
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       write(out,9030)
-c
 c
 c                       write out double precision data
 c                         1) global vectors
 c
-      prec_fact = 2
-      call wrtbk( fileno, u, prec_fact*nodof )
-      call wrtbk( fileno, c, prec_fact*nodof )
-      call wrtbk( fileno, ifv, prec_fact*nodof )
-      call wrtbk( fileno, load, prec_fact*nodof )
-      call wrtbk( fileno, dload, prec_fact*nodof )
-      call wrtbk( fileno, rload, prec_fact*nodof )
-      call wrtbk( fileno, rload_nm1, prec_fact*nodof )
+      call wrtbk_r8( fileno, u, nodof ) 
+      call wrtbk_r8( fileno, c, nodof )
+      call wrtbk_r8( fileno, ifv, nodof )
+      call wrtbk_r8( fileno, load, nodof )
+      call wrtbk_r8( fileno, dload, nodof )
+      call wrtbk_r8( fileno, rload, nodof )
+      call wrtbk_r8( fileno, rload_nm1, nodof )
       if( allocated( total_user_nodal_forces ) ) then
          write(fileno) .true.
-         call wrtbk( fileno, total_user_nodal_forces, prec_fact*nodof )
+         call wrtbk_r8( fileno, total_user_nodal_forces, nodof )
       else
          write(fileno) .false.
       end if
-      call wrt2d( fileno, load_pattern_factors, mxlc*prec_fact,
-     &            numlod*prec_fact, 2 )
-      call wrtbk( fileno, cnstrn_in, prec_fact*nodof )
-      write (fileno) check_data_key
-      call wrtbk( fileno, v, prec_fact*nodof )
-      call wrtbk( fileno, a, prec_fact*nodof )
-      call wrtbk( fileno, du, prec_fact*nodof )
-      call wrtbk( fileno, temper_nodes, prec_fact*nonode )
-      call wrtbk( fileno, temper_nodes_ref, prec_fact*nonode )
-      call wrtbk( fileno, temper_elems, prec_fact*noelem )
-      call wrt2d( fileno, dmatprp, 2*mxmtpr, 2*mxmtpr, mxmat )
+      call wrt2d_r8( fileno, load_pattern_factors, mxlc, numlod, 2 )
+      call wrtbk_r8( fileno, cnstrn_in, nodof )
+      write(fileno) check_data_key
+      call wrtbk_r8( fileno, v, nodof )
+      call wrtbk_r8( fileno, a, nodof )
+      call wrtbk_r8( fileno, du, nodof )
+      call wrtbk_r8( fileno, temper_nodes, nonode )
+      call wrtbk_r8( fileno, temper_nodes_ref, nonode )
+      call wrtbk_r8( fileno, temper_elems, noelem )
+      call wrt2d_r8( fileno, dmatprp, mxmtpr, mxmtpr, mxmat )
       write(fileno) J_cutoff_Je_step_1(1:max_front_nodes)
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       write(out,9040)
 c
 c                         2) blocked data structures for
@@ -309,55 +276,53 @@ c
       call store_blocks( fileno, 1 )
       write(out,9050)
       call store_blocks( fileno, 5 )
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       write(out,9055)
       call store_blocks( fileno, 2 )
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       write(out,9060)
       call store_blocks( fileno, 4 )
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       write(out,9080)
       call store_blocks( fileno, 6 )
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       write(out,9090)
 c
 c                         3) coordinate transformation matrices for
 c                            node coordinate systems for constraints
 c
       do node = 1, nonode
-         if (trn(node)) then
-            write (fileno) trnmat(node)%mat
-         end if
+         if( trn(node) ) write(fileno) trnmat(node)%mat
       end do
-      write (fileno) check_data_key
+      write(fileno) check_data_key
 c
-      call wrtbk( fileno, tol, prec_fact*mxcvtests)
-      call wrtbk( fileno, mdiag, prec_fact*nodof )
+      call wrtbk_r8( fileno, tol, mxcvtests )
+      call wrtbk_r8( fileno, mdiag, nodof )
 c
 c                            segmental curve definitions
 c 
-      call wrt3d( fileno, seg_curves, prec_fact*max_seg_points,2,
-     &            prec_fact*max_current_pts, 2, max_current_curves )
-      call wrtbk( fileno, seg_curves_min_stress,
-     &            prec_fact*max_current_curves )
-      call wrtbk( fileno, seg_curves_value,
-     &            prec_fact*max_current_curves )
-      call wrtbk( fileno, seg_curves_ym,
-     &            prec_fact*max_current_curves )
-      call wrtbk( fileno, seg_curves_nu,
-     &            prec_fact*max_current_curves )
-      call wrtbk( fileno, seg_curves_alpha,
-     &            prec_fact*max_current_curves )
-      call wrtbk( fileno, seg_curves_gp_sigma_0,
-     &            prec_fact*max_current_curves )
-      call wrtbk( fileno, seg_curves_gp_h_u,
-     &            prec_fact*max_current_curves )
-      call wrtbk( fileno, seg_curves_gp_beta_u,
-     &            prec_fact*max_current_curves )
-      call wrtbk( fileno, seg_curves_gp_delta_u,
-     &            prec_fact*max_current_curves )
+      call wrt3d_r8( fileno, seg_curves, max_seg_points, 2,
+     &            max_current_pts, 2, max_current_curves )
+      call wrtbk_r8( fileno, seg_curves_min_stress,
+     &            max_current_curves )
+      call wrtbk_r8( fileno, seg_curves_value,
+     &            max_current_curves )
+      call wrtbk_r8( fileno, seg_curves_ym,
+     &            max_current_curves )
+      call wrtbk_r8( fileno, seg_curves_nu,
+     &            max_current_curves )
+      call wrtbk_r8( fileno, seg_curves_alpha,
+     &            max_current_curves )
+      call wrtbk_r8( fileno, seg_curves_gp_sigma_0,
+     &            max_current_curves )
+      call wrtbk_r8( fileno, seg_curves_gp_h_u,
+     &            max_current_curves )
+      call wrtbk_r8( fileno, seg_curves_gp_beta_u,
+     &            max_current_curves )
+      call wrtbk_r8( fileno, seg_curves_gp_delta_u,
+     &            max_current_curves )
       write(fileno) seg_curves_pchip_slopes ! max_seg_pts x max_seg_curves
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       write(out,9100)
 c
 c                       save the nodal loading data. there are
@@ -366,79 +331,77 @@ c                       applied nodal loads and nodal temperaturres.
 c
       wrt_nod_lod = .false.
       do i = 1, mxlc
-       if ( node_load_defs(i)%node_count .gt. 0 ) wrt_nod_lod = .true.
-       if ( node_load_defs(i)%how_defined .gt. 0 ) wrt_nod_lod = .true.
+       if( node_load_defs(i)%node_count .gt. 0 ) wrt_nod_lod = .true.
+       if( node_load_defs(i)%how_defined .gt. 0 ) wrt_nod_lod = .true.
       end do
       write(fileno) wrt_nod_lod
-      if ( wrt_nod_lod ) then
+      if( wrt_nod_lod ) then
         do i = 1, mxlc
          node_count = node_load_defs(i)%node_count
          how_defined = node_load_defs(i)%how_defined
          write(fileno) node_count, how_defined
          write(fileno) node_load_defs(i)%user_file_name
-         if ( node_count .gt. 0 ) then
-          call wrtbk_i4( fileno, node_load_defs(i)%nodal_loads(1,1),
+         if( node_count .gt. 0 ) then
+          call wrtbk_i4( fileno, node_load_defs(i)%nodal_loads,
      &                2*node_count )
          end if
         end do
       end if
-      write (fileno) check_data_key
+      write(fileno) check_data_key
 c
       write(fileno) num_loddat_blks, next_loddat_col
       do i = 1, num_loddat_blks
-        call wrtbk_i4( fileno, loddat_blocks(i)%block(1,1),
+        call wrtbk_r4( fileno, loddat_blocks(i)%block,
      &              mxndldcm*sizeof_loddat_blks )
       end do
-      write (fileno) check_data_key
+      write(fileno) check_data_key
 c
 c                       save the element loading data, if given.
 c
       do i = 1, mxlc
          write(fileno) elem_loads(i)%size
-         if ( elem_loads(i)%size .gt. 0 ) then
-            call wrt2d( fileno, elem_loads(i)%data(1,1),
+         if( elem_loads(i)%size .gt. 0 ) then
+            call wrt2d_i4( fileno, elem_loads(i)%data,
      &           elem_loads(i)%size, elem_loads(i)%size, 3 )
-            call wrtbk_i4( fileno, elem_loads(i)%vals(1),
-     &           elem_loads(i)%size )
-            call wrtbk_i4( fileno, elem_loads(i)%piston_tabnum(1),
-     &           elem_loads(i)%size )
-         endif
+            call wrtbk_r4( fileno, elem_loads(i)%vals,
+     &                     elem_loads(i)%size )
+            call wrtbk_i4( fileno, elem_loads(i)%piston_tabnum,
+     &                     elem_loads(i)%size )
+         end if
       end do
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       write(out,9110)
 c
 c                       save the element equivalent nodal force vectors
 c                       for applied body forces, surface tractions,
 c                       pressures.
 c
-      if ( eq_node_force_len .gt. 0 ) then
+      if( eq_node_force_len .gt. 0 ) then
          call wrtbk_i4( fileno, eq_node_force_indexes, noelem )
-         call wrtbk( fileno, eq_node_forces,
-     &               eq_node_force_len*prec_fact )
+         call wrtbk_r8( fileno, eq_node_forces,
+     &               eq_node_force_len )
       end if
-      write (fileno) check_data_key
+      write(fileno) check_data_key
 c
 c                       save the nonlinear load step data
 c
-      if ( .not. allocated( step_load_data ) ) call mem_allocate( 19 )
+      if( .not. allocated( step_load_data ) ) call mem_allocate( 19 )
       do i = 1, max_step_limit
           write(fileno) step_load_data(i)%num_load_patterns
       end do
       do i = 1, max_step_limit
        num_patterns = step_load_data(i)%num_load_patterns
-       if ( num_patterns .gt. 0 ) then
+       if( num_patterns .gt. 0 ) then
         write(fileno) step_load_data(i)%load_patt_num(1:num_patterns)
         write(fileno) step_load_data(i)%load_patt_factor(1:num_patterns)
        end if
       end do
-      write (fileno) check_data_key
-c
+      write(fileno) check_data_key
 c
 c                       now save the crack growth parameters, if
 c                       needed. 1) integers/logicals, 2) doubles. then
 c                       data arrays based on user selected
 c                       growth options.
-c
 c
       write(fileno) crack_growth_type, max_dam_state, num_kill_elem,
      &              csttail, print_status, kill_order, no_killed_elems,
@@ -464,7 +427,7 @@ c
      &              regular_type, stop_released_nlist_length,  
      &              smcs_deleted_list_file_flag,
      &              smcs_removed_list_file_flag      
-      write (fileno) check_data_key
+      write(fileno) check_data_key
 c
       write(fileno) porosity_limit, gurson_cell_size,
      &              crack_plane_coord, release_fraction,
@@ -490,28 +453,28 @@ c
 c
       write(fileno) smcs_deleted_list_file_name, 
      &              smcs_removed_list_file_name
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       call wrtbk_i4( fileno, dam_ptr, noelem )
-      write (fileno) check_data_key
+      write(fileno) check_data_key
       write(out,9120)
 c
 c                             save element extinction variables
 c
-      if ( growth_by_kill ) then
+      if( growth_by_kill ) then
 c
          standard_kill_method = .true.
          if( use_mesh_regularization ) standard_kill_method = .false. 
 c
          call wrtbk_i4( fileno, dam_state, num_kill_elem )
-         call wrt2d( fileno, dam_ifv, prec_fact*mxedof,
-     &                    prec_fact*mxedof, num_kill_elem )
+         call wrt2d_r8( fileno, dam_ifv, mxedof, mxedof, 
+     &                  num_kill_elem )
 c
          write(fileno) check_data_key
          if( crack_growth_type .eq. 3 ) then   ! smcs
-               call wrtbk( fileno, smcs_old_epsplas,
-     &              prec_fact * num_kill_elem )
-               call wrtbk( fileno, smcs_tear_param,
-     &              prec_fact * num_kill_elem )
+               call wrtbk_r8( fileno, smcs_old_epsplas,
+     &              num_kill_elem )
+               call wrtbk_r8( fileno, smcs_tear_param,
+     &              num_kill_elem )
                isize = 0
                if( allocated(smcs_states_intlst) ) isize =
      &             sizeof( smcs_states_intlst )
@@ -519,25 +482,22 @@ c
                if( isize > 0 ) write(fileno)
      &             smcs_states_intlst(1:isize)
                if( use_weighted ) then
-                  isize = num_kill_elem * prec_fact 
-                  call wrtbk_i4( fileno, smcs_weighted_T, isize )
-                  call wrtbk_i4( fileno, smcs_weighted_zeta, isize )
-                  call wrtbk_i4( fileno, smcs_weighted_bar_theta, 
+                  isize = num_kill_elem  
+                  call wrtbk_r8( fileno, smcs_weighted_T, isize )
+                  call wrtbk_r8( fileno, smcs_weighted_zeta, isize )
+                  call wrtbk_r8( fileno, smcs_weighted_bar_theta, 
      &                           isize )
                 end if
          end if
          write(fileno) check_data_key
 c
          if( use_mesh_regularization ) then
-               call wrtbk( fileno, smcs_d_values,
-     &              prec_fact * num_kill_elem )
-               call wrtbk( fileno, smcs_eps_plas_at_death,
-     &              prec_fact * num_kill_elem )
-               call wrtbk( fileno, smcs_stress_at_death,
-     &              prec_fact * num_kill_elem )
-               call wrtbk_i4( fileno, smcs_start_kill_step, 
-     &                     num_kill_elem )
-               write(out,9250)
+           call wrtbk_r8( fileno, smcs_d_values, num_kill_elem )
+           call wrtbk_r8( fileno, smcs_eps_plas_at_death,
+     &           num_kill_elem )
+           call wrtbk_r8( fileno, smcs_stress_at_death, num_kill_elem )
+           call wrtbk_i4( fileno, smcs_start_kill_step, num_kill_elem )
+           write(out,9250)
          end if
          write(fileno) check_data_key
 c 
@@ -552,90 +512,89 @@ c
          if( print_status ) then
             call wrtbk_i4( fileno, dam_print_list, num_print_list )
          end if
-         write (fileno) check_data_key
+         write(fileno) check_data_key
 c
          if( kill_order ) then
             call wrtbk_i4( fileno, kill_order_list, 
      &       num_kill_order_list )
          end if
-         write (fileno) check_data_key
+         write(fileno) check_data_key
 c
-         if ( .not. no_killed_elems ) then
+         if( .not. no_killed_elems ) then
             call wrtbk_i4( fileno, dam_node_elecnt, nonode )
          end if
-         write (fileno) check_data_key
+         write(fileno) check_data_key
 c
-         if ( release_type .eq. 2  ) then
-            if ( .not. no_killed_elems ) then
+         if( release_type .eq. 2  ) then
+            if( .not. no_killed_elems ) then
                call wrtbk_i4( fileno, dam_face_nodes,
      &                        4*num_kill_elem )
-               call wrtbk( fileno, dam_dbar_elems,
-     &              (2*prec_fact)*num_kill_elem )
+               call wrtbk_r8( fileno, dam_dbar_elems,
+     &              2*num_kill_elem )
             end if
          end if
 c
-         write (fileno) check_data_key
+         write(fileno) check_data_key
          write(out,9130)
 c
 c                                   if load step size reduction is on,
 c                                   save porosity or plastic strain from
 c                                   last step.
 c
-         if ( load_size_control_crk_grth ) then
-            if ( crack_growth_type .eq. 1 ) then
-               call wrtbk( fileno, gt_old_porosity,
-     &              prec_fact * num_kill_elem )
-               call wrtbk( fileno, del_poros,
-     &              prec_fact * mxstp_store)
-            else if ( crack_growth_type .eq. 3) then
-               call wrtbk( fileno, old_plast_strain,
-     &              prec_fact * num_kill_elem )
-            else if ( crack_growth_type .eq. 4 ) then
-               call wrtbk( fileno, cohes_old_deff,
-     &              prec_fact * num_kill_elem )
-               call wrtbk( fileno, del_deff,
-     &              prec_fact * mxstp_store )
+         if( load_size_control_crk_grth ) then
+            if( crack_growth_type .eq. 1 ) then
+               call wrtbk_r8( fileno, gt_old_porosity,
+     &               num_kill_elem )
+               call wrtbk_r8( fileno, del_poros, mxstp_store) 
+            else if( crack_growth_type .eq. 3) then
+               call wrtbk_r8( fileno, old_plast_strain,
+     &               num_kill_elem )
+            else if( crack_growth_type .eq. 4 ) then
+               call wrtbk_r8( fileno, cohes_old_deff,
+     &               num_kill_elem )
+               call wrtbk_r8( fileno, del_deff, mxstp_store )
             end if
          end if
-         write (fileno) check_data_key
+         write(fileno) check_data_key
 c
 c                             save node release variables
 c
-      else if ( growth_by_release ) then
+      else if( growth_by_release ) then
 c
          call wrtbk_i4( fileno, crack_plane_nodes,
      &                  num_crack_plane_nodes )
          call wrtbk_i4( fileno, inv_crkpln_nodes, nonode )
          call wrtbk_i4( fileno, num_neighbors, 
      &                  num_crack_plane_nodes )
-         call wrt2d( fileno, neighbor_nodes, mxconn, mxconn,
+         call wrt2d_i4( fileno, neighbor_nodes, mxconn, mxconn,
      &        num_crack_plane_nodes )
          call wrtbk_i4( fileno, crkpln_nodes_state,
      &        num_crack_plane_nodes )
-         call wrtbk( fileno, crkpln_nodes_react,
-     &        num_crack_plane_nodes * prec_fact )
-         call wrt2d( fileno, crack_front_nodes, num_crack_plane_nodes,
-     &     num_crack_plane_nodes, 2 )
-         write (fileno) check_data_key
+         call wrtbk_r8( fileno, crkpln_nodes_react,
+     &        num_crack_plane_nodes )
+         call wrt2d_i4( fileno, crack_front_nodes, 
+     &                  num_crack_plane_nodes,
+     &                  num_crack_plane_nodes, 2 )
+         write(fileno) check_data_key
 
-         if ( release_type .eq. 2 ) call wrtbk ( fileno,
-     &        node_release_frac,num_crack_plane_nodes * prec_fact )
-         write (fileno) check_data_key
+         if( release_type .eq. 2 ) call wrtbk_r8( fileno,
+     &        node_release_frac, num_crack_plane_nodes )
+         write(fileno) check_data_key
 
-      if ( overshoot_control_crk_grth ) call wrt2d( fileno,
-     &        old_angles_at_front, num_crack_plane_nodes * prec_fact,
-     &        num_crack_plane_nodes * prec_fact, mxconn )
-         write (fileno) check_data_key
+      if( overshoot_control_crk_grth ) call wrt2d_r8( fileno,
+     &        old_angles_at_front, num_crack_plane_nodes,
+     &        num_crack_plane_nodes, mxconn )
+         write(fileno) check_data_key
 
-         if ( const_front ) then
+         if( const_front ) then
            call wrtbk_i4( fileno, master_nodes, num_crack_fronts )
-           call wrt2d( fileno, crack_front_list, num_crack_fronts*
+           call wrt2d_i4( fileno, crack_front_list, num_crack_fronts*
      &                 num_nodes_grwinc,num_crack_fronts*
      &                 num_nodes_grwinc,num_nodes_thick )
-           call wrt2d( fileno, master_lines, num_crack_fronts,
+           call wrt2d_i4( fileno, master_lines, num_crack_fronts,
      &                 num_crack_fronts, num_nodes_back + 1 )
          end if
-         write (fileno) check_data_key
+         write(fileno) check_data_key
          write(out,9140)
 c  
          isize = stop_released_nlist_length
@@ -644,80 +603,76 @@ c
          end if
 c
       end if
-      write (fileno) check_data_key
+      write(fileno) check_data_key
 c
 c                       save data structures for contact
 c
-      write (fileno) use_contact
+      write(fileno) use_contact
 c
-      if (use_contact) then
-         write (fileno) num_contact
+      if( use_contact ) then
+         write(fileno) num_contact
          call wrtbk_i4( fileno, contact_shape, num_contact)
-         call wrtbk_i4( fileno, contact_outside, num_contact)
-         call wrt2d( fileno, contact_cause, maxcontact, maxcontact,
-     &        nonode)
-         call wrtbk( fileno, contact_stiff, num_contact* prec_fact)
-         call wrtbk( fileno, contact_depth, num_contact*prec_fact)
-         call wrtbk( fileno, contact_fric, num_contact*prec_fact)
-         write (fileno) check_data_key
-         call wrt2d( fileno, cshape_param, maxcntprm* prec_fact,
-     &        maxcntprm*prec_fact, num_contact)
-         call wrt2d( fileno, cshape_rate, 3*prec_fact, 3*prec_fact,
-     &        num_contact)
-         call wrt2d( fileno, cshape_pnt, 3*prec_fact, 3*prec_fact,
-     &        num_contact)
-         call wrt2d( fileno, cshape_norm, 3*prec_fact, 3*prec_fact,
-     &        num_contact)
-         call wrt3d( fileno, cplane_vec, 3*prec_fact, 2*prec_fact,
-     &        3*prec_fact, 2*prec_fact,  num_contact)
+         call wrtbk_l4( fileno, contact_outside, num_contact)
+         call wrt2d_i4( fileno, contact_cause, maxcontact, maxcontact,
+     &                  nonode )
+         call wrtbk_r8( fileno, contact_stiff, num_contact )
+         call wrtbk_r8( fileno, contact_depth, num_contact )
+         call wrtbk_r8( fileno, contact_fric, num_contact )
+         write(fileno) check_data_key
+         call wrt2d_r8( fileno, cshape_param, maxcntprm,
+     &                  maxcntprm, num_contact)
+         call wrt2d_r8( fileno, cshape_rate, 3, 3, num_contact)
+         call wrt2d_r8( fileno, cshape_pnt, 3, 3, num_contact)
+         call wrt2d_r8( fileno, cshape_norm, 3, 3, num_contact)
+         call wrt3d_r8( fileno, cplane_vec, 3, 2, 3, 2, num_contact )
          write(out,9150)
-      endif
-      write (fileno) check_data_key
+      end if
+      write(fileno) check_data_key
 c
 c                       save data structures for mpcs. current values
 c                       of lagrange nodal forces
 c
-      write (fileno) mpcs_exist
-      if (mpcs_exist) then
-         write (fileno) num_user_mpc
+      write(fileno) mpcs_exist
+      if( mpcs_exist)  then
+         write(fileno) num_user_mpc
          do mpc = 1, num_user_mpc
             ntrm = user_mpc_table(mpc)%num_terms
-            write (fileno) ntrm
-            write (fileno) user_mpc_table(mpc)%constant
+            write(fileno) ntrm
+            write(fileno) user_mpc_table(mpc)%constant
             call wrtbk_i4( fileno, user_mpc_table(mpc)%node_list,
      &                     ntrm )
             call wrtbk_i4( fileno, user_mpc_table(mpc)%dof_list, 
      &                     ntrm )
-            call wrtbk_i4( fileno, user_mpc_table(mpc)%multiplier_list,
+            call wrtbk_r4( fileno, user_mpc_table(mpc)%multiplier_list,
      &                     ntrm )
-            write (fileno) check_data_key
+            write(fileno) check_data_key
          end do
          write(out,9160)
       end if
 c
-      write (fileno) tied_con_mpcs_constructed
-      if (tied_con_mpcs_constructed) then
-         write (fileno) num_tied_con_mpc
+      write(fileno) tied_con_mpcs_constructed
+      if( tied_con_mpcs_constructed ) then
+         write(fileno) num_tied_con_mpc
          do mpc = 1, num_tied_con_mpc
             ntrm = tied_con_mpc_table(mpc)%num_terms
-            write (fileno) ntrm
-            write (fileno) tied_con_mpc_table(mpc)%constant
+            write(fileno) ntrm
+            write(fileno) tied_con_mpc_table(mpc)%constant
             call wrtbk_i4( fileno, tied_con_mpc_table(mpc)%node_list,
      &                     ntrm)
             call wrtbk_i4( fileno, tied_con_mpc_table(mpc)%dof_list, 
      &                     ntrm )
-            call wrtbk_i4( fileno,
+            call wrtbk_r4( fileno,
      &                     tied_con_mpc_table(mpc)%multiplier_list,
      &                     ntrm )
-            write (fileno) check_data_key
+            write(fileno) check_data_key
          end do
          write(out,9170)
       end if
 c
       if( mpcs_exist .or. tied_con_mpcs_constructed ) then
-        call wrtbk( fileno, total_lagrange_forces, nodof* prec_fact )
+        call wrtbk_r8( fileno, total_lagrange_forces, nodof )
       end if
-      write (fileno) check_data_key
+      write(fileno) check_data_key
 c
 c                       save the table definitions, save both single
 c                       and double precision values.
@@ -729,12 +684,12 @@ c
          num_cols = tables(itab)%num_cols
          write(fileno) num_rows
          write(fileno) num_cols
-         if ( num_rows .ne. 0 ) then
-            call wrt2d( fileno, tables(itab)%table_values_sgl(1,1),
+         if( num_rows .ne. 0 ) then
+            call wrt2d_r4( fileno, tables(itab)%table_values_sgl,
      &           num_rows, num_rows, num_cols )
-            call wrt2d( fileno, tables(itab)%table_values_dbl(1,1),
-     &           num_rows*prec_fact, num_rows*prec_fact, num_cols )
-         endif
+            call wrt2d_r8( fileno, tables(itab)%table_values_dbl,
+     &           num_rows, num_rows, num_cols )
+         end if
       end do
       write(out,9180)
       write(fileno) check_data_key
@@ -745,9 +700,9 @@ c
          write(fileno) user_lists(ilist)%name
          ulen =  user_lists(ilist)%length_list
          write(fileno) ulen
-         if ( ulen .ne. 0 ) then
-           call wrtbk_i4(fileno,user_lists(ilist)%list(1),ulen)
-         endif
+         if( ulen .ne. 0 ) then
+           call wrtbk_i4( fileno, user_lists(ilist)%list, ulen )
+         end if
       end do
       write(out,9190)
       write(fileno) check_data_key
@@ -829,7 +784,7 @@ c
 c                       save initial stress data
 c
       if( initial_stresses_exist ) then
-        call wrtbk( fileno, initial_stresses, prec_fact*noelem*6 )
+        call wrtbk_r8( fileno, initial_stresses, noelem*6 )
         write(out,9230)
       end if
       write(fileno) check_data_key
@@ -854,7 +809,7 @@ c                       save a final check variable for checking in restart
 c                       to help indicate if a restart file has been corrupted.
 c                       The number is 2**31 - 1
 c
-      write (fileno) check_data_key
+      write(fileno) check_data_key
 c
 c                       close the file
 c
@@ -931,18 +886,17 @@ c
 
       integer, parameter :: check_data_key = 2147483647
 c
-c
       select case( proc_type )
 c
 c            element history data and [Dt]s
 c
       case( 1 )
       do blk = 1, nelblk
-       if ( history_blk_list(blk) .gt. 0 ) then
+       if( history_blk_list(blk) .gt. 0 ) then
           write(fileno) history_blocks(blk)%ptr
           write(fileno) check_data_key
        end if
-       if ( cep_blk_list(blk) .gt. 0 ) then
+       if( cep_blk_list(blk) .gt. 0 ) then
           write(fileno) cep_blocks(blk)%vector
           write(fileno) check_data_key
        end if
@@ -953,7 +907,7 @@ c            for geometric nonlinear element blocks.
 c
       case( 2 )
       do blk = 1, nelblk
-       if ( rot_blk_list(blk) .eq. 1 ) then
+       if( rot_blk_list(blk) .eq. 1 ) then
            write(fileno) rot_n1_blocks(blk)%ptr
            write(fileno) check_data_key
        end if
@@ -983,7 +937,7 @@ c            element strains at gauss points - all elements
 c
       case( 4 )
       do blk = 1, nelblk
-        if ( eps_blk_list(blk) .eq. 1 ) then
+        if( eps_blk_list(blk) .eq. 1 ) then
           write(fileno) eps_n_blocks(blk)%ptr
           write(fileno) check_data_key
         end if
@@ -993,7 +947,7 @@ c            element stresses at gauss points - all elements
 c
       case( 5 )
       do blk = 1, nelblk
-        if ( urcs_blk_list(blk) .eq. 1 ) then
+        if( urcs_blk_list(blk) .eq. 1 ) then
            write(fileno) urcs_n_blocks(blk)%ptr
            write(fileno) check_data_key
         end if
@@ -1127,30 +1081,6 @@ c
 c
       return
       end
-c
-c     ****************************************************************
-c     *                                                              *
-c     *               subroutine store_dvector                       *
-c     *                                                              *
-c     *                    written by : rhd                          *
-c     *                                                              *
-c     *                last modified : 8/19/21 rhd                   *
-c     *                                                              *
-c     ****************************************************************
-c
-      subroutine store_dvector( fileno, vec, n )
-      implicit none
-c
-      integer, intent(in) :: fileno, n
-      double precision :: vec(n)
-c
-      write(fileno) vec(1:n)
-c
-      return
-      end
- 
-
-
 
 
 

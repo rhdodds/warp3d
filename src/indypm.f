@@ -4,7 +4,7 @@ c     *                      subroutine indypm                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 3/28/2026 rhd              *
+c     *                   last modified : 4/10/2026 rhd              *
 c     *                                                              *
 c     *     input parameters controlling how the solution is         *
 c     *     performed for analysis                                   *
@@ -1029,7 +1029,11 @@ c **********************************************************************
 c
 c
  3100 continue
-      if (matchs('asymmetric',5)) then
+      if( matchs('asymmetric',5) ) then
+            if( mumps_solve .or. nasa_vss ) then
+                 asymmetric_assembly = .false.
+                 go to 10
+            end if     
             if (matchs('on',2)) then
                   asymmetric_assembly = .true.
             else if (matchs('off',3)) then

@@ -1442,8 +1442,8 @@ c
       subroutine wrt2d_si4( fileno, array, dimrow, numrows, numcols )               
 c
       implicit none
-      integer :: fileno, array(dimrow,numcols), dimrow, numrows,
-     &           numcols      
+      integer :: fileno, dimrow, numrows, numcols,
+     &           array(dimrow,numcols)
 c
       integer :: col                                                  
 c                                                                               
