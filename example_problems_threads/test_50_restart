@@ -1,0 +1,5 @@
+!
+ restart from 'test_50_rest1000'
+  *input from file 'test_50_get_results'
+  stop
+  
