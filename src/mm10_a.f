@@ -253,6 +253,7 @@ c
      &        local_work%gpn, cc_np1 )
 c
       if( locdebug ) write(iout,*) "Updating crystal ", c
+      p_strain_ten_c(1:6) = zero
       call mm10_solve_crystal( cc_props, cc_np1, cc_n,
      &        local_work%material_cut_step, iout, .false., 0,
      &        p_strain_ten_c, iter_0_extrapolate_off )
