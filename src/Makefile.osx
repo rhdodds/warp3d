@@ -132,7 +132,7 @@ NO_INLINE =
 ifeq ($(PLATFORM),Intel_ifort)
     ODIR = ././../obj_macOS_ifort
     EXE_NAME = warp3d_Intel.exe
-    BUILD_FLAG :=  
+    BUILD_FLAG :=  $(BUILDNUM)
     KMP_ERROR  := KMP_ERROR  # temp fix for MKL 
     MKL := MKL  # include MKL routines
     PARDISO := PARDISO
@@ -173,7 +173,7 @@ ifeq ($(PLATFORM),Intel_ifort)
                 -mmacosx-version-min=11.5
 #
     FOR      = $(COMPILER) $(FCOPTS) -D$(MKL) -D$(KMP_ERROR) -D$(OSNAME) \
-               -D$(PARDISO)
+               -D$(PARDISO) -DBuild=5100
     LINK     = $(COMPILER) $(FCOPTS)  $(OBJ)  $(LINKOPS)
 #
 endif
