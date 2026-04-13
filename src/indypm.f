@@ -457,6 +457,12 @@ c
       write(out,9620)
       go to 1150
 #endif            
+#ifndef PARDISO
+      mumps_solve = .true.
+      solver_flag = 2
+      write(out,9620)
+      go to 1150
+#endif            
       if ( matchs('technique',4) ) call splunj
       if ( matchs('type',4) ) call splunj
 c
