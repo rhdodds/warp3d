@@ -1,0 +1,1170 @@
+
+
+>>> Running with Python version: 3.14
+>>> Platform: macOS (Silicon)
+
+>>> Number of threads to use: 10
+
+>>> Note: comparison and output values may be different in the last 1 or 2
+          signficant digits with various number of threads
+
+> Select a problem to run:
+
+  1 ) All Problems
+  2 ) Test 14: (Linear elastic impact, sparse iterative solver)
+  3 ) Test 18: (Gurson model growth, impact loading, restart)
+  4 ) Test 24: (hollow sphere, skew constraints, int press, large displ) 
+  5 ) Test 39: (CTOA and SMCS crack growth)
+  6 ) Test 41: (rigid contact, large displacements)
+  7 ) Test 44: (Cohesive-interface growth, restart)
+  8 ) Test 47: (Bilinear, cyclic, thermo-plasticity)
+  9 ) Test 86: (SEB, FGMs, nonlinear, J-values)
+  10 ) Test 50: (Fatigue crack growth using node release)
+  11 ) Test 51: (Nonlinear patch tests: tet elements)
+  12 ) Test 54: (FGM, linear, SE(T), non-global constraints)
+  13 ) Test 57: (SSY, mises + hydrogen effects)
+  14 ) Test 60: (Advanced cyclic plasticty model)
+  15 ) Test 61: (FGMs, interaction integrals)
+  16 ) Test 63: (360-degree SSY model, KI,KII,KIII)
+  17 ) Test 67: (Mesh tieing of two cylinders)
+  18 ) Test 69: (Interface-cohesive elements)
+  19 ) Test 70: (generalized_plasticity w/ temperature dependent properties)
+  20 ) Test 71: (piston loading for unsteady aerodynamic pressures)
+  21 ) Test 72: (user-defined integer lists of nodes-elements)
+  22 ) Test 73: (UMAT included in WARP3D - bilinear mises, kinematic hardening)
+  23 ) Test 74: (Crystal plasticity and restart)
+  24 ) Test 75: (Release constraints: absolute and relative)
+  25 ) Test 76: (User-defined multi-point constraints)
+  26 ) Test 77: (Finite strain transformations/output)
+  27 ) Test 78: (High-rate loading panel with hole. 20-node, rate plasticity)
+  28 ) Test 80: (Norton creep. Non-global constraints)
+  29 ) Test 81: (Flat and Patran result output files
+  30 ) Test 82: (Crystal Plasticity options)
+  31 ) Test 83: (bar2 element)
+  32 ) Test 84: (link2 element; Periodic Boundary Conditions)
+  33 ) Test 85: (user-defined initial-stresses)
+  34 ) Test 86: (FGMs compute J. explicit terms needed for path independence)
+  35 ) Test 87: (T-stress. surface cracked plate. face loading)
+  36 ) Test 88: (SMCS ductile growth. mesh regularization, restart)
+  37 ) Test 89: (SMCS ductile growth. C(T), blunt with hole, restart)
+  38 ) Test 90: (RVEs with periodic boundary conditions)
+  39 ) Test 91: (Crystal plasticity for Ti6242)
+  40 ) Quit
+Enter your choice (<return> for menu): 1
+
+>>>  Test 14 (Linear elastic impact, sparse iterative solver)
+     ========================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_14  ... walltime: 9.0
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_14_out
+	    .... comparison value:	 -0.332151
+	    .... value from output:	 -0.332151   
+
+
+>>>  Test 18 (Gurson model, impact loading, restart)
+     ===============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_18a  ... walltime: 3.3
+  ... Ran:  test_18b  ... walltime: 2.6
+  ... Ran:  test_18e  ... walltime: 2.6
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_18a_out
+	    .... comparison value:	 0.1310E+01
+	    .... value from output:	 0.1310E+01   
+
+
+  ... Checking results: test_18b_out
+	    .... comparison value:	 0.3023E+01
+	    .... value from output:	 0.3023E+01   
+
+
+  ... Checking results: test_18e_out
+	    .... comparison value:	 0.2915E+01
+	    .... value from output:	 0.2915E+01   
+
+
+>>>  Test 24 (skew constraints)
+     ============================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_24  ... walltime: 0.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_24_out
+	    .... comparison value:	 -205.047360
+	    .... value from output:	 -205.047030   
+
+
+>>>  Test 39 (CTOA and SMCS crack growth)
+     ====================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_39a  ... walltime: 8.6
+  ... Ran:  test_39b  ... walltime: 9.0
+  ... Ran:  test_39c  ... walltime: 2.1
+  ... Ran:  test_39d  ... walltime: 2.1
+  ... Ran:  test_39e  ... walltime: 9.3
+  ... Ran:  test_39f  ... walltime: 4.4
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_39a_out
+	    .... comparison value:	 0.16735677E+00
+	    .... value from output:	 0.16735677E+00   
+
+
+  ... Checking results: test_39b_out
+	    .... comparison value:	 0.058250
+	    .... value from output:	 0.058250   
+
+
+  ... Checking results: test_39c_out
+	    .... comparison value:	 0.052446
+	    .... value from output:	 0.052446   
+
+
+  ... Checking results: test_39d_out
+	    .... comparison value:	 0.43827048E+00
+	    .... value from output:	 0.43827047E+00   
+
+
+  ... Checking results: test_39e_out
+	    .... comparison value:	 0.45094249E+00
+	    .... value from output:	 0.45094249E+00   
+
+
+  ... Checking results: test_39f_out
+	    .... comparison value:	 0.40744457E+00
+	    .... value from output:	 0.40744457E+00   
+
+
+>>>  Test 41 (rigid contact, large displacements)
+     ============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_41a  ... walltime: 13.4
+  ... Ran:  test_41b  ... walltime: 0.2
+  ... Ran:  test_41c  ... walltime: 39.8
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_41a_out
+	    .... comparison value:	 0.17156817E+02
+	    .... value from output:	 0.17156831E+02   
+
+
+  ... Checking results: test_41b_out
+	    .... comparison value:	 -0.113228
+	    .... value from output:	 -0.113228   
+
+
+  ... Checking results: test_41c_out
+	    .... comparison value:	 0.009979
+	    .... value from output:	 0.009979   
+
+
+>>> Test 44 (Cohesive-interface growth, restart)
+    ============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_44_ppr  ... walltime: 2.8
+  ... Ran:  test_44_ppr_restart  ... walltime: 2.8
+  ... Ran:  test_44_exp1  ... walltime: 2.5
+  ... Ran:  test_44_exp1_restart  ... walltime: 2.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_44b_out
+	    .... comparison value:	 0.33949465E+00
+	    .... value from output:	 0.33949393E+00   
+
+
+  ... Checking results: test_44d_out
+	    .... comparison value:	 0.35246131E+00
+	    .... value from output:	 0.35246162E+00   
+
+
+>>>  Test 47 (Bilinear, cyclic, thermo-plasticity)
+     =============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_47  ... walltime: 1.5
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_47_out
+	    .... comparison value:	 20.560236
+	    .... value from output:	 20.560236   
+
+
+>>>  Test 86 (FGMs compute J. explicit terms needed)
+     ===============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_86  ... walltime: 13.4
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_86_out
+	    .... comparison value:	 0.2172E+01
+	    .... value from output:	 0.2172E+01   
+
+
+>>>  Test 50 (Fatigue crack growth using node release
+     ================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_50  ... walltime: 19.5
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_50_out
+	    .... comparison value:	 -0.49623E-03
+	    .... value from output:	 -0.49623E-03   
+
+
+>>>  Test 51 (Nonlinear patch tests: tet elements)
+     =============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_51a  ... walltime: 0.1
+  ... Ran:  test_51b  ... walltime: 0.1
+  ... Ran:  test_51c  ... walltime: 0.1
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_51a_out
+	    .... comparison value:	 54.245932
+	    .... value from output:	 54.245932   
+
+
+  ... Checking results: test_51b_out
+	    .... comparison value:	 54.245932
+	    .... value from output:	 54.245932   
+
+
+  ... Checking results: test_51c_out
+	    .... comparison value:	 15.070968
+	    .... value from output:	 15.070969   
+
+
+>>>  Test 54 (FGM, non-global constraints)
+     =====================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_54b  ... walltime: 0.1
+  ... Ran:  test_54c  ... walltime: 0.1
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_54b_out
+	    .... comparison value:	 1.940321
+	    .... value from output:	 1.940321   
+
+
+  ... Checking results: test_54c_out
+	    .... comparison value:	 5.021967
+	    .... value from output:	 5.021967   
+
+
+>>>  Test 57 (SSY, mises + hydrogen efects)
+     ======================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_57  ... walltime: 1.6
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_57_out
+	    .... comparison value:	 0.1880E+05
+	    .... value from output:	 0.1880E+05   
+
+
+>>>  Test 60 (Advanced cyclic plasticty model)
+     =========================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_60a  ... walltime: 11.0
+  ... Ran:  test_60b  ... walltime: 7.0
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_60a_out
+	    .... comparison value:	 0.21036833E-01
+	    .... value from output:	 0.21036832E-01   
+
+
+  ... Checking results: test_60b_out
+	    .... comparison value:	 0.23211111E-01
+	    .... value from output:	 0.23211111E-01   
+
+
+>>>  Test 61 (FGMs, interaction integrals)
+     =====================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_61a  ... walltime: 0.4
+  ... Ran:  test_61b  ... walltime: 0.4
+  ... Ran:  test_61c  ... walltime: 0.4
+  ... Ran:  test_61d  ... walltime: 0.4
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_61a_out
+	    .... comparison value:	 0.5117E+00
+	    .... value from output:	 0.5117E+00   
+
+
+  ... Checking results: test_61b_out
+	    .... comparison value:	 0.1034E+01
+	    .... value from output:	 0.1034E+01   
+
+
+  ... Checking results: test_61c_out
+	    .... comparison value:	 -0.6174E+00
+	    .... value from output:	 -0.6174E+00   
+
+
+  ... Checking results: test_61d_out
+	    .... comparison value:	 -0.2635E+00
+	    .... value from output:	 -0.2635E+00   
+
+
+>>>  Test 63 (360-degree SSY model, KI,KII,KIII)
+     ===========================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_63a  ... walltime: 0.0
+  ... Ran:  test_63b  ... walltime: 0.0
+  ... Ran:  test_63c  ... walltime: 0.0
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_63a_out
+	    .... comparison value:	 0.1016E+01
+	    .... value from output:	 0.1016E+01   
+
+
+  ... Checking results: test_63b_out
+	    .... comparison value:	 0.1024E+01
+	    .... value from output:	 0.1024E+01   
+
+
+  ... Checking results: test_63c_out
+	    .... comparison value:	 0.1002E+01
+	    .... value from output:	 0.1002E+01   
+
+
+>>>  Test 67 (Mesh tieing: hex-to-hex, tet-to-hex)
+     =============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_67a  ... walltime: 2.2
+  ... Ran:  test_67b  ... walltime: 0.1
+  ... Ran:  test_67c  ... walltime: 0.0
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_67a_out
+	    .... comparison value:	 0.28518081E+01
+	    .... value from output:	 0.28518081E+01   
+
+
+  ... Checking results: test_67b_out
+	    .... comparison value:	 69.533108
+	    .... value from output:	 69.533108   
+
+
+  ... Checking results: test_67c_out
+	    .... comparison value:	 100.025528
+	    .... value from output:	 100.025528   
+
+
+>>>  Test 69 (Interface-cohesive elements)
+     =====================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_69aa  ... walltime: 0.1
+  ... Ran:  test_69ab  ... walltime: 0.1
+  ... Ran:  test_69ab  ... walltime: 0.1
+  ... Ran:  test_69ac  ... walltime: 0.2
+  ... Ran:  test_69ad  ... walltime: 0.4
+  ... Ran:  test_69sa  ... walltime: 0.4
+  ... Ran:  test_69sb  ... walltime: 0.4
+  ... Ran:  test_69ta  ... walltime: 0.1
+  ... Ran:  test_69tb  ... walltime: 0.1
+  ... Ran:  test_69c_initial  ... walltime: 0.3
+  ... Ran:  test_69c_restart  ... walltime: 0.2
+  ... Ran:  test_69_compression_a  ... walltime: 0.1
+  ... Ran:  test_69_compression_b  ... walltime: 0.1
+  ... Ran:  test_69_compression_c  ... walltime: 0.1
+  ... Ran:  test_69_PPR_patch_uniaxial  ... walltime: 1.4
+  ... Ran:  test_69_PPR_patch_shear  ... walltime: 1.5
+  ... Ran:  test_69_PPR_particle  ... walltime: 16.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_69aa_out
+	    .... comparison value:	 0.430622E+01
+	    .... value from output:	 0.430622E+01   
+
+
+  ... Checking results: test_69ab_out
+	    .... comparison value:	 0.473451E+01
+	    .... value from output:	 0.473451E+01   
+
+
+  ... Checking results: test_69ab_out2
+	    .... comparison value:	 -1.095195
+	    .... value from output:	 -1.095195   
+
+
+  ... Checking results: test_69ac_out
+	    .... comparison value:	 0.471995E+01
+	    .... value from output:	 0.471995E+01   
+
+
+  ... Checking results: test_69ad_out
+	    .... comparison value:	 0.398872E+00
+	    .... value from output:	 0.398872E+00   
+
+
+  ... Checking results: test_69sa_out
+	    .... comparison value:	 0.412147E+01
+	    .... value from output:	 0.412147E+01   
+
+
+  ... Checking results: test_69sb_out
+	    .... comparison value:	 0.267325E+00
+	    .... value from output:	 0.267325E+00   
+
+
+  ... Checking results: test_69ta_out
+	    .... comparison value:	 0.444265E+01
+	    .... value from output:	 0.444265E+01   
+
+
+  ... Checking results: test_69tb_out
+	    .... comparison value:	 0.442322E+01
+	    .... value from output:	 0.442322E+01   
+
+
+  ... Checking results: test_69c_initial_out
+	    .... comparison value:	 0.142984E+01
+	    .... value from output:	 0.142984E+01   
+
+
+  ... Checking results: test_69c_restart_out
+	    .... comparison value:	 0.398614E+00
+	    .... value from output:	 0.398614E+00   
+
+
+  ... Checking results: test_69_compression_a_out
+	    .... comparison value:	 -0.000011
+	    .... value from output:	 -0.000011   
+
+
+  ... Checking results: test_69_compression_b_out
+	    .... comparison value:	 -0.000011
+	    .... value from output:	 -0.000011   
+
+
+  ... Checking results: test_69_compression_c_out
+	    .... comparison value:	 -0.000010
+	    .... value from output:	 -0.000010   
+
+
+  ... Checking results: test_69_PPR_patch_uniaxial_out
+	    .... comparison value:	 0.405389E-01
+	    .... value from output:	 0.405393E-01   
+
+
+  ... Checking results: test_69_PPR_patch_shear_out
+	    .... comparison value:	 0.281979E+00
+	    .... value from output:	 0.281985E+00   
+
+
+  ... Checking results: test_69_PPR_particle_out
+	    .... comparison value:	 0.50854226E-01
+	    .... value from output:	 0.50854226E-01   
+
+
+>>>  Test 70 (cube with temperature dependent generalized plasticity)
+     ================================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_70  ... walltime: 23.9
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_70_out
+	    .... comparison value:	 0.017679
+	    .... value from output:	 0.017679   
+
+
+>>>  Test 71 (piston pressure loading on faces on ramp panel)
+     ========================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_71  ... walltime: 0.2
+  ... Ran:  test_71_restart  ... walltime: 0.1
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_71_out
+	    .... comparison value:	 0.008459
+	    .... value from output:	 0.008459   
+
+
+  ... Checking results: test_71_restart_out
+	    .... comparison value:	 0.008459
+	    .... value from output:	 0.008459   
+
+
+>>>  Test 72 (user-defined named lists of nodes elements)
+     ====================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_72a  ... walltime: 0.1
+  ... Ran:  test_72b  ... walltime: 0.1
+  ... Ran:  test_72c  ... walltime: 0.1
+  ... Ran:  test_72d  ... walltime: 0.1
+  ... Ran:  test_72e  ... walltime: 0.1
+  ... Ran:  test_72f  ... walltime: 0.1
+  ... Ran:  test_72g  ... walltime: 0.1
+  ... Ran:  test_72h  ... walltime: 0.1
+  ... Ran:  test_72i  ... walltime: 0.1
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_72_out
+	    .... comparison value:	 853
+	    .... value from output:	 853   
+
+
+  ... Checking results: test_72b_out
+	    .... comparison value:	 21
+	    .... value from output:	 21   
+
+
+  ... Checking results: test_72c_out
+	    .... comparison value:	 821
+	    .... value from output:	 821   
+
+
+  ... Checking results: test_72d_out
+	    .... comparison value:	 1
+	    .... value from output:	 1   
+
+
+  ... Checking results: test_72e_out
+	    .... comparison value:	 821
+	    .... value from output:	 821   
+
+
+  ... Checking results: test_72f_out
+	    .... comparison value:	 2053
+	    .... value from output:	 2053   
+
+
+  ... Checking results: test_72g_out
+	    .... comparison value:	 51
+	    .... value from output:	 51   
+
+
+  ... Checking results: test_72h_out
+	    .... comparison value:	 1
+	    .... value from output:	 1   
+
+
+  ... Checking results: test_72i_out
+	    .... comparison value:	 1
+	    .... value from output:	 1   
+
+
+>>>  Test 73 (UMAT included in WARP3D - bilinear plasticity)
+     =======================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test73  ... walltime: 0.1
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_73_out
+	    .... comparison value:	 26.119914
+	    .... value from output:	 26.119910   
+
+
+>>>   Test 74 (Crystal plasticity and restart)
+     =========================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test74  ... walltime: 15.6
+  ... Ran:  test_74_restart  ... walltime: 1.3
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_74_out
+	    .... comparison value:	 393.074091
+	    .... value from output:	 393.074091   
+
+
+  ... Checking results: test_74_restart_out
+	    .... comparison value:	 471.454198
+	    .... value from output:	 471.454198   
+
+
+>>>  Test 75 (Release nodal constraints)
+     ===================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_75_b  ... walltime: 1.9
+  ... Ran:  test_75_c  ... walltime: 8.0
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_75_b_out
+	    .... comparison value:	 -0.993701
+	    .... value from output:	 -0.993701   
+
+
+  ... Checking results: test_75_c_out
+	    .... comparison value:	 0.4951E-02
+	    .... value from output:	 0.4951E-02   
+
+
+>>>  Test 76 (User-defined multi-point constraints)
+     ==============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_76_tied_contact  ... walltime: 0.1
+  ... Ran:  test_76_mpc  ... walltime: 0.1
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_76a_out
+	    .... comparison value:	 0.025651
+	    .... value from output:	 0.025651   
+
+
+  ... Checking results: test_76b_out
+	    .... comparison value:	 0.025651
+	    .... value from output:	 0.025651   
+
+
+>>>  Test 77 (Finite strain transformations/output)
+     ==============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_77  ... walltime: 1.1
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_77_out
+	    .... comparison value:	 0.231553
+	    .... value from output:	 0.231561   
+
+
+>>>   Test 78 (High-rate loading 20-node panel w/ hole)
+     ==================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_78  ... walltime: 9.0
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_78_out
+	    .... comparison value:	 105.246482
+	    .... value from output:	 105.246489   
+
+
+>>>  Test 80 (Norton creep model. Non-global constraints)
+     ====================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_80a  ... walltime: 0.6
+  ... Ran:  test_80b  ... walltime: 0.9
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_80a_out
+	    .... comparison value:	 0.044536
+	    .... value from output:	 0.044536   
+
+
+  ... Checking results: test_80b_out
+	    .... comparison value:	 0.011431
+	    .... value from output:	 0.011431   
+
+
+>>> Test 81 (Flat and Patran result output files)
+    =============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_81  ... walltime: 0.6
+  ... WARP3D jobs completed...
+
+  ... Checking results: wns0000050_text
+	    .... comparison value:	 -0.430241E-01
+	    .... value from output:	 -0.430241E-01   
+
+
+  ... Checking results: wne0000050_text
+	    .... comparison value:	 -0.202360E-03
+	    .... value from output:	 -0.202360E-03   
+
+
+  ... Checking results: wee0000050_text
+	    .... comparison value:	 -0.698211E-02
+	    .... value from output:	 -0.698211E-02   
+
+
+  ... Checking results: wes0000050_text
+	    .... comparison value:	 0.565348E+02
+	    .... value from output:	 0.565348E+02   
+
+
+  ... Checking results: wnd0000050_text
+	    .... comparison value:	 -0.130775E-02
+	    .... value from output:	 -0.130775E-02   
+
+
+  ... Checking results: wem0000050_text_creep
+	    .... comparison value:	 0.358056E-01
+	    .... value from output:	 0.358056E-01   
+
+
+  ... Checking results: wnfd0000050
+	    .... comparison value:	 0.228269E-04
+	    .... value from output:	 0.228269E-04   
+
+
+  ... Checking results: wnfs0000050
+	    .... comparison value:	 0.359763E-01
+	    .... value from output:	 0.359763E-01   
+
+
+  ... Checking results: wnfe0000050
+	    .... comparison value:	 0.209145E-02
+	    .... value from output:	 0.209145E-02   
+
+
+>>>  Test 82 (Crystal Plasticity options: voche)
+     ===========================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_voche  ... walltime: 0.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: voche_out
+	    .... comparison value:	 476.645594
+	    .... value from output:	 476.645570   
+
+
+>>>  Test 82 (Crystal Plasticity options: mts)
+     =========================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_mts  ... walltime: 0.1
+  ... WARP3D jobs completed...
+
+  ... Checking results: mts_out
+	    .... comparison value:	 265.075377
+	    .... value from output:	 265.075376   
+
+
+>>>  Test 82 (Crystal Plasticity options: mts_multi)
+     ===============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_mts_multi  ... walltime: 2.8
+  ... WARP3D jobs completed...
+
+  ... Checking results: mts_multi_out
+	    .... comparison value:	 55.344656
+	    .... value from output:	 55.344656   
+
+
+>>>  Test 82 (Crystal Plasticity options: ornl)
+     ==========================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_ornl  ... walltime: 2.6
+  ... WARP3D jobs completed...
+
+  ... Checking results: ornl_out
+	    .... comparison value:	 517.481579
+	    .... value from output:	 517.481851   
+
+
+>>>  Test 82 (Crystal Plasticity options: mrr)
+     =========================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_mrr  ... walltime: 0.5
+  ... WARP3D jobs completed...
+
+  ... Checking results: mrr_out
+	    .... comparison value:	 8044.012339
+	    .... value from output:	 8044.010678   
+
+
+>>>  Test 82 (Crystal Plasticity options: MRR diff1B)
+     ================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_mrr1B  ... walltime: 0.8
+  ... WARP3D jobs completed...
+
+  ... Checking results: mrr_diff1B
+	    .... comparison value:	 8044.012304
+	    .... value from output:	 8044.010628   
+
+
+>>>  Test 82 (Crystal Plasticity options: MRR diff2A)
+     ================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_mrr  ... walltime: 2.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: mrr_out
+	    .... comparison value:	 8044.011459
+	    .... value from output:	 8044.009877   
+
+
+>>>  Test 82 (Crystal Plasticity options: MRR diff2B)
+     ================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_mrr  ... walltime: 3.6
+  ... WARP3D jobs completed...
+
+  ... Checking results: mrr_out
+	    .... comparison value:	 8044.012434
+	    .... value from output:	 8044.010891   
+
+
+>>>  Test 82 (Crystal Plasticity options: MRR diff3B)
+     ================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_mrr  ... walltime: 0.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: mrr_out
+	    .... comparison value:	 5938.543524
+	    .... value from output:	 5938.543684   
+
+
+>>>  Test 82 (Crystal Plasticity options: MRR diff4B)
+     ================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_mrr  ... walltime: 0.5
+  ... WARP3D jobs completed...
+
+  ... Checking results: mrr_out
+	    .... comparison value:	 5417.628275
+	    .... value from output:	 5417.628280   
+
+
+>>>  Test 82 (Crystal Plasticity options: djgm)
+     ==========================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_djgm  ... walltime: 0.5
+  ... WARP3D jobs completed...
+
+  ... Checking results: djgm_out
+	    .... comparison value:	 2.542574
+	    .... value from output:	 2.542578   
+
+
+>>>  Test 82 (Crystal Plasticity options: djgm_overlap_taylor)
+     =========================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_djgm  ... walltime: 0.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: djgm_out
+	    .... comparison value:	 0.43893E+07
+	    .... value from output:	 0.43893E+07   
+
+
+>>>  Test 82 (Crystal Plasticity options: djgm_taylor)
+     =================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_djgm  ... walltime: 0.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: djgm_out
+	    .... comparison value:	 -0.27452E+08
+	    .... value from output:	 -0.27452E+08   
+
+
+>>>  Test 82 (Crystal Plasticity options: djgm_hard_work)
+     ====================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_djgm  ... walltime: 0.3
+  ... WARP3D jobs completed...
+
+  ... Checking results: djgm_out
+	    .... comparison value:	 -0.27452E+08
+	    .... value from output:	 -0.27452E+08   
+
+
+>>>  Test 83 (bar2 element)
+     ======================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_83a  ... walltime: 0.0
+  ... Ran:  test_83b  ... walltime: 0.7
+  ... Ran:  test_83c  ... walltime: 0.1
+  ... Ran:  test_83d  ... walltime: 0.1
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_83a_out
+	    .... comparison value:	 0.000300
+	    .... value from output:	 0.000300   
+
+
+  ... Checking results: test_83b_out
+	    .... comparison value:	 0.405469
+	    .... value from output:	 0.405469   
+
+
+  ... Checking results: test_83c_out
+	    .... comparison value:	 -0.010027
+	    .... value from output:	 -0.010027   
+
+
+  ... Checking results: test_83d_out
+	    .... comparison value:	 3.000900
+	    .... value from output:	 3.000900   
+
+
+>>>  Test 84 (link2 element, Periodic Boundary Conditions)
+     =====================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_84a  ... walltime: 0.7
+  ... Ran:  test_84b  ... walltime: 0.1
+  ... Ran:  test_84c  ... walltime: 0.1
+  ... Ran:  test_84d  ... walltime: 2.8
+  ... Ran:  test_84e  ... walltime: 3.4
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_84a_out
+	    .... comparison value:	 26.543677
+	    .... value from output:	 26.543677   
+
+
+  ... Checking results: test_84b_out
+	    .... comparison value:	 116.577703
+	    .... value from output:	 116.577704   
+
+
+  ... Checking results: test_84c_out
+	    .... comparison value:	 -26.811147
+	    .... value from output:	 -26.811147   
+
+
+  ... Checking results: test_84d_out
+	    .... comparison value:	 0.025360
+	    .... value from output:	 0.025360   
+
+
+  ... Checking results: test_84e_out
+	    .... comparison value:	 0.026833
+	    .... value from output:	 0.026833   
+
+
+>>>  Test 85 (user-defined initial-stresses)
+     =======================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_85a  ... walltime: 0.0
+  ... Ran:  test_85b  ... walltime: 0.0
+  ... Ran:  test_85c  ... walltime: 0.0
+  ... Ran:  test_85d  ... walltime: 0.0
+  ... Ran:  test_85e  ... walltime: 0.0
+  ... Ran:  test_85f  ... walltime: 0.0
+  ... Ran:  test_85g  ... walltime: 0.0
+  ... Ran:  test_85h  ... walltime: 0.7
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_85a_out
+	    .... comparison value:	 3.333333
+	    .... value from output:	 3.333333   
+
+
+  ... Checking results: test_85b_out
+	    .... comparison value:	 2.282380
+	    .... value from output:	 2.282380   
+
+
+  ... Checking results: test_85c_out
+	    .... comparison value:	 3.057259
+	    .... value from output:	 3.057259   
+
+
+  ... Checking results: test_85d_out
+	    .... comparison value:	 3.333333
+	    .... value from output:	 3.333333   
+
+
+  ... Checking results: test_85e_out
+	    .... comparison value:	 3.333333
+	    .... value from output:	 3.333333   
+
+
+  ... Checking results: test_85f_out
+	    .... comparison value:	 2.153094
+	    .... value from output:	 2.153094   
+
+
+  ... Checking results: test_85g_out
+	    .... comparison value:	 33.333333
+	    .... value from output:	 33.333333   
+
+
+  ... Checking results: test_85h_out
+	    .... comparison value:	 13.803901
+	    .... value from output:	 13.803901   
+
+
+>>>  Test 86 (FGMs compute J. explicit terms needed)
+     ===============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_86  ... walltime: 16.7
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_86_out
+	    .... comparison value:	 0.2172E+01
+	    .... value from output:	 0.2172E+01   
+
+
+>>>  Test 87 (T-stress. face loading. surface cracked plate)
+     =======================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_87  ... walltime: 4.3
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_87_out
+	    .... comparison value:	 0.4130E-04
+	    .... value from output:	 0.4130E-04   
+
+
+>>>  Test 88 (SMCS ductile growth w/ mesh regularization)
+     ====================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_88  ... walltime: 1.9
+  ... Ran:  test_88_restart  ... walltime: 1.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_88_out
+	    .... comparison value:	 0.9936E+00
+	    .... value from output:	 0.9936E+00   
+
+
+  ... Checking results: test_88_restart_out
+	    .... comparison value:	 0.1651E+01
+	    .... value from output:	 0.1651E+01   
+
+
+>>>  Test 89 (SMCS initiation @ blunt notch, growth, C(T) w/ hole)
+     ============================================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_89  ... walltime: 8.2
+  ... Ran:  test_88_restart  ... walltime: 8.2
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_89_out
+	    .... comparison value:	 0.157702
+	    .... value from output:	 0.157702   
+
+
+  ... Checking results: test_89_restart_out
+	    .... comparison value:	 0.121290
+	    .... value from output:	 0.121290   
+
+
+>>>  Test 90 (RVE with periodic boundary conditions)
+     ===============================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_90a  ... walltime: 0.0
+  ... Ran:  test_90b  ... walltime: 65.6
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_90a_out
+	    .... comparison value:	 0.399993
+	    .... value from output:	 0.399993   
+
+
+  ... Checking results: test_90b_out
+	    .... comparison value:	 32.391793
+	    .... value from output:	 32.391793   
+
+
+>>>  Test 91 (Crystal plasticity for Ti4262)
+     =======================================
+ 
+  ... Running jobs: ...
+  ... Ran:  test_91a  ... walltime: 0.8
+  ... Ran:  test_91b  ... walltime: 0.4
+  ... WARP3D jobs completed...
+
+  ... Checking results: test_91a_out
+	    .... comparison value:	 2.841744
+	    .... value from output:	 2.841744   
+
+
+  ... Checking results: test_91b_out
+	    .... comparison value:	 22868.616552
+	    .... value from output:	 22868.616552   
+
+  ... Elaspsed walltime: 392.4
+
+ >>> Number of tests w/ detected solution differences:  0
+ 
+> Select a problem to run:
+
+Enter your choice (<return> for menu): 
+ 
+  1 ) All Problems
+  2 ) Test 14: (Linear elastic impact, sparse iterative solver)
+  3 ) Test 18: (Gurson model growth, impact loading, restart)
+  4 ) Test 24: (hollow sphere, skew constraints, int press, large displ) 
+  5 ) Test 39: (CTOA and SMCS crack growth)
+  6 ) Test 41: (rigid contact, large displacements)
+  7 ) Test 44: (Cohesive-interface growth, restart)
+  8 ) Test 47: (Bilinear, cyclic, thermo-plasticity)
+  9 ) Test 86: (SEB, FGMs, nonlinear, J-values)
+  10 ) Test 50: (Fatigue crack growth using node release)
+  11 ) Test 51: (Nonlinear patch tests: tet elements)
+  12 ) Test 54: (FGM, linear, SE(T), non-global constraints)
+  13 ) Test 57: (SSY, mises + hydrogen effects)
+  14 ) Test 60: (Advanced cyclic plasticty model)
+  15 ) Test 61: (FGMs, interaction integrals)
+  16 ) Test 63: (360-degree SSY model, KI,KII,KIII)
+  17 ) Test 67: (Mesh tieing of two cylinders)
+  18 ) Test 69: (Interface-cohesive elements)
+  19 ) Test 70: (generalized_plasticity w/ temperature dependent properties)
+  20 ) Test 71: (piston loading for unsteady aerodynamic pressures)
+  21 ) Test 72: (user-defined integer lists of nodes-elements)
+  22 ) Test 73: (UMAT included in WARP3D - bilinear mises, kinematic hardening)
+  23 ) Test 74: (Crystal plasticity and restart)
+  24 ) Test 75: (Release constraints: absolute and relative)
+  25 ) Test 76: (User-defined multi-point constraints)
+  26 ) Test 77: (Finite strain transformations/output)
+  27 ) Test 78: (High-rate loading panel with hole. 20-node, rate plasticity)
+  28 ) Test 80: (Norton creep. Non-global constraints)
+  29 ) Test 81: (Flat and Patran result output files
+  30 ) Test 82: (Crystal Plasticity options)
+  31 ) Test 83: (bar2 element)
+  32 ) Test 84: (link2 element; Periodic Boundary Conditions)
+  33 ) Test 85: (user-defined initial-stresses)
+  34 ) Test 86: (FGMs compute J. explicit terms needed for path independence)
+  35 ) Test 87: (T-stress. surface cracked plate. face loading)
+  36 ) Test 88: (SMCS ductile growth. mesh regularization, restart)
+  37 ) Test 89: (SMCS ductile growth. C(T), blunt with hole, restart)
+  38 ) Test 90: (RVEs with periodic boundary conditions)
+  39 ) Test 91: (Crystal plasticity for Ti6242)
+  40 ) Quit
+Enter your choice (<return> for menu): 40
+
+ >>> Number of tests w/ detected solution differences:  0
+
+ >>> All done with tests ...
+
+

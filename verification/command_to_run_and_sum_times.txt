@@ -1,0 +1,1 @@
+py -u run_tests.py 2>&1 | tee run_tests_output.txt
