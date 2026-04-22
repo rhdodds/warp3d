@@ -5,7 +5,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: March 21, 2026  (build number 5000)
+#   Last modifications: April 17, 2026 rhd  (build number 5110)
 #
 #       Builds executables for:
 #
@@ -123,7 +123,7 @@
 # ***********************************************************************
 #
 OSNAME   := OSX
-BUILDNUM := 5000 
+BUILDNUM := 5110 
 NO_INLINE = 
 #
 #              setup for macOS, Intel x86-64, ifort
@@ -155,13 +155,14 @@ ifeq ($(PLATFORM),Intel_ifort)
     CHECKOTHER = 
 #
     OSX_LIBDIR = ../OSX_MKL_files
-    MUMPS_LIB  = ../MUMPS_libs/libmumps_all_ifort_osx_Intel.a
+    MUMPS_LIB  = ../MUMPS_libs/libmumps_all_ifort_osx_Intel_metis.a
+    METIS_LINK = -L../MUMPS_libs -lmetis -Wl,-rpath,@loader_path/../MUMPS_lib           
     LINKOPS2  = -static-intel -qopenmp-link=static \
                 ${OSX_LIBDIR}/libiomp5.a \
                 ${OSX_LIBDIR}/libmkl_intel_lp64.a \
                 ${OSX_LIBDIR}/libmkl_intel_thread.a \
                 ${OSX_LIBDIR}/libmkl_core.a
-    LINKOPS   = $(LINKOPS2) $(MUMPS_LIB) #-Wl,-ld_classic  # classic loader 
+    LINKOPS   = $(LINKOPS2) $(MUMPS_LIB)  $(METIS_LINK)#-Wl,-ld_classic  # classic loader 
     ALL_PROCESSORS = -axAVX,CORE-AVX2 -xIVYBRIDGE \
                        -align array64byte  -qopt-zmm-usage=high
     HARDWARE_SPECIFIC = -xHOST  -align array64byte  -qopt-zmm-usage=high
@@ -173,8 +174,10 @@ ifeq ($(PLATFORM),Intel_ifort)
                 -mmacosx-version-min=11.5
 #
     FOR      = $(COMPILER) $(FCOPTS) -D$(MKL) -D$(KMP_ERROR) -D$(OSNAME) \
-               -D$(PARDISO) -DBuild=5100
+               -D$(PARDISO) -DBuild=$(BUILDNUM)
     LINK     = $(COMPILER) $(FCOPTS)  $(OBJ)  $(LINKOPS)
+    POST_LINK =
+    POST_LINK_SIGN = 
 #
 endif
 #
@@ -195,17 +198,18 @@ ifeq ($(PLATFORM),Intel_gfortran)
     COMPILER = gfortran
 #
     OSX_LIBDIR = ../OSX_MKL_files
-    MUMPS_LIB  = ../MUMPS_libs/libmumps_all_gfort_osx_Intel.a
+    MUMPS_LIB  = ../MUMPS_libs/libmumps_all_gfort_osx_Intel_metis.a
     MKL_THREADED_LIST=   $(OSX_LIBDIR)/libiomp5.a \
                          $(OSX_LIBDIR)/libmkl_intel_lp64.a \
                          $(OSX_LIBDIR)/libmkl_intel_thread.a \
                          $(OSX_LIBDIR)/libmkl_core.a 
-                         
+    METIS_LINK=-L../MUMPS_libs -lmetis -Wl,-rpath,@loader_path/../MUMPS_lib           
+#                         
     ALL_PROCESSORS = -march=x86-64-v3 -mtune=generic
     HARDWARE_SPECIFIC = -march=native -mtune=native
     MACHINE_TYPE =  $(ALL_PROCESSORS) # $(HARDWARE_SPECIFIC)
-        
-    PRODUCTION = -DOSX -DBuild=5100 -Dgfortran -DMKL -I$(OD) -J$(OD) \
+#        
+    PRODUCTION = -DOSX -DBuild=$(BUILDNUM) -Dgfortran -DMKL -I$(OD) -J$(OD) \
       -O3 -Wno-unused-dummy-argument  -Wno-argument-mismatch \
       -fbacktrace -fmax-errors=1 \
        -Wno-unused-variable -Wno-unused-parameter \
@@ -216,7 +220,7 @@ ifeq ($(PLATFORM),Intel_gfortran)
       -fno-omit-frame-pointer -fcheck=do,mem,pointer \
       $(MACHINE_TYPE)
 #   
-    DEBUG1 = -DOSX -DBuild=5100 -Dgfortran -DMKL -I$(OD) -J$(OD) \
+    DEBUG1 = -DOSX -DBuild=$(BUILDNUM) -Dgfortran -DMKL -I$(OD) -J$(OD) \
       -O0 -g -Wno-unused-dummy-argument  -Wno-argument-mismatch \
       -fbacktrace -fmax-errors=1 \
        -Wno-unused-variable -Wno-unused-parameter \
@@ -228,7 +232,7 @@ ifeq ($(PLATFORM),Intel_gfortran)
        -finit-real=snan -finit-integer=-999999  \
        $(MACHINE_TYPE)
 #   
-    DEBUG2 = -DOSX -DBuild=5100 -Dgfortran -DMKL -I$(OD) -J$(OD) \
+    DEBUG2 = -DOSX -DBuild=$(BUILDNUM) -Dgfortran -DMKL -I$(OD) -J$(OD) \
       -O0 -g -Wno-unused-dummy-argument  -Wno-argument-mismatch \
       -fbacktrace -fmax-errors=1 \
        -Wno-unused-variable -Wno-unused-parameter \
@@ -243,11 +247,17 @@ ifeq ($(PLATFORM),Intel_gfortran)
     OPTS = $(PRODUCTION)  -D$(OSNAME)
     FOR      = $(COMPILER) $(OPTS)
     LDWARN = -Wl,-w
-    LDFLAGS += -Wl,-t
     STATIC_LIBS = -static-libquadmath -static-libgfortran 
     LINK = $(COMPILER) $(OPTS) $(OBJ) $(MUMPS_LIB)  $(MKL_THREADED_LIST) \
-        $(STATIC_LIBS) $(LDWARN) 
-#    
+        $(STATIC_LIBS) $(METIS_LINK) $(LDWARN)
+    POST_LINK = \
+    install_name_tool -delete_rpath /usr/local/Cellar/gcc/15.2.0_1/lib/gcc/current/gcc/x86_64-apple-darwin22/15 $@ 2>/dev/null || true; \
+    install_name_tool -delete_rpath /usr/local/Cellar/gcc/15.2.0_1/lib/gcc/current/gcc $@ 2>/dev/null || true; \
+    install_name_tool -delete_rpath /usr/local/Cellar/gcc/15.2.0_1/lib/gcc/current $@ 2>/dev/null || true; \
+    install_name_tool -delete_rpath /opt/intel/oneapi/tbb/latest/lib $@ 2>/dev/null || true; \
+    install_name_tool -delete_rpath /opt/intel/oneapi/mkl/latest/lib $@ 2>/dev/null || true        
+    POST_LINK_SIGN = 
+#
 endif
 #
 #              setup for macOS, Apple silicon, gfortran
@@ -281,13 +291,14 @@ ifeq ($(PLATFORM),silicon)
 #
     COMPILER = gfortran
 #
-    MUMPS_LIB  = ../MUMPS_libs/libmumps_all_gfort_osx_arm64_NO_DGEMMT.a
+    MUMPS_LIB  = ../MUMPS_libs/libmumps_all_gfort_osx_arm64_metis.a
+    METIS_LINK = -L../MUMPS_libs -lmetis_arm64 -Wl,-rpath,@loader_path/../MUMPS_libs         
 #
     ALL_PROCESSORS = -mcpu=apple-m1
     HARDWARE_SPECIFIC = -mcpu=apple-m3   #  for example !
     MACHINE_TYPE =  $(ALL_PROCESSORS)  # $(HARDWARE_SPECIFIC) #$(ALL_PROCESSORS) 
 
-    PRODUCTION = -DOSX -DBuild=5100 -Dgfortran -I$(OD) -J$(OD) \
+    PRODUCTION = -DOSX -DBuild=$(BUILDNUM) -Dgfortran -I$(OD) -J$(OD) \
       -O3 -Wno-unused-dummy-argument  -Wno-argument-mismatch \
       -fbacktrace -fmax-errors=1 -fno-strict-overflow \
        -Wno-unused-variable -Wno-unused-parameter \
@@ -299,7 +310,7 @@ ifeq ($(PLATFORM),silicon)
       $(MACHINE_TYPE)
     
 #   
-    DEBUG1 = -DOSX -DBuild=5100 -Dgfortran -I$(OD) -J$(OD) \
+    DEBUG1 = -DOSX -DBuild=$(BUILDNUM) -Dgfortran -I$(OD) -J$(OD) \
       -O0 -g -Wno-unused-dummy-argument  -Wno-argument-mismatch \
       -fbacktrace -fmax-errors=1 \
        -Wno-unused-variable -Wno-unused-parameter \
@@ -311,7 +322,7 @@ ifeq ($(PLATFORM),silicon)
        -finit-real=snan -finit-integer=-999999  \
       $(MACHINE_TYPE)
 #   
-    DEBUG2 = -DOSX -DBuild=5100 -Dgfortran -I$(OD) -J$(OD) \
+    DEBUG2 = -DOSX -DBuild$(BUILDNUM) -Dgfortran -I$(OD) -J$(OD) \
       -O0 -g -Wno-unused-dummy-argument  -Wno-argument-mismatch \
       -fbacktrace -fmax-errors=1 \
        -Wno-unused-variable -Wno-unused-parameter \
@@ -329,7 +340,11 @@ ifeq ($(PLATFORM),silicon)
     LDFLAGS += -Wl,-t
     STATIC_LIBS = -static-libquadmath -static-libgfortran 
     LINK = $(COMPILER) $(PRODUCTION) $(OBJ) $(MUMPS_LIB) $(APPLE) \
-       $(STATIC_LIBS) $(LDWARN) 
+       $(STATIC_LIBS)  $(METIS_LINK) $(LDWARN) 
+    POST_LINK_SIGN = \
+    codesign --force --sign - ../MUMPS_libs/libmetis_arm64.dylib ; \
+    codesign --force --sign - $@
+    POST_LINK = 
 #
 endif
 #
@@ -610,6 +625,8 @@ OBJ =	 \
 #
 $(EXE_NAME) : $(OBJ)           # target is warp3d executable
 	$(LINK) -o $@  
+	$(POST_LINK_SIGN) 
+	$(POST_LINK)
 	$(MVC) $@ ./../run_macOS/$@
 	chmod ugo+rx  ./../run_macOS/$@
 #

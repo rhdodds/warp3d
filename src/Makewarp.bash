@@ -362,9 +362,9 @@ fi
 #
 # The MUMPS library for Intel mac must be present in WARP3D distribution directory
 #
-if [ ! -f "$WARP3D_HOME/MUMPS_libs/libmumps_all_gfort_osx_Intel.a" ]; then
+if [ ! -f "$WARP3D_HOME/MUMPS_libs/libmumps_all_gfort_osx_Intel_metis.a" ]; then
 printf "\n[ERROR]\n"
-printf "... The file MUMPS_libs/libmumps_all_gfort_osx_Intel.a\n"
+printf "... The file MUMPS_libs/libmumps_all_gfort_osx_Intel_metis.a\n"
 printf "     does not exist in the WARP3D distribution directory. Run this shell command to\n" 
 printf "    download:  install_MUMPS_libs_from_remote\n  "
 printf "Quitting...\n\n"
@@ -457,9 +457,9 @@ exit 1
 #
 # The MUMPS library for Intel mac must be present in WARP3D distribution directory
 #
-if [ ! -f "$WARP3D_HOME/MUMPS_libs/libmumps_all_gfort_osx_arm64_NO_DGEMMT.a" ]; then
+if [ ! -f "$WARP3D_HOME/MUMPS_libs/libmumps_all_gfort_osx_arm64_metis.a" ]; then
 printf "\n[ERROR]\n"
-printf "... The file MUMPS_libs/libmumps_all_gfort_osx_arm64_NO_DGEMMT.a\n"
+printf "... The file MUMPS_libs/libmumps_all_gfort_osx_arm64_metis.a\n"
 printf "     does not exist in the WARP3D distribution directory. Run this shell command to\n" 
 printf "    download:  install_MUMPS_libs_from_remote\n  "
 printf "Quitting...\n\n"

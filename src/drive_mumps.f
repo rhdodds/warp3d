@@ -328,7 +328,7 @@ c     *         drive MUMPS solver for symmetric equations           *
 c     *            uses MKL LAPACK/BLAS for ifort/ifx                *
 c     *            uses OpenBLAS for gfortran                        *
 c     *                                                              *
-c     *          last modified : 3/7/2026 rhd                        *
+c     *          last modified : 4/16/26 rhd                         *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -483,11 +483,13 @@ c
         id%ICNTL(3) = -1  !
         id%ICNTL(4) = 0   !
         id%ICNTL(7) = 0   ! force AMD
-        if( neq > 1000 ) id%ICNTL(7) = 4    ! force PORD
+        if( neq > 1000 ) id%ICNTL(7) = 5   ! 4 = force PORD
+c                                             5 = metis        
         id%ICNTL(14) = 0   ! increase working memory n%
         id%ICNTL(24) = 1   ! null pivot row detection
         if( prn .and. id%ICNTL(7)==0 ) write(out,9202)  
         if( prn .and. id%ICNTL(7)==4 ) write(out,9204)  
+        if( prn .and. id%ICNTL(7)==5 ) write(out,9206)  
 c
 c              Phase 1: Analysis (ordering, symbolic factorization)
 c
@@ -558,6 +560,7 @@ c
  9200 format(15x,'VSS map -> MUMPS completed    @ ',f10.2 )
  9202 format(15x,'reordering by : AMD')
  9204 format(15x,'reordering by : PORD')
+ 9206 format(15x,'reordering by : METIS')
  9210 format(15x,'reorder + symbolic fact done  @ ',f10.2 )
  9220 format(15x,'factorization done            @ ',f10.2 )
  9230 format(15x,'forward/backward done         @ ',f10.2 )
