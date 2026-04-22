@@ -1,10 +1,9 @@
 
 
->>> Running with Python version: 3.14
->>> Platform: macOS (Silicon)
+>>> Running with Python version: 3.10
+>>> Platform: macOS (Intel)
 
->>> Number of threads to use: 10
-
+>>> Number of threads to use: 
 >>> Note: comparison and output values may be different in the last 1 or 2
           signficant digits with various number of threads
 
@@ -50,13 +49,12 @@
   38 ) Test 90: (RVEs with periodic boundary conditions)
   39 ) Test 91: (Crystal plasticity for Ti6242)
   40 ) Quit
-Enter your choice (<return> for menu): 1
-
+Enter your choice (<return> for menu): 
 >>>  Test 14 (Linear elastic impact, sparse iterative solver)
      ========================================================
  
   ... Running jobs: ...
-  ... Ran:  test_14  ... walltime: 9.0
+  ... Ran:  test_14  ... walltime: 6.6
   ... WARP3D jobs completed...
 
   ... Checking results: test_14_out
@@ -68,9 +66,9 @@ Enter your choice (<return> for menu): 1
      ===============================================
  
   ... Running jobs: ...
-  ... Ran:  test_18a  ... walltime: 3.3
-  ... Ran:  test_18b  ... walltime: 2.6
-  ... Ran:  test_18e  ... walltime: 2.6
+  ... Ran:  test_18a  ... walltime: 4.4
+  ... Ran:  test_18b  ... walltime: 3.8
+  ... Ran:  test_18e  ... walltime: 3.1
   ... WARP3D jobs completed...
 
   ... Checking results: test_18a_out
@@ -104,12 +102,12 @@ Enter your choice (<return> for menu): 1
      ====================================
  
   ... Running jobs: ...
-  ... Ran:  test_39a  ... walltime: 8.6
-  ... Ran:  test_39b  ... walltime: 9.0
-  ... Ran:  test_39c  ... walltime: 2.1
+  ... Ran:  test_39a  ... walltime: 10.3
+  ... Ran:  test_39b  ... walltime: 12.8
+  ... Ran:  test_39c  ... walltime: 2.4
   ... Ran:  test_39d  ... walltime: 2.1
-  ... Ran:  test_39e  ... walltime: 9.3
-  ... Ran:  test_39f  ... walltime: 4.4
+  ... Ran:  test_39e  ... walltime: 14.4
+  ... Ran:  test_39f  ... walltime: 6.1
   ... WARP3D jobs completed...
 
   ... Checking results: test_39a_out
@@ -129,7 +127,7 @@ Enter your choice (<return> for menu): 1
 
   ... Checking results: test_39d_out
 	    .... comparison value:	 0.43827048E+00
-	    .... value from output:	 0.43827047E+00   
+	    .... value from output:	 0.43827048E+00   
 
 
   ... Checking results: test_39e_out
@@ -146,9 +144,9 @@ Enter your choice (<return> for menu): 1
      ============================================
  
   ... Running jobs: ...
-  ... Ran:  test_41a  ... walltime: 13.4
-  ... Ran:  test_41b  ... walltime: 0.2
-  ... Ran:  test_41c  ... walltime: 39.8
+  ... Ran:  test_41a  ... walltime: 12.0
+  ... Ran:  test_41b  ... walltime: 0.1
+  ... Ran:  test_41c  ... walltime: 7.1
   ... WARP3D jobs completed...
 
   ... Checking results: test_41a_out
@@ -171,9 +169,9 @@ Enter your choice (<return> for menu): 1
  
   ... Running jobs: ...
   ... Ran:  test_44_ppr  ... walltime: 2.8
-  ... Ran:  test_44_ppr_restart  ... walltime: 2.8
-  ... Ran:  test_44_exp1  ... walltime: 2.5
-  ... Ran:  test_44_exp1_restart  ... walltime: 2.2
+  ... Ran:  test_44_ppr_restart  ... walltime: 2.9
+  ... Ran:  test_44_exp1  ... walltime: 2.7
+  ... Ran:  test_44_exp1_restart  ... walltime: 2.1
   ... WARP3D jobs completed...
 
   ... Checking results: test_44b_out
@@ -190,7 +188,7 @@ Enter your choice (<return> for menu): 1
      =============================================
  
   ... Running jobs: ...
-  ... Ran:  test_47  ... walltime: 1.5
+  ... Ran:  test_47  ... walltime: 1.1
   ... WARP3D jobs completed...
 
   ... Checking results: test_47_out
@@ -202,7 +200,7 @@ Enter your choice (<return> for menu): 1
      ===============================================
  
   ... Running jobs: ...
-  ... Ran:  test_86  ... walltime: 13.4
+  ... Ran:  test_86  ... walltime: 7.7
   ... WARP3D jobs completed...
 
   ... Checking results: test_86_out
@@ -214,7 +212,7 @@ Enter your choice (<return> for menu): 1
      ================================================
  
   ... Running jobs: ...
-  ... Ran:  test_50  ... walltime: 19.5
+  ... Ran:  test_50  ... walltime: 19.7
   ... WARP3D jobs completed...
 
   ... Checking results: test_50_out
@@ -250,8 +248,8 @@ Enter your choice (<return> for menu): 1
      =====================================
  
   ... Running jobs: ...
-  ... Ran:  test_54b  ... walltime: 0.1
-  ... Ran:  test_54c  ... walltime: 0.1
+  ... Ran:  test_54b  ... walltime: 0.2
+  ... Ran:  test_54c  ... walltime: 0.2
   ... WARP3D jobs completed...
 
   ... Checking results: test_54b_out
@@ -268,7 +266,7 @@ Enter your choice (<return> for menu): 1
      ======================================
  
   ... Running jobs: ...
-  ... Ran:  test_57  ... walltime: 1.6
+  ... Ran:  test_57  ... walltime: 1.7
   ... WARP3D jobs completed...
 
   ... Checking results: test_57_out
@@ -280,13 +278,13 @@ Enter your choice (<return> for menu): 1
      =========================================
  
   ... Running jobs: ...
-  ... Ran:  test_60a  ... walltime: 11.0
-  ... Ran:  test_60b  ... walltime: 7.0
+  ... Ran:  test_60a  ... walltime: 10.6
+  ... Ran:  test_60b  ... walltime: 7.2
   ... WARP3D jobs completed...
 
   ... Checking results: test_60a_out
 	    .... comparison value:	 0.21036833E-01
-	    .... value from output:	 0.21036832E-01   
+	    .... value from output:	 0.21036833E-01   
 
 
   ... Checking results: test_60b_out
@@ -298,10 +296,10 @@ Enter your choice (<return> for menu): 1
      =====================================
  
   ... Running jobs: ...
-  ... Ran:  test_61a  ... walltime: 0.4
-  ... Ran:  test_61b  ... walltime: 0.4
-  ... Ran:  test_61c  ... walltime: 0.4
-  ... Ran:  test_61d  ... walltime: 0.4
+  ... Ran:  test_61a  ... walltime: 0.8
+  ... Ran:  test_61b  ... walltime: 0.8
+  ... Ran:  test_61c  ... walltime: 0.8
+  ... Ran:  test_61d  ... walltime: 0.8
   ... WARP3D jobs completed...
 
   ... Checking results: test_61a_out
@@ -328,9 +326,9 @@ Enter your choice (<return> for menu): 1
      ===========================================
  
   ... Running jobs: ...
-  ... Ran:  test_63a  ... walltime: 0.0
-  ... Ran:  test_63b  ... walltime: 0.0
-  ... Ran:  test_63c  ... walltime: 0.0
+  ... Ran:  test_63a  ... walltime: 0.1
+  ... Ran:  test_63b  ... walltime: 0.1
+  ... Ran:  test_63c  ... walltime: 0.1
   ... WARP3D jobs completed...
 
   ... Checking results: test_63a_out
@@ -352,14 +350,14 @@ Enter your choice (<return> for menu): 1
      =============================================
  
   ... Running jobs: ...
-  ... Ran:  test_67a  ... walltime: 2.2
-  ... Ran:  test_67b  ... walltime: 0.1
-  ... Ran:  test_67c  ... walltime: 0.0
+  ... Ran:  test_67a  ... walltime: 2.1
+  ... Ran:  test_67b  ... walltime: 0.2
+  ... Ran:  test_67c  ... walltime: 0.1
   ... WARP3D jobs completed...
 
   ... Checking results: test_67a_out
 	    .... comparison value:	 0.28518081E+01
-	    .... value from output:	 0.28518081E+01   
+	    .... value from output:	 0.28518080E+01   
 
 
   ... Checking results: test_67b_out
@@ -380,19 +378,19 @@ Enter your choice (<return> for menu): 1
   ... Ran:  test_69ab  ... walltime: 0.1
   ... Ran:  test_69ab  ... walltime: 0.1
   ... Ran:  test_69ac  ... walltime: 0.2
-  ... Ran:  test_69ad  ... walltime: 0.4
-  ... Ran:  test_69sa  ... walltime: 0.4
-  ... Ran:  test_69sb  ... walltime: 0.4
+  ... Ran:  test_69ad  ... walltime: 0.2
+  ... Ran:  test_69sa  ... walltime: 0.3
+  ... Ran:  test_69sb  ... walltime: 0.3
   ... Ran:  test_69ta  ... walltime: 0.1
   ... Ran:  test_69tb  ... walltime: 0.1
-  ... Ran:  test_69c_initial  ... walltime: 0.3
-  ... Ran:  test_69c_restart  ... walltime: 0.2
+  ... Ran:  test_69c_initial  ... walltime: 0.4
+  ... Ran:  test_69c_restart  ... walltime: 0.1
   ... Ran:  test_69_compression_a  ... walltime: 0.1
   ... Ran:  test_69_compression_b  ... walltime: 0.1
   ... Ran:  test_69_compression_c  ... walltime: 0.1
-  ... Ran:  test_69_PPR_patch_uniaxial  ... walltime: 1.4
-  ... Ran:  test_69_PPR_patch_shear  ... walltime: 1.5
-  ... Ran:  test_69_PPR_particle  ... walltime: 16.2
+  ... Ran:  test_69_PPR_patch_uniaxial  ... walltime: 0.5
+  ... Ran:  test_69_PPR_patch_shear  ... walltime: 0.5
+  ... Ran:  test_69_PPR_particle  ... walltime: 7.9
   ... WARP3D jobs completed...
 
   ... Checking results: test_69aa_out
@@ -472,7 +470,7 @@ Enter your choice (<return> for menu): 1
 
   ... Checking results: test_69_PPR_patch_shear_out
 	    .... comparison value:	 0.281979E+00
-	    .... value from output:	 0.281985E+00   
+	    .... value from output:	 0.281979E+00   
 
 
   ... Checking results: test_69_PPR_particle_out
@@ -484,7 +482,7 @@ Enter your choice (<return> for menu): 1
      ================================================================
  
   ... Running jobs: ...
-  ... Ran:  test_70  ... walltime: 23.9
+  ... Ran:  test_70  ... walltime: 5.6
   ... WARP3D jobs completed...
 
   ... Checking results: test_70_out
@@ -496,7 +494,7 @@ Enter your choice (<return> for menu): 1
      ========================================================
  
   ... Running jobs: ...
-  ... Ran:  test_71  ... walltime: 0.2
+  ... Ran:  test_71  ... walltime: 0.3
   ... Ran:  test_71_restart  ... walltime: 0.1
   ... WARP3D jobs completed...
 
@@ -514,15 +512,15 @@ Enter your choice (<return> for menu): 1
      ====================================================
  
   ... Running jobs: ...
-  ... Ran:  test_72a  ... walltime: 0.1
-  ... Ran:  test_72b  ... walltime: 0.1
-  ... Ran:  test_72c  ... walltime: 0.1
-  ... Ran:  test_72d  ... walltime: 0.1
-  ... Ran:  test_72e  ... walltime: 0.1
-  ... Ran:  test_72f  ... walltime: 0.1
-  ... Ran:  test_72g  ... walltime: 0.1
-  ... Ran:  test_72h  ... walltime: 0.1
-  ... Ran:  test_72i  ... walltime: 0.1
+  ... Ran:  test_72a  ... walltime: 0.3
+  ... Ran:  test_72b  ... walltime: 0.3
+  ... Ran:  test_72c  ... walltime: 0.3
+  ... Ran:  test_72d  ... walltime: 0.3
+  ... Ran:  test_72e  ... walltime: 0.3
+  ... Ran:  test_72f  ... walltime: 0.3
+  ... Ran:  test_72g  ... walltime: 0.3
+  ... Ran:  test_72h  ... walltime: 0.3
+  ... Ran:  test_72i  ... walltime: 0.3
   ... WARP3D jobs completed...
 
   ... Checking results: test_72_out
@@ -574,7 +572,7 @@ Enter your choice (<return> for menu): 1
      =======================================================
  
   ... Running jobs: ...
-  ... Ran:  test73  ... walltime: 0.1
+  ... Ran:  test73  ... walltime: 0.3
   ... WARP3D jobs completed...
 
   ... Checking results: test_73_out
@@ -586,8 +584,8 @@ Enter your choice (<return> for menu): 1
      =========================================
  
   ... Running jobs: ...
-  ... Ran:  test74  ... walltime: 15.6
-  ... Ran:  test_74_restart  ... walltime: 1.3
+  ... Ran:  test74  ... walltime: 12.3
+  ... Ran:  test_74_restart  ... walltime: 2.0
   ... WARP3D jobs completed...
 
   ... Checking results: test_74_out
@@ -604,8 +602,8 @@ Enter your choice (<return> for menu): 1
      ===================================
  
   ... Running jobs: ...
-  ... Ran:  test_75_b  ... walltime: 1.9
-  ... Ran:  test_75_c  ... walltime: 8.0
+  ... Ran:  test_75_b  ... walltime: 1.0
+  ... Ran:  test_75_c  ... walltime: 5.3
   ... WARP3D jobs completed...
 
   ... Checking results: test_75_b_out
@@ -640,7 +638,7 @@ Enter your choice (<return> for menu): 1
      ==============================================
  
   ... Running jobs: ...
-  ... Ran:  test_77  ... walltime: 1.1
+  ... Ran:  test_77  ... walltime: 0.7
   ... WARP3D jobs completed...
 
   ... Checking results: test_77_out
@@ -652,7 +650,7 @@ Enter your choice (<return> for menu): 1
      ==================================================
  
   ... Running jobs: ...
-  ... Ran:  test_78  ... walltime: 9.0
+  ... Ran:  test_78  ... walltime: 5.2
   ... WARP3D jobs completed...
 
   ... Checking results: test_78_out
@@ -664,8 +662,8 @@ Enter your choice (<return> for menu): 1
      ====================================================
  
   ... Running jobs: ...
-  ... Ran:  test_80a  ... walltime: 0.6
-  ... Ran:  test_80b  ... walltime: 0.9
+  ... Ran:  test_80a  ... walltime: 0.5
+  ... Ran:  test_80b  ... walltime: 0.4
   ... WARP3D jobs completed...
 
   ... Checking results: test_80a_out
@@ -734,19 +732,19 @@ Enter your choice (<return> for menu): 1
      ===========================================
  
   ... Running jobs: ...
-  ... Ran:  test_voche  ... walltime: 0.2
+  ... Ran:  test_voche  ... walltime: 0.5
   ... WARP3D jobs completed...
 
   ... Checking results: voche_out
 	    .... comparison value:	 476.645594
-	    .... value from output:	 476.645570   
+	    .... value from output:	 476.645594   
 
 
 >>>  Test 82 (Crystal Plasticity options: mts)
      =========================================
  
   ... Running jobs: ...
-  ... Ran:  test_mts  ... walltime: 0.1
+  ... Ran:  test_mts  ... walltime: 0.2
   ... WARP3D jobs completed...
 
   ... Checking results: mts_out
@@ -758,7 +756,7 @@ Enter your choice (<return> for menu): 1
      ===============================================
  
   ... Running jobs: ...
-  ... Ran:  test_mts_multi  ... walltime: 2.8
+  ... Ran:  test_mts_multi  ... walltime: 8.9
   ... WARP3D jobs completed...
 
   ... Checking results: mts_multi_out
@@ -770,96 +768,96 @@ Enter your choice (<return> for menu): 1
      ==========================================
  
   ... Running jobs: ...
-  ... Ran:  test_ornl  ... walltime: 2.6
+  ... Ran:  test_ornl  ... walltime: 6.7
   ... WARP3D jobs completed...
 
   ... Checking results: ornl_out
 	    .... comparison value:	 517.481579
-	    .... value from output:	 517.481851   
+	    .... value from output:	 517.481582   
 
 
 >>>  Test 82 (Crystal Plasticity options: mrr)
      =========================================
  
   ... Running jobs: ...
-  ... Ran:  test_mrr  ... walltime: 0.5
+  ... Ran:  test_mrr  ... walltime: 1.8
   ... WARP3D jobs completed...
 
   ... Checking results: mrr_out
 	    .... comparison value:	 8044.012339
-	    .... value from output:	 8044.010678   
+	    .... value from output:	 8044.012340   
 
 
 >>>  Test 82 (Crystal Plasticity options: MRR diff1B)
      ================================================
  
   ... Running jobs: ...
-  ... Ran:  test_mrr1B  ... walltime: 0.8
+  ... Ran:  test_mrr1B  ... walltime: 3.6
   ... WARP3D jobs completed...
 
   ... Checking results: mrr_diff1B
 	    .... comparison value:	 8044.012304
-	    .... value from output:	 8044.010628   
+	    .... value from output:	 8044.012305   
 
 
 >>>  Test 82 (Crystal Plasticity options: MRR diff2A)
      ================================================
  
   ... Running jobs: ...
-  ... Ran:  test_mrr  ... walltime: 2.2
+  ... Ran:  test_mrr  ... walltime: 8.9
   ... WARP3D jobs completed...
 
   ... Checking results: mrr_out
 	    .... comparison value:	 8044.011459
-	    .... value from output:	 8044.009877   
+	    .... value from output:	 8044.011460   
 
 
 >>>  Test 82 (Crystal Plasticity options: MRR diff2B)
      ================================================
  
   ... Running jobs: ...
-  ... Ran:  test_mrr  ... walltime: 3.6
+  ... Ran:  test_mrr  ... walltime: 14.8
   ... WARP3D jobs completed...
 
   ... Checking results: mrr_out
 	    .... comparison value:	 8044.012434
-	    .... value from output:	 8044.010891   
+	    .... value from output:	 8044.012436   
 
 
 >>>  Test 82 (Crystal Plasticity options: MRR diff3B)
      ================================================
  
   ... Running jobs: ...
-  ... Ran:  test_mrr  ... walltime: 0.2
+  ... Ran:  test_mrr  ... walltime: 0.7
   ... WARP3D jobs completed...
 
   ... Checking results: mrr_out
 	    .... comparison value:	 5938.543524
-	    .... value from output:	 5938.543684   
+	    .... value from output:	 5938.543533   
 
 
 >>>  Test 82 (Crystal Plasticity options: MRR diff4B)
      ================================================
  
   ... Running jobs: ...
-  ... Ran:  test_mrr  ... walltime: 0.5
+  ... Ran:  test_mrr  ... walltime: 2.0
   ... WARP3D jobs completed...
 
   ... Checking results: mrr_out
 	    .... comparison value:	 5417.628275
-	    .... value from output:	 5417.628280   
+	    .... value from output:	 5417.628276   
 
 
 >>>  Test 82 (Crystal Plasticity options: djgm)
      ==========================================
  
   ... Running jobs: ...
-  ... Ran:  test_djgm  ... walltime: 0.5
+  ... Ran:  test_djgm  ... walltime: 1.3
   ... WARP3D jobs completed...
 
   ... Checking results: djgm_out
 	    .... comparison value:	 2.542574
-	    .... value from output:	 2.542578   
+	    .... value from output:	 2.542574   
 
 
 >>>  Test 82 (Crystal Plasticity options: djgm_overlap_taylor)
@@ -890,7 +888,7 @@ Enter your choice (<return> for menu): 1
      ====================================================
  
   ... Running jobs: ...
-  ... Ran:  test_djgm  ... walltime: 0.3
+  ... Ran:  test_djgm  ... walltime: 0.2
   ... WARP3D jobs completed...
 
   ... Checking results: djgm_out
@@ -903,8 +901,8 @@ Enter your choice (<return> for menu): 1
  
   ... Running jobs: ...
   ... Ran:  test_83a  ... walltime: 0.0
-  ... Ran:  test_83b  ... walltime: 0.7
-  ... Ran:  test_83c  ... walltime: 0.1
+  ... Ran:  test_83b  ... walltime: 0.1
+  ... Ran:  test_83c  ... walltime: 0.0
   ... Ran:  test_83d  ... walltime: 0.1
   ... WARP3D jobs completed...
 
@@ -932,11 +930,11 @@ Enter your choice (<return> for menu): 1
      =====================================================
  
   ... Running jobs: ...
-  ... Ran:  test_84a  ... walltime: 0.7
+  ... Ran:  test_84a  ... walltime: 0.2
   ... Ran:  test_84b  ... walltime: 0.1
-  ... Ran:  test_84c  ... walltime: 0.1
-  ... Ran:  test_84d  ... walltime: 2.8
-  ... Ran:  test_84e  ... walltime: 3.4
+  ... Ran:  test_84c  ... walltime: 0.2
+  ... Ran:  test_84d  ... walltime: 2.6
+  ... Ran:  test_84e  ... walltime: 2.6
   ... WARP3D jobs completed...
 
   ... Checking results: test_84a_out
@@ -946,7 +944,7 @@ Enter your choice (<return> for menu): 1
 
   ... Checking results: test_84b_out
 	    .... comparison value:	 116.577703
-	    .... value from output:	 116.577704   
+	    .... value from output:	 116.577703   
 
 
   ... Checking results: test_84c_out
@@ -975,7 +973,7 @@ Enter your choice (<return> for menu): 1
   ... Ran:  test_85e  ... walltime: 0.0
   ... Ran:  test_85f  ... walltime: 0.0
   ... Ran:  test_85g  ... walltime: 0.0
-  ... Ran:  test_85h  ... walltime: 0.7
+  ... Ran:  test_85h  ... walltime: 0.6
   ... WARP3D jobs completed...
 
   ... Checking results: test_85a_out
@@ -1022,7 +1020,7 @@ Enter your choice (<return> for menu): 1
      ===============================================
  
   ... Running jobs: ...
-  ... Ran:  test_86  ... walltime: 16.7
+  ... Ran:  test_86  ... walltime: 7.6
   ... WARP3D jobs completed...
 
   ... Checking results: test_86_out
@@ -1034,7 +1032,7 @@ Enter your choice (<return> for menu): 1
      =======================================================
  
   ... Running jobs: ...
-  ... Ran:  test_87  ... walltime: 4.3
+  ... Ran:  test_87  ... walltime: 4.2
   ... WARP3D jobs completed...
 
   ... Checking results: test_87_out
@@ -1046,8 +1044,8 @@ Enter your choice (<return> for menu): 1
      ====================================================
  
   ... Running jobs: ...
-  ... Ran:  test_88  ... walltime: 1.9
-  ... Ran:  test_88_restart  ... walltime: 1.2
+  ... Ran:  test_88  ... walltime: 2.7
+  ... Ran:  test_88_restart  ... walltime: 1.5
   ... WARP3D jobs completed...
 
   ... Checking results: test_88_out
@@ -1064,8 +1062,8 @@ Enter your choice (<return> for menu): 1
      ============================================================
  
   ... Running jobs: ...
-  ... Ran:  test_89  ... walltime: 8.2
-  ... Ran:  test_88_restart  ... walltime: 8.2
+  ... Ran:  test_89  ... walltime: 11.0
+  ... Ran:  test_88_restart  ... walltime: 8.5
   ... WARP3D jobs completed...
 
   ... Checking results: test_89_out
@@ -1083,7 +1081,7 @@ Enter your choice (<return> for menu): 1
  
   ... Running jobs: ...
   ... Ran:  test_90a  ... walltime: 0.0
-  ... Ran:  test_90b  ... walltime: 65.6
+  ... Ran:  test_90b  ... walltime: 40.8
   ... WARP3D jobs completed...
 
   ... Checking results: test_90a_out
@@ -1100,8 +1098,8 @@ Enter your choice (<return> for menu): 1
      =======================================
  
   ... Running jobs: ...
-  ... Ran:  test_91a  ... walltime: 0.8
-  ... Ran:  test_91b  ... walltime: 0.4
+  ... Ran:  test_91a  ... walltime: 2.4
+  ... Ran:  test_91b  ... walltime: 1.0
   ... WARP3D jobs completed...
 
   ... Checking results: test_91a_out
@@ -1113,58 +1111,22 @@ Enter your choice (<return> for menu): 1
 	    .... comparison value:	 22868.616552
 	    .... value from output:	 22868.616552   
 
-  ... Elaspsed walltime: 392.4
+  ... Elaspsed walltime: 338.0
 
  >>> Number of tests w/ detected solution differences:  0
  
 > Select a problem to run:
 
 Enter your choice (<return> for menu): 
- 
-  1 ) All Problems
-  2 ) Test 14: (Linear elastic impact, sparse iterative solver)
-  3 ) Test 18: (Gurson model growth, impact loading, restart)
-  4 ) Test 24: (hollow sphere, skew constraints, int press, large displ) 
-  5 ) Test 39: (CTOA and SMCS crack growth)
-  6 ) Test 41: (rigid contact, large displacements)
-  7 ) Test 44: (Cohesive-interface growth, restart)
-  8 ) Test 47: (Bilinear, cyclic, thermo-plasticity)
-  9 ) Test 86: (SEB, FGMs, nonlinear, J-values)
-  10 ) Test 50: (Fatigue crack growth using node release)
-  11 ) Test 51: (Nonlinear patch tests: tet elements)
-  12 ) Test 54: (FGM, linear, SE(T), non-global constraints)
-  13 ) Test 57: (SSY, mises + hydrogen effects)
-  14 ) Test 60: (Advanced cyclic plasticty model)
-  15 ) Test 61: (FGMs, interaction integrals)
-  16 ) Test 63: (360-degree SSY model, KI,KII,KIII)
-  17 ) Test 67: (Mesh tieing of two cylinders)
-  18 ) Test 69: (Interface-cohesive elements)
-  19 ) Test 70: (generalized_plasticity w/ temperature dependent properties)
-  20 ) Test 71: (piston loading for unsteady aerodynamic pressures)
-  21 ) Test 72: (user-defined integer lists of nodes-elements)
-  22 ) Test 73: (UMAT included in WARP3D - bilinear mises, kinematic hardening)
-  23 ) Test 74: (Crystal plasticity and restart)
-  24 ) Test 75: (Release constraints: absolute and relative)
-  25 ) Test 76: (User-defined multi-point constraints)
-  26 ) Test 77: (Finite strain transformations/output)
-  27 ) Test 78: (High-rate loading panel with hole. 20-node, rate plasticity)
-  28 ) Test 80: (Norton creep. Non-global constraints)
-  29 ) Test 81: (Flat and Patran result output files
-  30 ) Test 82: (Crystal Plasticity options)
-  31 ) Test 83: (bar2 element)
-  32 ) Test 84: (link2 element; Periodic Boundary Conditions)
-  33 ) Test 85: (user-defined initial-stresses)
-  34 ) Test 86: (FGMs compute J. explicit terms needed for path independence)
-  35 ) Test 87: (T-stress. surface cracked plate. face loading)
-  36 ) Test 88: (SMCS ductile growth. mesh regularization, restart)
-  37 ) Test 89: (SMCS ductile growth. C(T), blunt with hole, restart)
-  38 ) Test 90: (RVEs with periodic boundary conditions)
-  39 ) Test 91: (Crystal plasticity for Ti6242)
-  40 ) Quit
-Enter your choice (<return> for menu): 40
+.... Bad menu entry. Please try again ...
 
- >>> Number of tests w/ detected solution differences:  0
+> Select a problem to run:
 
- >>> All done with tests ...
-
-
+Enter your choice (<return> for menu): Traceback (most recent call last):
+  File "/Users/rdodds/warp3d_development/warp3d_project_standard/verification/run_tests.py", line 845, in <module>
+    if __name__ == "__main__": main()
+  File "/Users/rdodds/warp3d_development/warp3d_project_standard/verification/run_tests.py", line 773, in main
+    choice, bad_choice, last = display_menu()
+  File "/Users/rdodds/warp3d_development/warp3d_project_standard/verification/run_tests.py", line 706, in display_menu
+    choice = int( schoice )
+ValueError: invalid literal for int() with base 10: 'lt'
