@@ -3,12 +3,16 @@
            Highest Level README File for WARP3D
            ====================================
 
-            Last Update: April 2026
+            Last Update: April 17, 2026
+            
+            Since early April update: changed to Metis reordering
+            algorithm for MUMPS equation solver. Improves performance  
+            by 25-30% on larger models
             
             See Revision History section of updated User Manual for
             more complete descriptions. 
              
-            Version 18.6.0 Build 5100 on all platforms
+            Version 18.5.0 Build 51010 on all platforms
 
             The MPI version of WARP3D on Linux platforms has
             been deprecated. Going forward, the threads model for
