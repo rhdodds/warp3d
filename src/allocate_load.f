@@ -6,7 +6,7 @@ c     *                       written by : ag                        *
 c     *                                                              *          
 c     *                   last modified : 11/15/11 jcs               *          
 c     *                                                              *          
-c     *     this subroutine handles the allocation and deallocation  *          
+c     *     handles the allocation and deallocation                  *          
 c     *     of the temporary element load input structures.          *          
 c     *                                                              *          
 c     *     These temporary structures hold the element loadings     *          
@@ -17,14 +17,20 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine allocate_temp_load( status )                                   
-      use global_data ! old common.main
-      use elem_load_data                                                        
-      implicit integer (a-z)                                                    
-c                                                                               
-      logical :: debug                                                          
-      real :: zero     !  note:  single precision                               
-      data zero, debug /0.0, .false./                                           
+      subroutine allocate_temp_load( status )   
+c                                      
+      use global_data, only : noelem, mxndof
+      use elem_load_data, only : temp_allocated, temp_body, temp_face, 
+     &                           numfaces, temp_press, temp_temper,
+     &                           temp_piston  
+      use constants, only : rzero
+c        
+      implicit none
+c
+      integer :: status      
+c        
+      integer :: k                                                                       
+      logical, parameter :: debug  = .false.                                                        
 c                                                                               
       if ( debug ) write (*,*) ' >>> inside allocate_temp_load'                 
       go to (10,20), status                                                     
@@ -56,7 +62,7 @@ c
       if (allocated(temp_temper)) go to 9998                                    
       allocate(temp_temper(noelem))                                             
       do k = 1, noelem                                                          
-       temp_temper(k) = zero                                                    
+       temp_temper(k) = rzero                                                    
       end do                                                                    
 c                                                                               
 c                allocate and zero temp_piston                                  
@@ -96,15 +102,20 @@ c     *     of the permanent body and face load input structures.    *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine allocate_perm_load( status, loadnum )                          
-      use global_data ! old common.main
-      use elem_load_data                                                        
-      implicit integer (a-z)                                                    
-c                                                                               
-      logical debug                                                             
-c                                                                               
-      real zero     !  note:  single precision                                  
-      data zero, debug /0.0, .false./                                           
+      subroutine allocate_perm_load( status, loadnum )         
+c                       
+      use global_data, only : noelem, mxndof
+      use elem_load_data, only : temp_allocated, temp_body, numfaces,
+     &                           temp_press, temp_face, temp_temper,
+     &                           temp_piston
+      use constants, only : rzero
+c                                                         
+      implicit none                                                    
+c         
+      integer :: status, loadnum
+c
+      integer ::  num_loads, elem, dof, face                                                                            
+      logical, parameter :: debug = .false.                                                                                                                                        
 c                                                                               
       if ( debug ) write (*,*) ' >>> allocate_perm_load'                        
       go to (10,20), status                                                     
@@ -123,30 +134,30 @@ c                       first find number of entries needed
 c                                                                               
       if ( debug ) write (*,*) ' counting loadings...'                          
       do elem = 1, noelem                                                       
-c         if ( debug ) write (*,*) '   ** element:',elem                        
+         if ( debug ) write (*,*) '   ** element:',elem                        
          do dof = 1, mxndof                                                     
-            if ( temp_body(elem,dof).ne.zero ) then                             
+            if ( temp_body(elem,dof).ne.rzero ) then                             
                num_loads = num_loads + 1                                        
-c               if (debug) write (*,*) '    body'                               
+               if (debug) write (*,*) '    body'                               
             endif                                                               
          end do                                                                 
          do face = 1, numfaces                                                  
-            if ( temp_press(elem,face).ne.zero ) then                           
+            if ( temp_press(elem,face).ne.rzero ) then                           
                num_loads = num_loads + 1                                        
-c               if (debug) write (*,*) '     pressure'                          
+               if (debug) write (*,*) '     pressure'                          
             elseif ( temp_piston(elem,face).ne.0 ) then                         
                num_loads = num_loads + 1                                        
-c               if (debug) write(*,*) '     piston'                             
+               if (debug) write(*,*) '     piston'                             
             else                                                                
                do dof = 1, mxndof                                               
-                  if ( temp_face(elem,face,dof).ne.zero ) then                  
+                  if ( temp_face(elem,face,dof).ne.rzero ) then                  
                      num_loads = num_loads + 1                                  
-c                     if ( debug ) write (*,*) '     face'                      
+                     if ( debug ) write (*,*) '     face'                      
                   end if                                                        
                end do                                                           
             end if                                                              
          end do                                                                 
-         if ( temp_temper(elem) .ne. zero ) num_loads = num_loads + 1           
+         if ( temp_temper(elem) .ne. rzero ) num_loads = num_loads + 1           
       end do                                                                    
 c                                                                               
  15   continue                                                                  
@@ -187,14 +198,13 @@ c
       subroutine do_perm_allo( status, loadnum, num_loads, fill )   
 c             
       use global_data, only : out
-      use elem_load_data   
+      use elem_load_data, only : elem_loads  
 c                                                     
       implicit none
 c   
       integer :: status, loadnum, num_loads
       logical :: fill
 c
-                                                                            
       logical, parameter ::  debug = .false.
 c                                                                               
       if( debug ) write (out,*) 
@@ -303,7 +313,8 @@ c
      &                            size, thread_number ) 
 c            
       use global_data, only : out, mxndof, noelem, num_threads
-      use elem_load_data      
+      use elem_load_data, only : temp_body, temp_press, numfaces, 
+     &                           temp_face, temp_temper, temp_piston    
 c                                                  
       implicit none                                                    
 c     
@@ -443,7 +454,8 @@ c     *     this subroutine prints out the face and body loadings    *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine dump_load( eload_data, eload_val, thread_number, size)          
+      subroutine dump_load( eload_data, eload_val, thread_number,
+     &                      size )          
 c
       use global_data, only : out
 c
@@ -587,10 +599,10 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine zero_vector1( vec, n )                                         
-      real vec(*), zero    !   real not dp                                      
-      data zero / 0.0 /                                                         
+      real :: vec(n), rzero    !   real not dp                                      
+      data rzero / 0.0 /                                                         
 c                                                                               
-      vec(1:n) = zero                                                           
+      vec = rzero                                                           
 c                                                                               
       return                                                                    
       end                                                                       
@@ -607,10 +619,9 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine zero_vector2( vec, n )                                         
-      integer vec(*), zero   ! integer, not dp                                  
-      data zero / 0 /                                                           
+      integer :: vec(n) ! integer, not dp                                  
 c                                                                               
-      vec(1:n) = zero                                                           
+      vec = 0
 c                                                                               
       return                                                                    
       end                                                                       
