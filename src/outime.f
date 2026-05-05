@@ -19,11 +19,11 @@ c
       integer :: calc                                                           
       character(len=30) :: clctyp                                               
       real :: t1                                                                
-      real, external :: wcputime                                                
+      real, external :: wwalltime                                                
 c                                                                               
       write(out,9000)                                                           
 c                                                                               
-      t1 = wcputime( 1 )                                                        
+      t1 = wwalltime( 1 )                                                        
 c                                                                               
       do calc = 1, mxtim                                                        
          if( times(calc,2) .lt. 0.01 ) cycle                                    

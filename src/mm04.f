@@ -2311,21 +2311,19 @@ c
      &                             elem_killed, mxvl )
 c
       use constants, only : zero, one      
-      implicit integer (a-z)
+      implicit none
 c
-c                   parameter declarations
+      integer :: span, mxvl
+      double precision :: intfprps(mxvl,*), cohmat(mxvl,3),
+     &                    dis(mxvl,*), history(span,*), 
+     &                    history1(span,*)
+       logical :: elem_killed(*)
 c
-      double precision ::
-     & intfprps(mxvl,*), cohmat(mxvl,3), dis(mxvl,*),
-     & history(span,*), history1(span,*)
-       logical elem_killed(*)
-c
-c                   locally defined
-c
-      double precision ::
-     & tol, dtol, d_eff_at_peak, beta, dt1, dt2, dn, b2,
-     & effdis(mxvl), efftrac(mxvl), e, maxeffdis(mxvl),
-     & prior_max_d_eff, d_eff_at_n, peak_intf_stress, comp_multiplier
+      integer :: i, k
+      double precision :: tol, dtol, d_eff_at_peak, beta, dt1, dt2,
+     &                    dn, b2, effdis(mxvl), efftrac(mxvl), e,
+     &                    maxeffdis(mxvl), prior_max_d_eff, d_eff_at_n,
+     &                    peak_intf_stress, comp_multiplier
       logical :: compression(mxvl), small_effdis(mxvl), 
      &           loading(mxvl)
       logical, parameter :: local_debug = .false.
@@ -3715,16 +3713,14 @@ c
 c
       use constants, only : zero, one    
 c
-      implicit integer (a-z)       
+      implicit none
 c
-c                   parameter declarations
-c
+      integer :: span, mxvl, felem, iout
       double precision :: intfprps(mxvl,*), tanmat(mxvl,3,3), 
      &                    dis(mxvl,*), history(span,*)
       logical :: local_debug, elem_killed(*)
 c
-c                   locally defined
-c
+      integer :: i, k 
       double precision :: 
      & tol, dtol, t11, t12, t13, t21, t22, t23, t31, t32,
      & t33, effdis(mxvl), efftrac, e, maxeffdis(mxvl),

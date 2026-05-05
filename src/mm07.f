@@ -132,7 +132,7 @@ c                   local variables
 c                   ---------------
 c
       integer :: i,j
-      logical :: local_debug
+      logical, parameter :: local_debug = .false.
       double precision ::
      & shear_mod, a,b,c, zero, one, two,half,three,onep5,
 c
@@ -150,7 +150,6 @@ c
       data zero, one, two/0.0d00, 1.0d00, 2.0d00/
       data half, three, onep5 /0.5d00, 3.0d00, 1.5d00/
       data rgas,rna,temper,tol/8.3144d00,6.0232d23,300.d00,1.0d-6/
-      data local_debug / .false. /
 c
       if( step .eq. 1 ) then
           do i = 1, span
@@ -389,6 +388,9 @@ c *******************************************************************
      &    shear_mod, pe, p_np1, hcon_n, hcon_np1, etran_n, eps_n,
      &    etran_np1, adaptive_possible, cut_step_size_now, iout,
      &    cl, ct )
+c
+       use constants, only : zero, one, two, three
+     
        implicit none
 c
        integer :: iout
@@ -402,13 +404,12 @@ c
 c
 c                  local variables
 c
-       integer :: j
+      integer :: j
       double precision ::
-     &    zero, one, two, three, tol, cguess,
+     &    tol, cguess,
      &    delc, ddc, detkk, skk, cnow, thl, tht, dcdskk, dcdep,
      &    dntdeps, res, dskkdc, slope, eps, cl, ct,tol1
 
-      data zero, one, two, three /0.0d00, 1.0d00, 2.0d00, 3.0d00/
       data tol,tol1, cguess/1.d-6,1.d-8, 1.d-3/
 c
       delc = zero
@@ -450,9 +451,11 @@ c *******************************************************************
      &       wb, beta, vm, vh, c0, rksi, alamda, rnl, rna, rgas,
      &       temper, eps, skk, cnow, thl, tht, dcdskk, dcdep,
      &       dntdeps, cl, ct)
-       implicit none
 c
-       integer :: iout
+      use constants,only : zero, one, two, three, half     
+      implicit none
+c
+      integer :: iout
 c
       double precision ::
      & alpha, rho0, gamma, alat,
@@ -463,12 +466,11 @@ c
 c                local variables
 c
       double precision ::
-     & zero, one,two,three,half,fac,
+     & fac,
      & aux, rkl, rkt, thl0, cl, ct, rho, epst2, tden,
      & n1,n2,n3,n4,n5,n6,n7,ten, tdenfac,k1,k2,k3
 c
-      data one, two, three /1.0d00, 2.0d00, 3.0d00/
-      data zero , half,fac /0.0d00, 0.5d00,6932799.d0/
+      data fac /6932799.d0/
       data n1,n2,n3,n4/20.911d0,10.334d0,18.635d0,17.073d0/
       data n5,n6,n7,ten/8.302d0,2.034d0,0.197d0,10.d0/
       data k1,k2,k3/23.26d0,-2.33d0,-5.5d0/
@@ -543,6 +545,8 @@ c *******************************************************************
      &    shear_mod, pe, p_np1, hcon_n, hcon_np1, etran_n, etran_np1,
      &    eps_n, eps_np1, adaptive_possible, cut_step_size_now, iout,
      &    sigma_0, eps_0, n_power, qe, cl, ct )
+c
+       use constants, only : zero, one, two, three     
        implicit none
 c
        integer :: iout, j
@@ -557,12 +561,10 @@ c
 c                   local variables
 c
       double precision ::
-     & tol, zero, one, two, three,
-     & epsguess, ddeps, sigmaY, dsdep, ff1, slope,ff2,deleps,
+     & tol, epsguess, ddeps, sigmaY, dsdep, ff1, slope,ff2,deleps,
      & delc, ddelc, detkk, dsdc, cnow, thl, tht, dcdskk,tol1,
      & dcdep, dntdeps, a11, a12, a21, a22, det1, skk, dskkdc
 c
-      data zero, one, two, three /0.0d00, 1.0d00, 2.0d00, 3.0d00/
       data tol,tol1, epsguess/1.d-6,1.d-8, 1.d-4/
 c
       deleps = epsguess
@@ -618,6 +620,8 @@ c *******************************************************************
 
        subroutine mm07_yield( hcon, rksi, eps, sigma_0, eps_0,
      &    n_power, sigmaY, dsdep, dsdc)
+c
+       use constants, only : zero, one      
        implicit none
 c
       double precision ::
@@ -626,9 +630,7 @@ c
 c
 c                   local variables
 c
-      double precision ::
-     &    zero, one, aux1, aux2
-      data zero, one / 0.d00, 1.d00 /
+      double precision ::  aux1, aux2
 c
       aux2 = ( rksi - one )* hcon + one
       if( eps.le.zero ) then
@@ -655,17 +657,20 @@ c
      &  e_vec, nu_vec, sigyld_vec, n_power_vec, mm_props,
      &  trial_elas_stress, history_n,
      &  history_np1, stress_np1, dmat, killed_status )
+c
+      use constants, only :  zero, one, two, three, quarter, half,
+     &                       onep5, one_third, two_third
+c     
       implicit none
 c
 c                   parameter declarations
 c                   ----------------------
 c
-      integer ::
-     &  span, felem, gpn, iter, iout, mxvl, nstrn
+      integer :: span, felem, gpn, iter, iout, mxvl, nstrn
       logical :: killed_status(span)
 c
-      double precision ::
-     & mm_props(mxvl,10), e_vec(mxvl), nu_vec(mxvl),
+      double precision :: mm_props(mxvl,10), e_vec(mxvl), 
+     & nu_vec(mxvl),
      & trial_elas_stress(mxvl,nstrn), history_n(span,*),
      & history_np1(span,*), dmat(mxvl,nstrn,nstrn),
      & stress_np1(mxvl,nstrn), sigyld_vec(mxvl), n_power_vec(mxvl)
@@ -715,23 +720,15 @@ c     sig-xx, sig-yy, sig-zz, tau-xy, tau-yz, tau-xz
 c
       integer :: i,jj,kk
       logical :: local_debug
-      double precision ::
-     &  zero, one, two,three, quarter, half, onep5,
-     &  one_third, two_third,
-c
-     &  rna,rgas,temper,fact,c1,c2,c3,c4,bk,shear_mod,
+      double precision :: rna,rgas,temper,fact,c1,c2,c3,c4,bk,shear_mod,
      &  alpha,rho0,gamma,alat,wb,beta,vm,vh,c0,rksi,alamda,
      & rnl,hcon,delc,rlam,drlamdc,eps,skk,thl,tht,dthldskk,
      & dthtdskk,dcdskk,dcdep,fac1,fac2,sigmaY,dsdep,dsdc,
      & pe,qe,fac3,fac4,tden,sigma_0,hcon_np1,eps_np1,eps_0,
      & deleps,dntdeps,rbeta,rgamma,n_power,ctol,cnow,fac,
-     &  cl, ct, etran,
-c
+     & cl, ct, etran,
      &  dcde(6),depde(6),delta(6),an(6),str_epd_1(6),ak(6,6)
 c
-      data zero, one, two, three /0.0d00,1.0d00,2.0d00,3.0d00/
-      data quarter, half, onep5 /0.25d00, 0.5d00, 1.5d00/
-      data one_third, two_third/0.333333333d00, 0.666666667d00/
       data rgas, rna, temper, ctol/8.3144d0,6.0232d23,3.d02,1.d-8/
 c
       dcdep  = zero
@@ -742,12 +739,12 @@ c
       ak(1,1) = two_third
       ak(2,2) = two_third
       ak(3,3) = two_third
-      ak(1,2) = - one_third
-      ak(1,3) = - one_third
-      ak(2,1) = - one_third
-      ak(2,3) = - one_third
-      ak(3,1) = - one_third
-      ak(3,2) = - one_third
+      ak(1,2) = -one_third
+      ak(1,3) = -one_third
+      ak(2,1) = -one_third
+      ak(2,3) = -one_third
+      ak(3,1) = -one_third
+      ak(3,2) = -one_third
       ak(4,4) = half
       ak(5,5) = half
       ak(6,6) = half
@@ -950,11 +947,10 @@ c
 c                   parameter declarations
 c                   ----------------------
 c
-      integer
-     &  gpn, mxvl, span, iout,i
+      integer :: gpn, mxvl, span, iout,i
 c
 c
-      double precision
+      double precision ::
      & stress(mxvl,*), elestr(mxvl,*), history(mxvl,*),
      & p, two, three, onep5, fac1
 c
@@ -1040,7 +1036,10 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm07_set_sizes( info_vector )
-      dimension info_vector(*)
+c
+      implicit none
+c            
+      integer :: info_vector(*)
 c
 c        set infor_data
 c
@@ -1081,7 +1080,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm07_states_values( itype, elem_states_output,
-     &                                 nrow_states, num_states  )
+     &                               nrow_states, num_states  )
       use global_data ! old common.main
 c
 c                       access some global data structures
@@ -1089,7 +1088,7 @@ c
       use elem_block_data, only: history_blocks, history_blk_list
       use main_data, only: elems_to_blocks, cohesive_ele_types
 c
-      implicit integer (a-z)
+      implicit none
 c
 c                       parameters
 c

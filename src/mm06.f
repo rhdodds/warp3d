@@ -269,6 +269,8 @@ c
       subroutine mm06_get_eng_dens( relem )                                     
 c                                                                               
 c             locally defined variables                                         
+c       
+      implicit none
 c                                                                               
       integer :: relem                                                          
       double precision ::                                                       
@@ -762,29 +764,23 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine mm06_states_values( itype, elem_states_output,                 
-     &                                nrow_states, num_states  )                
-      use global_data ! old common.main
-c                                                                               
-c                       access some global data structures                      
-c                                                                               
+     &                               nrow_states, num_states  )        
+c              
+      use global_data, only : out, elblks, iprops
+      use constants, only : zero  
       use elem_block_data, only: history_blocks, history_blk_list               
       use main_data, only: elems_to_blocks                                      
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                       parameters                                              
+      implicit none
 c                                                                               
       integer :: nrow_states, itype, num_states                                 
       double precision :: elem_states_output(nrow_states,*)                     
 c                                                                               
-c                       locals                                                  
-c                                                                               
       double precision,                                                         
      & allocatable :: history_dump(:,:,:), one_elem_states(:)                   
-      integer :: relem, elnum, hist_size, blockno                               
+      integer :: relem, elnum, hist_size, blockno, elem_type, felem,
+     &           int_points, mat_type, span                                
       logical :: do_a_block, local_debug                                        
-      double precision :: zero                                                  
-      data zero / 0.0d00 /                                                      
 c                                                                               
 c           build creep model states values output.                             
 c                                                                               

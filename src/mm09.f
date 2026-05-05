@@ -492,7 +492,7 @@ c
       use elem_block_data, only: history_blocks, history_blk_list               
       use main_data, only: elems_to_blocks, cohesive_ele_types                  
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                               
 c                       parameters                                              
 c                                                                               

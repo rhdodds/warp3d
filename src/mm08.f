@@ -61,10 +61,6 @@ c
 c                                                                               
       return                                                                    
       end                                                                       
-                                                                                
-                                                                                
-                                                                                
-c                                                                               
 c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
@@ -77,14 +73,14 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine mm08_states_values( itype, elem_states_output,                 
-     &                                 nrow_states, num_states  )               
-      use global_data ! old common.main
-c                                                                               
-c                       access some global data structures                      
-c                                                                               
+     &                               nrow_states, num_states  )               
+c
+      use global_data, only : elblks, iprops, out
+      use constants, only : zero
       use elem_block_data, only: history_blocks, history_blk_list               
       use main_data, only: elems_to_blocks                                      
-      implicit integer (a-z)                                                    
+c
+      implicit none                                                    
 c                                                                               
 c                       parameters                                              
 c                                                                               
@@ -96,10 +92,9 @@ c
       double precision,                                                         
      & allocatable :: history_dump(:,:,:), one_elem_states(:),                  
      &                avgs(:), ip_state_values(:)                               
-      integer :: relem, elnum, hist_size, blockno                               
+      integer :: relem, elnum, hist_size, blockno, elem_type, felem,
+     &           int_points, mat_type, span                                
       logical :: do_a_block, local_debug                                        
-      double precision :: zero                                                  
-      data zero / 0.0d00 /                                                      
 c                                                                               
 c           build umat states values output.                                    
 c                                                                               
@@ -183,8 +178,7 @@ c
 c                       locals                                                  
 c                                                                               
       integer :: ipt, num_states_returned                                       
-      double precision ::                                                       
-     & a_bar, b_bar                                                             
+      double precision :: a_bar, b_bar                                                             
 c                                                                               
       avgs(1:num_states) = zero                                                 
 c                                                                               

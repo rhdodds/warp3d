@@ -4155,14 +4155,13 @@ c     ****************************************************************
 c
       subroutine mm05_states_values( itype, elem_states_output,
      &                                 nrow_states, num_states  )
-      use global_data ! old common.main
 c
 c                       access some global data structures
 c
       use elem_block_data, only: history_blocks, history_blk_list
       use main_data, only: elems_to_blocks, cohesive_ele_types
 c
-      implicit integer (a-z)
+      implicit none
 c
 c                       parameters
 c

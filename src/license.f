@@ -14,8 +14,10 @@ c
 c                                                                               
 c                                                                               
       subroutine license                                                        
-      use global_data ! old common.main
-      implicit integer (a-z)                                                    
+c 
+      use global_data, only : out
+c 
+      implicit none
 c                                                                               
 c                                                                               
       write(out,*)                                                              

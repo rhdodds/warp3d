@@ -544,15 +544,14 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine mm02_states_values( itype, elem_states_output,                 
-     &                                nrow_states, num_states  )                
-      use global_data ! old common.main
-c                                                                               
-c                       access some global data structures                      
-c                                                                               
+     &                               nrow_states, num_states  )                
+c
+      use global_data, only : out, elblks, iprops
+      use constants, only : zero
       use elem_block_data, only: history_blocks, history_blk_list               
       use main_data, only: elems_to_blocks                                      
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                               
 c                       parameters                                              
 c                                                                               
@@ -563,9 +562,10 @@ c                       locals
 c                                                                               
       double precision, allocatable :: history_dump(:,:,:),
      &                                 one_elem_states(:)                   
-      integer :: relem, elnum, hist_size, blockno                               
-      logical :: do_a_block, local_debug                                        
-      double precision, parameter :: zero = 0.d0
+      integer :: relem, elnum, hist_size, blockno, elem_type, felem,
+     &           mat_type, int_points, span                               
+      logical :: do_a_block
+      logical, parameter :: local_debug = .false.                                     
 c                                                                               
 c           build deformation plasticity states values output.                  
 c                                                                               
@@ -585,7 +585,6 @@ c
          blockno = elems_to_blocks(elnum,1)                                     
       end if                                                                    
 c                                                                               
-      local_debug = .false.                                                     
       felem       = elblks(1,blockno)                                           
       elem_type   = iprops(1,felem)                                             
       mat_type    = iprops(25,felem)                                            

@@ -54,7 +54,7 @@ c     ****************************************************************
 c                                                                               
       subroutine xit  
       use global_data, only : out                                                          
-      implicit integer (a-z)                                                    
+      implicit none                                                    
 c     
       write(out,*) ' '                                                                          
       write(out,*) '>>> UMAT called to abort execution'        

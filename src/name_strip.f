@@ -7,9 +7,14 @@ c  *            input string                                           *
 c  *                                                                   *        
 c  *********************************************************************        
       subroutine name_strip ( instring, length)                                 
-      implicit integer (a-z)                                                    
-      character(LEN=length) instring                                            
-      logical keep_strip                                                        
+c
+      implicit none
+c 
+      integer :: length
+      character(LEN=length) :: instring                                            
+c 
+      integer :: last
+      logical :: keep_strip                                                        
 c                                                                               
 c        input parameters                                                       
 c               instring -- the input string                                    
@@ -25,7 +30,8 @@ c
          else                                                                   
             keep_strip  = .false.                                               
          endif                                                                  
-      enddo                                                                     
-      length = last                                                             
+      end do                                                                     
+      length = last 
+c                                                                  
       return                                                                    
       end                                                                       
