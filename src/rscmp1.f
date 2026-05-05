@@ -6,34 +6,34 @@ c     *                       written by : bh                        *
 c     *                                                              *          
 c     *                   last modified : 06/30/91                   *          
 c     *                                                              *          
-c     *     this subroutine computes the polar decompostion of the   *          
+c     *     computes the polar decompostion of the                   *          
 c     *     deformation gradient into the right stretch tensor.      *          
 c     *     the computations are for a gauss point of a q3disop      *          
 c     *     or l3disop element.                                      *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
-      subroutine rscmp1( span, f, u )                                           
-      implicit integer (a-z)                                                    
-      include 'param_def'                                                       
+      subroutine rscmp1( span, f, u )      
+c
+      use constants, only : one
+      use globaL_data, only : mxvl, ndim, nstr
+c      
+      implicit none
+c
+      integer :: span      
 c                                                                               
 c                      parameter declarations                                   
 c                                                                               
-      double precision                                                          
-     & f(mxvl,ndim,*), u(mxvl,*)                                                
+      double precision :: f(mxvl,ndim,*), u(mxvl,*)                                                
 c                                                                               
 c                      locally allocated arrays & constants                     
-c                                                                               
-      double precision                                                          
-     &  c(mxvl,nstr), cc(mxvl,nstr), iu(mxvl), iiu(mxvl),                       
-     &  iiiu(mxvl), a1(mxvl), b1(mxvl), c1(mxvl), one                           
-      data one / 1.0 /                                                          
+c    
+      integer :: i                                                                           
+      double precision :: c(mxvl,nstr), cc(mxvl,nstr), iu(mxvl), 
+     &  iiu(mxvl), iiiu(mxvl), a1(mxvl), b1(mxvl), c1(mxvl)
 c                                                                               
 c                       u is in symmetric upper triangular form.                
-c                                                                               
-c                                                                               
+c
 c                       compute the invariants of the right                     
 c                       stretch tensor, the metric tensor, and                  
 c                       its square.                                             

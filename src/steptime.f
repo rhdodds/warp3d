@@ -1,12 +1,10 @@
-                                                                                
-                                                                                
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine steptime                     *          
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 1/17/2016 rhd              *          
+c     *                   last modified : 4/25/26 rhd                *          
 c     *                                                              *          
 c     *     determine if the then load step will likely exceel the   *          
 c     *     user specified maximum wall clock time.if so, write a    *          
@@ -16,21 +14,24 @@ c     *     nonlinear parameters, skip this processing               *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine steptime( step, status )                                       
-      use global_data ! old common.main
-      implicit integer (a-z)                                                    
+      subroutine steptime( step, status )   
+c                                          
+      use global_data, only : stname, out, time_limit
+      
+      implicit none
 c                                                                               
       integer :: step, status                                                   
 c                                                                               
-      integer :: idummy, last                                                   
+      integer :: idummy, last                                                
       real, save :: last_step_time, time_before_step                            
       logical, save :: ignore                                                   
       double precision :: dumd                                                  
       character(len=80) :: name                                                 
-      real :: wcputime, wwalltime, dumr, percent, time_so_far                   
+      real :: wcputime, wwalltime, dumr, time_so_far       
+      real, parameter :: percent = 0.90            
       external :: wcputime, wwalltime                                           
-      logical ldum1, ldum2, debug, quit_now                                     
-      data percent, debug / .90, .false./                                       
+      logical ldum1, ldum2, quit_now          
+      logical, parameter :: debug = .false.                           
 c                                                                               
       select case( status )                                                     
       case( 1 )                                                                 

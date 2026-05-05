@@ -1,5 +1,5 @@
       subroutine splunj                                                         
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                               
 c                     this is a dummy subroutine that does nothing.             
 c                     we use it most often in scanning of input                 

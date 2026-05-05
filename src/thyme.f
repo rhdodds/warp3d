@@ -20,12 +20,12 @@ c
 c      
       integer :: calc, flag      
       real ::  t1
-      real, external :: wcputime                                                        
+      real, external :: wwalltime                                                        
 c
       if ( flag .eq. 1 ) then  ! initial call                                                                               
-         strtm = wcputime ( 1 )                                                 
+         strtm = wwalltime ( 1 )                                                 
       else  ! accumulate wall time and counts.
-         t1            = wcputime ( 1 )                                         
+         t1            = wwalltime ( 1 )                                         
          times(calc,1) = times(calc,1) + t1 - strtm                             
          times(calc,2) = times(calc,2) + 1.0                                    
       end if                                                                    

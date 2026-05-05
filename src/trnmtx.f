@@ -6,7 +6,7 @@ c     *                       written by : bh                        *
 c     *                                                              *          
 c     *                   last modified : 07/02/91                   *          
 c     *                                                              *          
-c     *     this subroutine transforms an element stiffness or       *          
+c     *     transforms an element stiffness or                       *          
 c     *     mass matrix from uniform global coordinates to           *          
 c     *     constraint compatable global coordinates by virtue of    *          
 c     *     the equation                             t               *          
@@ -17,19 +17,21 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine trnmtx( mat, cp, trnmte, trne, ndof, nnode, totdof,            
-     &                   bele, nsize )                                          
-      use main_data, only: asymmetric_assembly                                  
-      implicit integer (a-z)                                                    
-      include 'param_def'                                                       
-      double precision                                                          
-     & mat(nsize,*), trnmte(mxvl,mxedof,*), sums(mxedof,mxndof)                 
-        double precision,                                                       
-     &      dimension(mxedof,mxedof) :: tmat                                    
-      dimension cp(*)                                                           
-      logical trne(mxvl,*)                                                      
+     &                   bele, nsize )         
+c                 
+      use global_data, only : mxvl, mxedof, mxndof                 
+      use main_data, only: asymmetric_assembly     
+c                                   
+      implicit none
+c
+      integer :: nsize, ndof, nnode, totdof, bele, cp(*)                                                              
+      double precision :: mat(nsize,*), trnmte(mxvl,mxedof,*) 
+      logical :: trne(mxvl,*)                                                      
+     
+      integer :: i, j, nod, ts, utsz            
+      double precision :: tmat(mxedof,mxedof), sums(mxedof,mxndof)                                    
 c                                                                               
-      if (.not. asymmetric_assembly) utsz = nsize                               
-c                                                                               
+      if( .not. asymmetric_assembly ) utsz = nsize                               
 c                                                                               
 c                       note: ndof is an element dependent variable,            
 c                       but since ndof= 3 for every element in the              
@@ -38,26 +40,22 @@ c                       code. if ever a conflicting element is added
 c                       to the prgram, the code will need to be mod-            
 c                       ified.                                                  
 c                                                                               
-c                                                                               
 c                       expand the matrix from global upper triangular          
 c                       vector form to full matrix form.                        
-c                                                                               
-c                                                                               
-      if (.not. asymmetric_assembly) then                                       
-      do j = 1, totdof                                                          
-        do i = 1, j                                                             
+c                                                                                                                                                              
+      if( .not. asymmetric_assembly ) then                                       
+        do j = 1, totdof                                                          
+          do i = 1, j                                                             
             tmat(i,j) = mat(cp(j)+i,bele)                                       
-         end do                                                                 
-         do i = 1, j-1                                                          
+          end do                                                                 
+          do i = 1, j-1                                                          
             tmat(j,i) = tmat(i,j)                                               
-         end do                                                                 
-      end do                                                                    
+          end do                                                                 
+        end do                                                                    
       else                                                                      
-            tmat(1:totdof,1:totdof) = reshape(mat(1:totdof*totdof,bele),        
+        tmat(1:totdof,1:totdof) = reshape(mat(1:totdof*totdof,bele),        
      &            (/totdof, totdof/))                                           
       end if                                                                    
-                                                                                
-c                                                                               
 c                                                                               
 c                       transform. first multiply the matrix by the             
 c                       transformation matrix. if the transformation            
@@ -65,7 +63,6 @@ c                       matrix for a node is identity, skip the
 c                       multiplication. for each node, store the product        
 c                       in temporary storage. place the results in the          
 c                       matrix after the node is processed.                     
-c                                                                               
 c                                                                               
       do nod = 1, nnode                                                         
          if( trne(bele,nod) ) then                                              
@@ -91,14 +88,12 @@ c
          end if                                                                 
       end do                                                                    
 c                                                                               
-c                                                                               
 c                       multiply the partially transformed matrix by the        
 c                       transpose of the transformation matrix. if the          
 c                       transformation matrix for a node is identity,           
 c                       skip the multiplication. for each node, store           
 c                       the product in temporary storage and place the          
 c                       results in the matrix after the node is processed.      
-c                                                                               
 c                                                                               
       do nod = 1, nnode                                                         
          if( trne(bele,nod) ) then                                              
@@ -126,14 +121,14 @@ c                       return the matrix to global upper triangular
 c                       vector form. (or full form unrolled form for            
 c                       asymmetric assembly)                                    
 c                                                                               
-      if (.not. asymmetric_assembly) then                                       
-      do j = 1, totdof                                                          
-         do i = 1, j                                                            
+      if( .not. asymmetric_assembly ) then                                       
+        do j = 1, totdof                                                          
+          do i = 1, j                                                            
             mat(cp(j)+i,bele) = tmat(i,j)                                       
-         end do                                                                 
-      end do                                                                    
+          end do                                                                 
+        end do                                                                    
       else                                                                      
-            mat(:,bele) = reshape(tmat, (/totdof*totdof/))                      
+        mat(:,bele) = reshape(tmat, (/totdof*totdof/))                      
       end if                                                                    
 c                                                                               
 c                                                                               

@@ -4978,20 +4978,23 @@ c
       subroutine gauss_pt_coords(
      &       gpn, etype, span, int_order,
      &       nnodel, gp_coords, node_coords, iout  )
-      implicit integer (a-z)
-      include 'param_def'
+c
+      use global_data, only : mxvl, mxndel
+      use constants, only : zero
+c         
+      implicit none
 c
 c                      parameter declarations
 c
-      double precision ::
-     &  gp_coords(mxvl,3), node_coords(mxvl,*)
+      integer :: gpn, etype, span, int_order, nnodel, iout
+      double precision :: gp_coords(mxvl,3), node_coords(mxvl,*)
 c
-c                     locally defined arrays-variables
+c                     locals
 c
-      double precision ::
-     &  sf(mxndel), xi, eta, zeta, weight, zero
-      logical :: local_debug
-      data zero, local_debug / 0.0d00, .false. /
+      integer :: ky, kz, enode, i
+      double precision :: sf(mxndel), xi, eta, zeta, weight
+      logical, parameter :: local_debug = .false.
+
 c
       if( local_debug ) write(iout,*) '... in gauss_pt_coords'
 c
@@ -5002,11 +5005,7 @@ c
       call getgpts( etype, int_order, gpn, xi, eta, zeta, weight )
       call shapef( etype, xi, eta, zeta, sf(1) )
 c
-      do i = 1, span
-         gp_coords(i,1) = zero
-         gp_coords(i,2) = zero
-         gp_coords(i,3) = zero
-      end do
+      gp_coords = zero
 c
 c                     interpolate (x,y,z) global coords at this gpn for
 c                     each element in block. rows of node_coords have

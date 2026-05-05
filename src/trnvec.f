@@ -6,7 +6,7 @@ c     *                       written by : bh                        *
 c     *                                                              *          
 c     *                   last modified : 07/01/90                   *          
 c     *                                                              *          
-c     *     this subroutine transforms element vectors to and from   *          
+c     *     transforms element vectors to and from                   *          
 c     *     constraint compatable global coordinates and uniform     *          
 c     *     global coordinates. the element vectors are for one      *          
 c     *     element in a block of similar, non-conflicting elements. *          
@@ -14,12 +14,19 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine trnvec(vec,trnmte,trne,ndof,nnode,bele,switch)                 
-      implicit integer (a-z)                                                    
-      include 'param_def'                                                       
-      double precision                                                          
-     & vec(mxvl,*), trnmte(mxvl,mxedof,*), sums(mxndof)                         
-      logical trne(mxvl,*)                                                      
+      subroutine trnvec( vec, trnmte, trne, ndof, nnode, bele, 
+     &                   switch )      
+c                 
+      use global_data, only : mxvl, mxedof, mxndof
+c       
+      implicit none
+c                
+      integer :: ndof, nnode, bele, switch                                         
+      double precision :: vec(mxvl,*), trnmte(mxvl,mxedof,*), 
+     &                    sums(mxndof)                         
+      logical :: trne(mxvl,*)  
+c
+      integer :: nod, ts                                                            
 c                                                                               
 c                                                                               
 c                       note: ndof is an element dependent variable,            
@@ -92,13 +99,13 @@ c
       end                                                                       
 c     ****************************************************************          
 c     *                                                              *          
-c     *                      subroutine trnvec                       *          
+c     *                      subroutine trnvecs                      *          
 c     *                                                              *          
 c     *                       written by : bh                        *          
 c     *                                                              *          
 c     *                   last modified : 07/01/90                   *          
 c     *                                                              *          
-c     *     this subroutine transforms element vectors to and from   *          
+c     *     transforms element vectors to and from                   *          
 c     *     constraint compatable global coordinates and uniform     *          
 c     *     global coordinates. the element vectors are for one      *          
 c     *     element in a block of similar, non-conflicting elements. *          
@@ -106,13 +113,19 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine trnvecs(vec,trnmte,trne,ndof,nnode,bele,switch,                
-     &                   nrow_vec)                                              
-      implicit integer (a-z)                                                    
-      include 'param_def'                                                       
-      double precision                                                          
-     & vec(nrow_vec,*), trnmte(mxvl,mxedof,*), sums(mxndof)                     
-      logical trne(mxvl,*)                                                      
+      subroutine trnvecs( vec, trnmte, trne, ndof, nnode, bele,
+     &                    switch, nrow_vec) 
+c  
+      use global_data, only : mxvl, mxedof, mxndof
+c                                                        
+      implicit none
+c 
+      integer :: ndof, nnode, bele, switch, nrow_vec
+      double precision :: vec(nrow_vec,*), trnmte(mxvl,mxedof,*),
+     &                    sums(mxndof)                     
+      logical:: trne(mxvl,*)  
+c 
+      integer :: nod, ts                                                           
 c                                                                               
 c                                                                               
 c                       note: ndof is an element dependent variable,            
