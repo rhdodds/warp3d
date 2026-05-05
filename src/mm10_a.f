@@ -687,8 +687,9 @@ c
       double precision, dimension(6,6) :: J11, JJ, JR, JA, JB
       double precision, dimension(6) :: work_vec
       double precision, allocatable :: ed(:,:), J12(:,:), J21(:,:),
-     &          ipiv(:), symtqmat(:,:), dgammadd(:,:),
+     &          symtqmat(:,:), dgammadd(:,:),
      &          J22(:,:), alpha(:,:), beta(:,:)
+      integer, allocatable :: ipiv(:)
 c
       debug    = .false.     ! props%debug
       gpall    = props%gpall ! print iteration norms for all int points
@@ -2078,6 +2079,7 @@ c
       end
 c
       subroutine mm10_setup_voche( props, np1, n )
+      use global_data, only : ltmstp
       use mm10_defs
       use mm10_constants
       implicit none
@@ -2088,6 +2090,13 @@ c
 c              define a mu_harden at state np1 for the
 c              sake of the CP model
 c
+c              ltmstp = 0 means first time ever here. 
+c              n%u(1)  has not been properly initialized to zero.
+c              this is a code error but I can't fined exactly where
+c              it should be done.
+c              accessing ltmstp is a kludge.
+c
+      if( ltmstp == 0  ) n%u(1) = zero
       np1%mu_harden = props%stiffness(6,6)
 c
 c
@@ -2112,19 +2121,17 @@ c *********************************************************************
 c
       subroutine mm10_init_mts( props, tau_tilde, uhist )
       use mm10_defs
-      use mm10_constants
+      use constants, only : minus_one
       implicit none
 c
       type(crystal_props) :: props
       double precision, dimension(max_uhard) :: tau_tilde
       double precision, dimension(max_uhard) :: uhist
 c
-      double precision, parameter :: mone = -1.0d0
-c
-      tau_tilde(1) = mone     ! This only works because these
+      tau_tilde(1) = minus_one ! This only works because these
 c                               are actually flags
-      uhist(1) = mone
-      uhist(2) = mone
+      uhist(1) = minus_one
+      uhist(2) = minus_one
 c
       return
       end
@@ -2141,6 +2148,12 @@ c
       double precision, parameter :: init_hard = 0.1d0
 c
 c              continuum effective rate
+c
+c              ltmstp = 0 means first time ever here. 
+c              n%u(1)  has not been properly initialized to zero.
+c              this is a code error but I can't fined exactly where
+c              it should be done.
+c              accessing ltmstp is a kludge.
 c
       dgc = np1%dg / np1%tinc
 c
@@ -2254,8 +2267,11 @@ c
       end
 c
       subroutine mm10_setup_mrr( props, np1, n )
+      use global_data, only : ltmstp
       use mm10_defs
       use mm10_constants
+      use, intrinsic :: ieee_arithmetic
+c      
       implicit none
 c
       type(crystal_props) :: props
@@ -2264,6 +2280,13 @@ c
 c
 c              increment the total time
 c
+c              ltmstp = 0 means first time ever here. 
+c              n%u(1)  has not been properly initialized to zero.
+c              this is a code error but I can't fined exactly where
+c              it should be done.
+c              accessing ltmstp is a kludge.
+c
+      if( ltmstp == 0  ) n%u(1) = zero
       time     = n%u(1) + np1%tinc
       np1%u(1) = time
 c
@@ -2327,8 +2350,11 @@ c
       end subroutine
 c
       subroutine mm10_setup_ornl( props, np1, n )
+      use global_data, only : ltmstp
       use mm10_defs
       use mm10_constants
+      use, intrinsic :: ieee_arithmetic
+c          
       implicit none
 c
       type(crystal_props) :: props
@@ -2337,6 +2363,13 @@ c
 c
 c              increment the total time
 c
+c              ltmstp = 0 means first time ever here. 
+c              n%u(1)  has not been properly initialized to zero.
+c              this is a code error but I can't fined exactly where
+c              it should be done.
+c              accessing ltmstp is a kludge.
+c
+      if( ltmstp == 0  ) n%u(1) = zero
       time     = n%u(1) + np1%tinc
       np1%u(1) = time
 c
@@ -2380,8 +2413,11 @@ c
       end
 c
       subroutine mm10_setup_arfr( props, np1, n )
+      use global_data, only : ltmstp
       use mm10_defs
       use mm10_constants
+      use, intrinsic :: ieee_arithmetic
+c
       implicit none
 c
       type(crystal_props) :: props
@@ -2390,6 +2426,13 @@ c
 c
 c              increment the total time
 c
+c              ltmstp = 0 means first time ever here. 
+c              n%u(1)  has not been properly initialized to zero.
+c              this is a code error but I can't fined exactly where
+c              it should be done.
+c              accessing ltmstp is a kludge.
+c
+      if( ltmstp == 0  ) n%u(1) = zero
       time     = n%u(1) + np1%tinc
       np1%u(1) = time
 c
@@ -2435,16 +2478,24 @@ c
       end
 c
       subroutine mm10_setup_DJGM( props, np1, n )
+      use global_data, only : ltmstp
       use mm10_defs
       use mm10_constants
+c
       implicit none
 c
       type(crystal_props) :: props
       type(crystal_state) :: np1, n
       double precision :: time
 c
-c              increment the total time
+c              increment the total time.
+c              ltmstp = 0 means first time ever here. 
+c              n%u(1)  has not been properly initialized to zero.
+c              this is a code error but I can't fined exactly where
+c              it should be done.
+c              accessing ltmstp is a kludge.
 c
+      if( ltmstp == 0  ) n%u(1) = zero
       time     = n%u(1) + np1%tinc
       np1%u(1) = time
 c
@@ -2486,7 +2537,7 @@ c     ****************************************************************
 c
       subroutine mm10_copy_cc_hist( crys_no, span, history, gradfe,
      &                              R, props, n)
-      use mm10_defs
+      use mm10_defs 
       use mm10_constants
       implicit none
 c
@@ -3092,6 +3143,11 @@ c
       tan_mat_implemented = (props%tang_calc .eq. 0) .or.
      &                      (props%tang_calc .eq. 3) .or.
      &                      (props%tang_calc .eq. 4)
+c
+c      write(*,*) "...atol1:  ", nR1
+c      write(*,*) "...nR1:    ", atol1
+c      write(*,*) "...inR1:   ", inR1
+c      write(*,*) "...rtol1:  ", rtol1   
 c
       do while( (nR1 .gt. atol1) .and. (nR1/inR1 .gt. rtol1)  )
 c
