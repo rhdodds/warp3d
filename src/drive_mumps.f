@@ -2,7 +2,7 @@ c     ****************************************************************
 c     *                                                              *
 c     *       drive MUMPS solver for symmetric equations             *
 c     *                                                              *
-c     *      last modified : 13/7/2026 rhd                           *
+c     *      last modified : 5/4/2026 rhd                            *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -325,10 +325,11 @@ c
 c     ****************************************************************
 c     *                                                              *
 c     *         drive MUMPS solver for symmetric equations           *
-c     *            uses MKL LAPACK/BLAS for ifort/ifx                *
-c     *            uses OpenBLAS for gfortran                        *
+c     *            uses MKL LAPACK/BLAS for ifort/ifx (x86-64)       *
+c     *            uses MKL LAPACK/BLAS for gfortran (x86-64)        *
+c     *            uses Apple Accelerate w/ gfortran (arm64)         *
 c     *                                                              *
-c     *          last modified : 4/16/26 rhd                         *
+c     *          last modified : 5/4/26  rhd                         *
 c     *                                                              *
 c     ****************************************************************
 c
@@ -337,36 +338,35 @@ c
      &                        col_indexes, print_time_stats,
      &                        itype, out )
 c
-      use performance_data, only : t_performance_start_mumps,
-     &                             t_performance_end_mumps
-      use dmumps_struc_def
-      use global_data, only : ltmstp
+      use dmumps_struc_def, only : DMUMPS_STRUC
+      use global_data, only : mumps_solver_type
       use constants, only : zero
 c
       implicit none
 c
 c              parameter declarations
 c
-      double precision ::  diagonals(neq), rhs(neq), solution_vec(neq),
-     &                     off_diagonals(ncoeff)
+      double precision :: diagonals(neq), rhs(neq), solution_vec(neq),
+     &                    off_diagonals(ncoeff)
       integer :: row_counts(neq), col_indexes(ncoeff)
       logical :: print_time_stats
       integer :: itype, out, neq, ncoeff
 c
 c              locally defined.
 c
-      integer :: nnz, count, k, col_count, eqn, p, num_off_diag, 
-     &           off_count, A_count, i9, negpiv, local_now_step
-      integer ::  n_total_threads, num_procs, omp_solver, mkl_solver, 
-     &           save_omp_threads, save_mkl_threads
+      integer :: nnz, count, A_count, i9, negpiv, local_now_step,
+     &           omp_threads, mkl_solver
       integer, save :: num_calls = 0
       integer, external :: omp_get_num_procs, mkl_get_max_threads,
      &                     omp_get_max_threads
-      logical :: prn 
+      integer, save :: solver_method = 1
+      logical :: prn, failed_factorization
+      logical, parameter :: ldb = .false.
       double precision :: fact_entries, fact_gb, gflop_elim
 c
       integer, target, save, allocatable :: w_irn(:), w_jrn(:)
       double precision, target, save, allocatable :: aval(:), lrhs(:)
+      real :: sfactor_start, sfactor_end
       real, external :: wwalltime
 c
       type(DMUMPS_STRUC), save :: id
@@ -381,8 +381,15 @@ c                     with a new set of coefficients but same
 c                     sparsity
 c                 3 - no solution. just release data.
 c
+c              if we enter with solver type = 1 (symmetric positive
+c              definite) and factorization fails, switch to symmetric
+c              indefinite and try again. Set global flag to
+c              use type 2 from this point on. Also saved in restart.   
+c              if solver type = 2 and factorization fails, stop.
+c              if we have multi-point constraints, the assembler 
+c              sets solver type = 2 (system init type = 1)
+c
       prn =  print_time_stats
-      call t_performance_start_mumps
       nnz = ncoeff + neq
 c      
       if( itype == 3 ) then
@@ -391,148 +398,95 @@ c
         call DMUMPS( id) 
         return
       end if  
-c      
-c              Save the number of omp and mkl threads 
-c              to restore after mumps.
-c              Use our allocator routine to set the number of omp and
-c              mkl threads to use during MUMPS.
+c  
+ 100  continue     !  in case solver fails and change type
+      if( ldb ) write(out,*) "....solution type: ", itype
 c
 c              Turn off mkl dynamic so it cannot change # threads
 c
-      mkl_solver = 0
-      save_omp_threads = omp_get_max_threads()
-#ifdef MKL      
-      save_mkl_threads = mkl_get_max_threads()
-#endif    
+      omp_threads = omp_get_max_threads()
 c
-      call get_mumps_thread_split( save_omp_threads, omp_solver,
-     &                             mkl_solver )
-c
-#ifdef MKL      
+#ifdef MKL     
+      mkl_solver = omp_threads
       call mkl_set_num_threads( mkl_solver )
       call mkl_set_dynamic( 0 )
+      if( prn ) write(out,9404) omp_threads, mkl_solver
+#else
+      if( prn ) write(out,9405) omp_threads
 #endif      
-      call omp_set_num_threads( omp_solver )
-      if( prn ) write(out,9404) omp_solver, mkl_solver
 c
+c              Check diagonals.
 c              Build triplet storage format from WARP3D 
-c              NASA-VSS upper triangle      
+c              NASA-VSS upper triangle. Initialize MUMPS for first 
+c              solve of these equations. reordering and
+c              symbolic factorization.
+c 
+      call warp3d_mumps_check_diagonals( 0 )
 c
       if( itype == 1 ) then
-        if( allocated( w_jrn) ) deallocate( w_jrn )
-        if( allocated( w_irn) ) deallocate( w_irn )
-        if( allocated( aval) )  deallocate( aval )
-        if( allocated( lrhs) )  deallocate( lrhs )
-        allocate( w_jrn(nnz), w_irn(nnz), aval(nnz), lrhs(neq) )
-        p         = 1
-        col_count = 1
-c      
-        do eqn = 1, neq
-         w_irn(p) = eqn
-         w_jrn(p) = eqn
-         p = p + 1
-         num_off_diag = row_counts(eqn)
-         do k = 1, num_off_diag
-            w_irn(p) = eqn
-            w_jrn(p) = col_indexes(col_count)
-            p = p + 1
-            col_count = col_count + 1
-           end do
-         end do
-      end if  
-c              
-c              Load coefficients into aval vector
-c           
-      if( itype == 1 .or. itype == 2 ) then
-          p = 1
-          off_count = 1
-c      
-          do eqn = 1, neq
-             aval(p)  = diagonals(eqn)
-             p = p + 1
-             num_off_diag = row_counts(eqn)
-             do k = 1, num_off_diag
-               aval(p)  = off_diagonals(off_count)
-               p = p + 1
-               off_count = off_count + 1
-             end do
-          end do
+         call warp3d_mumps_vss_map()
+         call warp3d_mumps_setup
       end if         
 c
-      if( prn ) write(out,9200) wwalltime( 1 )
-      call mumps_check_diagonals( 0 )
-c
-c              initialize MUMPS for first solve of these equations
-c
-      if( itype == 1 ) then
-        id%COMM = -987654   ! centralized, no MPI
-        id%SYM  = 2         ! SPD matrix =1, indefinite = 2
-        id%PAR  = 1         ! host participates
-        id%JOB  = -1
-        call DMUMPS(id)
-        id%N     = neq
-        id%NZ    = nnz
-        id%IRN   => w_jrn  !irn
-        id%JCN   => w_irn  !jcn
-        id%A     => aval
-        id%NRHS  = 1
-        id%RHS   => lrhs
-c
-        id%ICNTL(1) = -1  ! output controls
-        id%ICNTL(2) = -1  !
-        id%ICNTL(3) = -1  !
-        id%ICNTL(4) = 0   !
-        id%ICNTL(7) = 0   ! force AMD
-        if( neq > 1000 ) id%ICNTL(7) = 5   ! 4 = force PORD
-c                                             5 = metis        
-        id%ICNTL(14) = 0   ! increase working memory n%
-        id%ICNTL(24) = 1   ! null pivot row detection
-        if( prn .and. id%ICNTL(7)==0 ) write(out,9202)  
-        if( prn .and. id%ICNTL(7)==4 ) write(out,9204)  
-        if( prn .and. id%ICNTL(7)==5 ) write(out,9206)  
-c
-c              Phase 1: Analysis (ordering, symbolic factorization)
-c
-        call thyme( 23, 1 )
-        id%JOB = 1
-        call DMUMPS( id )
-        if( id%INFO(1) /= 0 ) then
-         write(out,*) 'MUMPS error in analysis: ', id%INFO(1)
-         call die_abort
-        end if
-        write(out,9210) wwalltime( 1 )
-        call thyme( 23, 2 )
-c    
-      end if  ! itype == 1
-c
-c              Numeric factorization & solve
-c
+c              Load coefficients. factorize     
+c       
+      call warp3d_mumps_load_coeffs()
+      id%A => aval
+c      
       num_calls = num_calls + 1
       call thyme( 26, 1 )
+      if( prn ) then
+        if( mumps_solver_type == 1 ) write(out,9500)
+        if( mumps_solver_type == 2 ) write(out,9505)
+       end if 
       id%JOB = 2
+      if( ldb ) sfactor_start =  wwalltime( 1 )  
       call DMUMPS( id )
-      if( id%INFO(1) /= 0 ) then
-         write(out,*) 'MUMPS error in factorization: ', id%INFO(1)
-         call die_abort
-      end if
-      if( prn ) write(out,9220) wwalltime( 1 )
-      i9 = id%INFOG(9)! [L] factor storage 
-      if( i9 .lt. 0 ) then
-         fact_entries = dble(-i9) * 1.0d6
+      if( ldb ) then
+         sfactor_end =  wwalltime( 1 )  
+         write(out,*) "..... factor time: ", sfactor_end-sfactor_start
+      end if  
+c  
+      failed_factorization = id%INFO(1) /= 0
+      if( failed_factorization ) then
+         if( mumps_solver_type == 2 ) then
+           write(out,9510) 
+           call die_abort
+         end if 
+         id%JOB = -2        !   reset MUMPS for indefinite solver
+         call DMUMPS( id) 
+         itype = 1          !   restart solver
+         mumps_solver_type = 2
+         write(out,9515)
+         go to 100
+      end if          
+c      
+      if( prn ) then
+         write(out,9220) wwalltime( 1 )
+         i9 = id%INFOG(9)! [L] factor storage 
+         if( i9 .lt. 0 ) then
+            fact_entries = dble(-i9) * 1.0d6
+         else
+            fact_entries = dble(i9)
+         end if
+         fact_gb = fact_entries * 8.0d0 / (1024.0d0**3)
+         gflop_elim = id%RINFOG(3) / 1.0d9   ! after factorization: elimination flops
+       end if  
+       negpiv  = id%INFOG(12)   ! for SYM=1 or 2: total number of negative pivots
+c
+      if( prn ) then
+         write(out,9240) fact_gb
+         write(out,9250) gflop_elim
+         write(out,9270) negpiv
       else
-         fact_entries = dble(i9)
-      end if
-      fact_gb = fact_entries * 8.0d0 / (1024.0d0**3)
-      gflop_elim = id%RINFOG(3) / 1.0d9   ! after factorization: elimination flops
-      negpiv  = id%INFOG(12)   ! for SYM=1 or 2: total number of negative pivots
+         write(out,9280) negpiv
+      end if         
 c
-      if( prn ) write(out,9240) fact_gb
-      if( prn ) write(out,9250) gflop_elim
-      if( prn ) write(out,9270) negpiv
-      if( .not. prn ) write(out,9280) negpiv
-c
+c              Forward/backward solve
+c                  
+      id%NRHS  = 1
+      id%RHS   => lrhs ! loaded earlier
       id%JOB = 3
-      lrhs(1:neq) = rhs(1:neq) ! make a target version
       call DMUMPS( id )
       if( id%INFO(1) /= 0 ) then
          write(out,*) 'MUMPS error in solve: ', id%INFO(1)
@@ -545,42 +499,39 @@ c
       if( prn ) write(out,9260) dble(id%INFOG(17))/1024.d0
 c
       call thyme( 26, 2 )
-      call t_performance_end_mumps
 c
-c              reset the number of omp, mkl threasds to values
-c              before MUMPS solve
-c      
-#ifdef MKL
-      call mkl_set_num_threads( save_mkl_threads )
-#endif      
-      call omp_set_num_threads( save_omp_threads )
-c      
       return
       
- 9200 format(15x,'VSS map -> MUMPS completed    @ ',f10.2 )
- 9202 format(15x,'reordering by : AMD')
- 9204 format(15x,'reordering by : PORD')
- 9206 format(15x,'reordering by : METIS')
- 9210 format(15x,'reorder + symbolic fact done  @ ',f10.2 )
+ 9200 format(15x,'map -> MUMPS completed        @ ',f10.2 )
  9220 format(15x,'factorization done            @ ',f10.2 )
- 9230 format(15x,'forward/backward done         @ ',f10.2 )
+ 9230 format(15x,'forward/backward solve        @ ',f10.2 )
  9240 format(15x,'no. terms in [L] factor:',8x,f10.2,' x 10**9')
  9250 format(15x,'factorization GFLOP: :',10x,f10.2 )
  9260 format(15x,'peak memory usage (GB) :',8x,f10.2 )
  9270 format(15x,'negative pivots found :',9x,i10 )
  9280 format(15x,'negative pivots found :',i8 )
- 9404  format (15x,'number of OMP threads used      ',i10,
+ 9404 format(15x,'number of OMP threads used      ',i10,
      & /,15x,'number of MKL threads used      ',i10 )      
+ 9405 format(15x,'OMP threads for MUMPS           ',i10 ) 
+ 9500 format(15x,'use symm. pos definite factorization')
+ 9505 format(15x,'use symm. indefinite factorization')
+ 9510 format(/1x,'>>>>> Fatal error: the indefinite ',
+     &           'factorization failed.',
+     &  /20x,'solution terminated...',//)
+ 9515 format(/1x,'>>>>> warning: the symmetric positive definite ',
+     &       'factorization failed.',
+     &  /16x,'resetting the solver to try indefinite factorization',
+     &  /16x,'for all further solves this analysis',// )
 c
       return
 c
       contains
 c     ========
 c     ******************************************************************
-c     *       contains:   mumps_check_diagonals                        *
+c     *       contains:   warp3d_mumps_check_diagonals                 *
 c     ******************************************************************
 c
-      subroutine mumps_check_diagonals( message_type )
+      subroutine warp3d_mumps_check_diagonals( message_type )
 c
       implicit none
 c
@@ -596,92 +547,138 @@ c
       end do
 c
       write(out,9020) min_diagonal, max_diagonal
-      if( min_diagonal < zero ) write(out,9010)
+      if( min_diagonal <= zero ) then
+          write(out,9010)
+          write(out,9012)
+          mumps_solver_type = 2
+      end if          
 c
       return
 c                
  9010 format(15x,'*** negative diagonal(s) found ***')
+ 9012 format(15x,'*** switching to indefinite solver ***')
  9020 format(15x,'min diagonal term: ',d10.3,
      &     /,15x,'max diagonal term: ',d10.3 )
 c
-      end subroutine mumps_check_diagonals      
-
-      end subroutine drive_mumps
-      
-      subroutine get_mumps_thread_split( n_total,
-     &                                   n_omp_solver,
-     &                                   n_mkl_solver )
-
-c     ------------------------------------------------------------
-c     Determine thread split for MUMPS solver phase
+      end subroutine warp3d_mumps_check_diagonals
 c
-c     Input:
-c        n_total       total threads requested by user
+c     ******************************************************************
+c     *       contains:   warp3d_mumps_vss_map                         *
+c     ******************************************************************
 c
-c     Output:
-c        n_omp_solver  OMP threads during solver
-c        n_mkl_solver  MKL threads during solver
+      subroutine warp3d_mumps_vss_map()
 c
-c     Conservative default rule based on benchmarking:
-c
-c        for n_total <= 5:
-c           n_mkl = 1
-c
-c        for n_total  > 5:
-c           n_mkl = nint( 0.30 * n_total )
-c           n_mkl = max( n_mkl, 1 )
-c           n_mkl = min( n_mkl, 4 )
-c
-c        n_omp = n_total - n_mkl
-c
-c     This favors keeping most threads in outer MUMPS/OpenMP
-c     parallelism while giving MKL a modest number of threads
-c     for dense BLAS/LAPACK work.
-c     ------------------------------------------------------------
-
       implicit none
-
-      integer          n_total
-      integer          n_omp_solver
-      integer          n_mkl_solver
-
-      integer          mkl_cap
-      integer          small_cut
-      double precision frac
-
-      parameter      ( mkl_cap   = 4 )
-      parameter      ( small_cut = 5 )
-      parameter      ( frac      = 0.30d0 )
-
-c     ---- degenerate/serial case
-
-      if( n_total .le. 1 ) then
-         n_omp_solver = 1
-         n_mkl_solver = 1
-         return
-      endif
-
-c     ---- small thread counts: keep MKL serial
-
-      if( n_total .le. small_cut ) then
-         n_mkl_solver = 1
-         n_omp_solver = n_total - n_mkl_solver
-         if( n_omp_solver .lt. 1 ) n_omp_solver = 1
-         return
-      endif
-
-c     ---- general conservative rule
-
-      n_mkl_solver = nint( frac * dble(n_total) )
-
-      if( n_mkl_solver .lt. 1 ) n_mkl_solver = 1
-      if( n_mkl_solver .gt. mkl_cap ) n_mkl_solver = mkl_cap
-
-      n_omp_solver = n_total - n_mkl_solver
-
-c     ---- guards
-
-      if( n_omp_solver .lt. 1 ) n_omp_solver = 1
-
+c
+      integer :: p, eqn, num_off_diag, k, col_count      
+c
+      if( allocated( w_jrn) ) deallocate( w_jrn )
+      if( allocated( w_irn) ) deallocate( w_irn )
+      if( allocated( aval) )  deallocate( aval )
+      if( allocated( lrhs) )  deallocate( lrhs )
+      allocate( w_jrn(nnz), w_irn(nnz), aval(nnz), lrhs(neq) )
+      p         = 1
+      col_count = 1
+c      
+      do eqn = 1, neq
+        w_irn(p) = eqn
+        w_jrn(p) = eqn
+        p = p + 1
+        num_off_diag = row_counts(eqn)
+        do k = 1, num_off_diag
+            w_irn(p) = eqn
+            w_jrn(p) = col_indexes(col_count)
+            p = p + 1
+            col_count = col_count + 1
+        end do
+      end do
+c      
       return
-      end      
+      end subroutine warp3d_mumps_vss_map
+c
+c
+c     ******************************************************************
+c     *       contains:   mumps_load_coeffs                           *
+c     ******************************************************************
+c
+      subroutine warp3d_mumps_load_coeffs()
+c
+      implicit none
+      
+      integer :: p, off_count, eqn, k, num_off_diag     
+c
+      p = 1
+      off_count = 1
+c      
+      do eqn = 1, neq
+        aval(p)  = diagonals(eqn)
+        p = p + 1
+        num_off_diag = row_counts(eqn)
+        do k = 1, num_off_diag
+          aval(p)  = off_diagonals(off_count)
+          p = p + 1
+          off_count = off_count + 1
+        end do
+        lrhs(eqn) = rhs(eqn) ! make a target version
+      end do
+c
+      return
+      end subroutine warp3d_mumps_load_coeffs
+c
+c
+c     ******************************************************************
+c     *       contains:   mumps_setup                                  *
+c     ******************************************************************
+c
+      subroutine warp3d_mumps_setup()
+c
+      implicit none
+c 
+c             initial call to MUMPS for new set of equations.
+c            
+      id%COMM = -987654       ! centralized, no MPI
+      id%SYM  = mumps_solver_type !solver_method ! SPD matrix =1, indefinite = 2
+      id%PAR  =  1            ! host participates
+      id%JOB  = -1
+      call DMUMPS(id)
+      id%N     = neq
+      id%NZ    = nnz
+      id%IRN   => w_jrn  !irn
+      id%JCN   => w_irn  !jcn
+c
+      id%cntl(1) = 0.01 
+      id%ICNTL(1) = -1  ! output controls
+      id%ICNTL(2) = -1  !
+      id%ICNTL(3) = -1  !
+      id%ICNTL(4) = 0   !
+      id%ICNTL(7) = 0   ! force AMD
+      if( neq > 1000 ) id%ICNTL(7) = 5   ! 4 = force PORD
+c                                           5 = metis        
+      id%ICNTL(14) = 0   ! increase working memory n%
+      id%ICNTL(24) = 1   ! null pivot row detection
+      if( prn .and. id%ICNTL(7)==0 ) write(out,9202)  
+      if( prn .and. id%ICNTL(7)==4 ) write(out,9204)  
+      if( prn .and. id%ICNTL(7)==5 ) write(out,9206)  
+c
+c            Phase 1: Analysis (ordering, symbolic factorization)
+c
+      call thyme( 23, 1 )
+      id%JOB = 1
+      call DMUMPS( id )
+      if( id%INFO(1) /= 0 ) then
+         write(out,*) 'MUMPS error in analysis: ', id%INFO(1)
+         call die_abort
+      end if
+      write(out,9210) wwalltime( 1 )
+      call thyme( 23, 2 )
+c    
+      return
+c       
+ 9202 format(15x,'reordering by : AMD')
+ 9204 format(15x,'reordering by : PORD')
+ 9206 format(15x,'reordering by : METIS')
+ 9210 format(15x,'reorder + symbolic fact done  @ ',f10.2 )
+c         
+      end subroutine warp3d_mumps_setup      
+c         
+      end subroutine drive_mumps

@@ -18,7 +18,8 @@ c
      &                        solver_mkl_iterative, solver_threads,
      &                        num_threads, noelem, dcp, res, dstmap,
      &                        sparse_stiff_output, sparse_stiff_binary,
-     &                        sparse_stiff_file_name, sparse_research  
+     &                        sparse_stiff_file_name, sparse_research,
+     &                        mumps_solver_type 
       use elem_block_data, only : edest_blocks
       use main_data, only : repeat_incid, modified_mpcs,
      &                      asymmetric_assembly, force_solver_rebuild,
@@ -742,6 +743,7 @@ c
 
 
       if( tied_con_mpcs_constructed .or. mpcs_exist ) then
+          mumps_solver_type = 2!   symmetric indefinite
           rebuild_mpcs = now_iteration .eq. 1
           if( new_size .or. modified_mpcs .or. rebuild_mpcs ) then
             if( local_debug ) write(out,*) '.... @ 6.1'
