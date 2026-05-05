@@ -4,27 +4,28 @@ c     *                      subroutine inalpha                      *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/3/2019 rhd              *
+c     *                   last modified : 4/25/26 rhd                *
 c     *                                                              *
-c     *     this subroutine supervises and conducts the input of     *
-c     *     element thermal expansion coefficients for anisotopic    *
-c     *     materials. values are stored directly into props         *
+c     *     parses input of element thermal expansion coefficients   *
+c     *     for anisotopic materials. values are stored directly     *
+c     *     into props                                               *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine inalpha( sbflg1, sbflg2 )
-      use global_data ! old common.main
-      use allocated_integer_list
+c      
+      use global_data, only : noelem
+      use allocated_integer_list, only : trlist_allocated
 c
-      implicit integer (a-z)
+      implicit none
 c
+      logical :: sbflg1, sbflg2
+c
+      integer :: list_size, lenlst, errnum, idum, param
       double precision :: dumd
       real :: dumr, alphax, alphay, alphaz, alphaxy, alphayz, alphaxz
       real, parameter :: zero = 0.0
       character(len=1) :: dums
-      logical :: sbflg1, sbflg2
       logical, external :: matchs, matchs_exact, endcrd, true, numr
       integer, allocatable :: intlst(:)
 c
@@ -46,7 +47,7 @@ c
       alphayz = zero
       alphaxz = zero
       call readsc
-      if ( matchs('dump',4) ) then
+      if( matchs('dump',4) ) then
        call inalpha_dump
        go to 505
       end if
@@ -94,86 +95,86 @@ c **********************************************************************
 c
 c
  511  continue
-      if ( matchs_exact('alphaxy') ) then
+      if(  matchs_exact('alphaxy') ) then
         if ( .not. numr(alphaxy) ) then
-         call errmsg( 5,dum,'a_xy',dumr,dumd )
+         call errmsg( 5, idum, 'a_xy', dumr, dumd )
         else
          go to 511
         end if
       end if
       if ( matchs_exact('alphaxz') ) then
         if ( .not. numr(alphaxz) ) then
-         call errmsg( 5,dum,'a_xz',dumr,dumd )
+         call errmsg( 5, idum, 'a_xz', dumr, dumd )
         else
          go to 511
         end if
       end if
       if( matchs_exact('alphayz') ) then
         if ( .not. numr(alphayz) ) then
-         call errmsg( 5,dum,'a_yz',dumr,dumd )
+         call errmsg( 5, idum, 'a_yz', dumr, dumd )
         else
          go to 511
         end if
       end if
       if( matchs_exact('alphaz') ) then
-        if ( .not. numr(alphaz) ) then
-         call errmsg( 5,dum,'a_z ',dumr,dumd )
+        if(  .not. numr(alphaz) ) then
+         call errmsg( 5, idum, 'a_z ', dumr, dumd )
         else
          go to 511
         end if
       end if
       if( matchs_exact('alphay') ) then
         if ( .not. numr(alphay) ) then
-         call errmsg( 5,dum,'a_y ',dumr,dumd )
+         call errmsg( 5, idum, 'a_y ', dumr, dumd )
         else
          go to 511
         end if
       end if
       if( matchs_exact('alphax') ) then
         if ( .not. numr(alphax) ) then
-         call errmsg( 5,dum,'a_x ',dumr,dumd )
+         call errmsg( 5, idum, 'a_x ', dumr, dumd )
         else
          go to 511
         end if
       end if
       if ( matchs_exact('xy') ) then
         if ( .not. numr(alphaxy) ) then
-         call errmsg( 5,dum,'a_xy',dumr,dumd )
+         call errmsg( 5, idum, 'a_xy', dumr, dumd )
         else
          go to 511
         end if
       end if
       if ( matchs_exact('xz') ) then
         if ( .not. numr(alphaxz) ) then
-         call errmsg( 5,dum,'a_xz',dumr,dumd )
+         call errmsg( 5, idum, 'a_xz', dumr, dumd )
         else
          go to 511
         end if
       end if
       if( matchs_exact('yz') ) then
         if ( .not. numr(alphayz) ) then
-         call errmsg( 5,dum,'a_yz',dumr,dumd )
+         call errmsg( 5, idum, 'a_yz', dumr, dumd )
         else
          go to 511
         end if
       end if
       if( matchs_exact('z') ) then
         if ( .not. numr(alphaz) ) then
-         call errmsg( 5,dum,'a_z ',dumr,dumd )
+         call errmsg( 5, idum, 'a_z ', dumr, dumd )
         else
          go to 511
         end if
       end if
       if( matchs_exact('y') ) then
         if ( .not. numr(alphay) ) then
-         call errmsg( 5,dum,'a_y ',dumr,dumd )
+         call errmsg( 5, idum, 'a_y ', dumr, dumd )
         else
          go to 511
         end if
       end if
       if( matchs_exact('x') ) then
         if ( .not. numr(alphax) ) then
-         call errmsg( 5,dum,'a_x ',dumr,dumd )
+         call errmsg( 5, idum, 'a_x ', dumr, dumd )
         else
          go to 511
         end if
@@ -184,8 +185,8 @@ c                       there is no match for expansion coeff.
 c                       check for end of card. if not, print error
 c                       message.
 c
-      if( endcrd(dum) ) go to 590
-      call errmsg(211,dum,dums,dumr,dumd)
+      if( endcrd(dumr) ) go to 590
+      call errmsg(211,idum,dums,dumr,dumd)
       call scan_flushline; go to 9999
 c
 c **********************************************************************
@@ -218,21 +219,27 @@ c     *                      subroutine instore_alpha                *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/10/98                   *
+c     *                   last modified : 4/25/26 rhd                *
 c     *                                                              *
-c     *     this subroutine stores the anisotropic thermal expansion *
+c     *     stores the anisotropic thermal expansion                 *
 c     *     coefficients for a list of elements                      *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine instore_alpha( intlst, lenlst, alphax, alphay, alphaz,
      &                    alphaxy, alphayz, alphaxz )
+c
       use global_data ! old common.main
-      implicit integer (a-z)
-      real :: dumr, alphax, alphay, alphaz, alphaxy, alphayz, alphaxz
+c
+      implicit none
+c
+      integer :: intlst(*), lenlst
+      real ::  alphax, alphay, alphaz, alphaxy, alphayz, alphaxz
+c
+      integer :: icn, iplist, elem      
       double precision :: dumd
+      real :: dumr
       character :: dums
-      dimension intlst(*)
 c
 c                       for each element in the list, set the
 c                       element temporary storage array.
@@ -280,15 +287,19 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 11/10/98                   *
 c     *                                                              *
-c     *     this subroutine prints the anisotropic thermal expansion *
-c     *     coefficients for a list of elements                      *
+c     *     prints the anisotropic thermal expansion                 *
+c     *     coefficients for all elements                            *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine inalpha_dump
-      use global_data ! old common.main
-      implicit integer (a-z)
-      real  alphax, alphay, alphaz, alphaxy, alphayz, alphaxz
+c      
+      use global_data, only : noelem, props, out
+c
+      implicit none
+c   
+      integer :: elem   
+      real :: alphax, alphay, alphaz, alphaxy, alphayz, alphaxz
 c
 c                       for each element
 c                       element temporary storage array.

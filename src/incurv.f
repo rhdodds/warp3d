@@ -6,7 +6,7 @@ c     *                       written by : kck                       *
 c     *                                                              *          
 c     *                   last modified : 4/8/26 rhd                 *          
 c     *                                                              *          
-c     *     this subroutine supervises and conducts the input of     *          
+c     *     input of                                                 *          
 c     *     segmentally defined stress-strain curves including       *          
 c     *     temperature dependent and strain-rate dependent cases    *          
 c     *                                                              *          
@@ -29,7 +29,7 @@ c
      &                    tau, slope
       double precision, allocatable :: pchip_m(:), pchip_delta(:),
      &                                 x(:), y(:)
-      real dumr                                                                 
+      real :: dumr                                                                 
       character(len=1) :: dums                                                  
 c
       local_debug = .false.                                                                               
@@ -345,35 +345,30 @@ c     *                       written by : rhd                       *
 c     *                                                              *          
 c     *                   last modified : 7/28/2011 rhd              *          
 c     *                                                              *          
-c     *     this subroutine supervises and conducts the input of the *          
-c     *     temperature dependent modulus, poisson ratio and         *          
+c     *     input temperature dependent modulus, poisson ratio and   *          
 c     *     expansion coefficient for a segmental stress-strain      *          
 c     *     curve                                                    *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine incurv_temperature( gp_model_flag )                            
-      use segmental_curves                                                      
-      implicit integer (a-z)                                                    
-      include 'param_def'                                                       
+      subroutine incurv_temperature( gp_model_flag ) 
+c                                 
+      use segmental_curves            
+c                                               
+      implicit none                                                    
 c                                                                               
-c                paramter declarations                                          
-c                                                                               
-      logical gp_model_flag                                                     
-c                                                                               
-c                local declarations                                             
-c                                                                               
-      logical matchs_exact, numd, local_debug,               
-     &        endcrd, ym_input, nu_input, alpha_input, ok,                      
+      logical :: gp_model_flag                                                     
+c
+      integer :: dumi
+      logical :: ym_input, nu_input, alpha_input, ok,                      
      &        gp_sigma_0_input, gp_h_u_input,                                   
      &        gp_beta_u_input, gp_delta_u_input,                                
-     &        local_match_flag                                                  
-c                                                                               
-      double precision                                                          
-     &    dumd, value                                                           
-      real dumr                                                                 
+     &        local_match_flag    
+      logical, parameter :: local_debug = .false.
+      logical, external :: matchs_exact, numd, endcrd                                        
+      double precision :: dumd, value                                                           
+      real :: dumr                                                                 
       character(len=1) :: dums                                                  
-      data local_debug / .false. /                                              
 c                                                                               
       gp_model_flag = .false.                                                   
 c                                                                               
@@ -557,26 +552,23 @@ c     *                       written by : rhd                       *
 c     *                                                              *          
 c     *                   last modified : 4/15/00 rhd                *          
 c     *                                                              *          
-c     *     this subroutine supervises and conducts the input of the *          
-c     *     strain-rate dependent plastic-strain vs. stress,         *          
+c     *     input strain-rate dependent plastic-strain vs. stress,   *          
 c     *     segmental curve                                          *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
       subroutine incurv_strain_rate                                             
-      use segmental_curves                                                      
-      implicit integer (a-z)                                                    
-      include 'param_def'                                                       
-c                                                                               
-c                local declarations                                             
-c                                                                               
-      logical matchs, numd, local_debug                                         
-c                                                                               
-      double precision                                                          
-     &    dumd                                                                  
-      real dumr                                                                 
+c
+      use segmental_curves   
+c                                                         
+      implicit none
+c                  
+      integer :: dumi                                                             
+      logical, external :: matchs, numd                                         
+      logical, parameter :: local_debug = .false. 
+      double precision :: dumd                                                                  
+      real :: dumr                                                                 
       character(len=1) :: dums                                                  
-      data local_debug / .false. /                                              
 c                                                                               
 c                get the plastic strain rate for the curve.                     
 c                if not given, curve is stored as rate independent              

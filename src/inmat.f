@@ -1487,38 +1487,38 @@ c     *                      subroutine inseg_curve_list             *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 12/3/2019 rhd              *
+c     *                   last modified : 4/28/26 rhd                *
 c     *                                                              *
-c     *     this subroutine supervises and conducts the input of the *
-c     *     list of segmental stress-strain curves for use with      *
+c     *     input ist of segmental stress-strain curves for use with *
 c     *     this material                                            *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine inseg_curve_list( cur_set_no, ok  )
-      use global_data ! old common.main
-      use allocated_integer_list
 c
-      use segmental_curves
+      use allocated_integer_list, only : trlist_allocated
+      use segmental_curves, only : seg_curve_table, max_seg_curve_sets,
+     &                             max_seg_curves, num_seg_curve_sets,
+     &                             seg_curve_def, seg_curves_type,
+     &                             num_seg_points, seg_curves,
+     &                             seg_curves_value
 c
-      implicit integer (a-z)
+      implicit none
 c
-c                       parameters
-c
+      integer :: cur_set_no
       logical :: ok
-c                       local declarations
 c
-      integer :: tcurve_list(max_seg_curves)
+      integer :: count, errnum, param, icn, iplist, i, ii, j, dum,
+     &           tcurve_list(max_seg_curves), curve_no, curve_type,
+     &           lenlst, list_size, now_curve, number_of_curves
       integer, allocatable :: intlst(:)
-      character :: dums*10
-      logical :: local_debug, true
+      character(len=10) :: dums
+      logical, parameter :: local_debug = .false.
+      logical, external ::  true
       real :: dumr
-      double precision ::
-     &   dumd, tcurve_value(max_seg_curves), strain_1, strain_2,
-     &   tol_strain
-      data local_debug, tol_strain / .false., 1.0e-05 /
+      double precision :: dumd, tcurve_value(max_seg_curves), 
+     &                    strain_1, strain_2, tol_strain
+      data  tol_strain / 1.0e-05 /
 c
 c                 get the integerlist of segmental stress-strain curves
 c                 to be associated with this material. we enter with scan

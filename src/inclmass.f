@@ -4,7 +4,7 @@ c     *                      subroutine inclmass                     *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : rhd 1/20/2015              *          
+c     *                   last modified : rhd 4/26/26                *          
 c     *                                                              *          
 c     *     includes the element lumped mass matrices into the       *          
 c     *     element stiffness matrices using newmark factors         *          
@@ -12,34 +12,24 @@ c     *                                                              *
 c     *     now includes modified for asymmetric assembly            *          
 c     *                                                              *          
 c     ****************************************************************          
+c                                                                                                                                                             
+      subroutine inclmass           
+c                                                  
+      use global_data, only : nelblk, elblks 
 c                                                                               
+      implicit none                                                    
 c                                                                               
-      subroutine inclmass                                                       
-      use global_data ! old common.main
-c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-      integer :: blk, now_thread                                                
-c                                                                               
-c                                                                               
-c             MPI:                                                              
-c               tell the slave processors to enter this routine and             
-c               add the mass contribution to the element stiffnesses            
-c               they own.                                                       
-c             Non-MPI:                                                          
-c               these are dummy routines which return immediately               
-c                                                                               
+      integer :: blk, now_thread    
+      integer, external :: omp_get_thread_num                                            
 c                                                                               
 c             update diagonal terms of element stiffness                        
 c             matrices to include nodal mass scaled by                          
 c             time increment and newmark beta factor.                           
-c             do the update by blocks. elblks(2,blk) holds                      
-c             which processor owns the block (=0 non-MPI).                      
+c             do the update by blocks.                
 c                                                                               
 c$OMP PARALLEL DO PRIVATE( blk, now_thread )                                    
-c$OMP&            SHARED( nelblk, elblks, myid )                                
+c$OMP&            SHARED( nelblk, elblks )                                
       do blk = 1, nelblk                                                        
-         if( elblks(2,blk) .ne. myid ) cycle                                    
          now_thread = omp_get_thread_num() + 1                                  
          call inclmass_blk( blk )                                               
       end do ! over blocks                                                      

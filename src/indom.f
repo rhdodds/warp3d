@@ -1029,15 +1029,18 @@ c     *      all the duplicates are removed. num duplicates returned *
 c     *                                                              *          
 c     *                       written by  : bjb                      *          
 c     *                                                              *          
-c     *                    last modified : 11/23/22 rhd              *          
+c     *                    last modified : 4/28/26 rhd               *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine  indom_heapsort(n, ra, num_dups)                                           
+      subroutine  indom_heapsort( n, ra, num_dups )                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      dimension  ra(*)                                                          
-c                                                                               
+      implicit none
+c
+      integer :: n, ra(*), num_dups                                                          
+c
+      integer :: l, ir, rra, i, j, count
+c                                                                                     
       if (n .lt. 2) then                                                        
          return                                                                 
       end if                                                                    

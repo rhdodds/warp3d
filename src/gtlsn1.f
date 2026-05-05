@@ -20,27 +20,30 @@ c     *      increment is then most often noted D (or the rate D     *
 c     *      * dt).                                                  *          
 c     *                                                              *          
 c     ****************************************************************          
-c                                                                               
-c                                                                               
-      subroutine gtlsn1( span, nnode,                                           
-     &                   due, deps, gama, nxi, neta,                            
-     &                   nzeta, vol_block, bbar, eps_bbar, b )                  
-      implicit integer (a-z)                                                    
-      include 'param_def'                                                       
+c                                                                                                                                                        
+      subroutine gtlsn1( span, nnode, due, deps, gama, nxi, neta,                            
+     &                   nzeta, vol_block, bbar, eps_bbar, b ) 
+c  
+      use global_data, only : mxvl, nstr, mxedof   
+      use constants, only : zero
+c                       
+      implicit none                                                    
 c                                                                               
 c                      parameter declarations                                   
-c                                                                               
-      double precision ::                                                       
-     & due(mxvl,*), deps(mxvl,nstr), gama(mxvl,3,3),                            
-     & nxi(*), neta(*), nzeta(*), vol_block(mxvl,8,*), eps_bbar,                
-     & b(mxvl,mxedof,*)                                                         
+c                    
+      integer :: span, nnode                                                           
+      double precision :: due(mxvl,*), deps(mxvl,nstr), gama(mxvl,3,3),                            
+     &      nxi(*), neta(*), nzeta(*), vol_block(mxvl,8,*), eps_bbar,                
+     &      b(mxvl,mxedof,*)                                                         
       logical :: bbar                                                           
 c                                                                               
-c                      locals                                                   
+c                      locals            
+c
+      integer :: j, i, bpos1, bpos2                                       
 c                                                                               
 c                       compute linear strain-displacement                      
 c                       [B] matrix for this material (gauss) point at           
-c                       all elements in the block. modify                       
+c                       all eleme nts in the block. modify                       
 c                       for B-bar as needed.                                    
                                                                                 
       call blcmp1( span, b, gama, nxi, neta, nzeta, nnode )                     
@@ -52,7 +55,7 @@ c                       done for all elements in the block for this
 c                       material (gauss) point nuber. take advantage of         
 c                       sparsity in [B] during multiply.                        
 c                                                                               
-      deps = 0.0d00                                                             
+      deps = zero
 c                                                                               
       bpos1 = nnode                                                             
       bpos2 = 2*nnode                                                           
@@ -102,21 +105,22 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
       subroutine gtlsn2( span, nnode, due, dgstrn, dgstrs, rot, shape,          
-     &                   etype, gpn, felem, iout )                              
-      implicit integer (a-z)                                                    
-      include 'param_def'                                                       
+     &                   etype, gpn, felem, iout )
+c     
+      use constants, only : zero
+      use global_data, only : mxvl, nstr, mxedof 
+      implicit none
 c                                                                               
 c                      parameter declarations                                   
-c                                                                               
-      double precision ::                                                       
-     & due(mxvl,*), dgstrn(mxvl,nstr), dgstrs(mxvl,*), rot(mxvl,3,3),           
-     & shape(*), b(mxvl,mxedof,nstr)                                            
+c      
+      integer :: span, nnode, etype, gpn, felem, iout                                                                         
+      double precision :: due(mxvl,*), dgstrn(mxvl,nstr), 
+     &   dgstrs(mxvl,*), rot(mxvl,3,3), shape(*), b(mxvl,mxedof,nstr)                                            
 c                                                                               
 c                      locals                                                   
-c                                                                               
-      double precision, parameter :: zero = 0.0d00                              
-      logical :: local_debug                                                    
-      data local_debug / .false. /                                              
+c             
+      integer :: bpos1, bpos2, i, j                                                                  
+      logical, parameter :: local_debug = .false.                                                    
 c                                                                               
 c         compute linear relative displacement jump                             
 c         [b] matrix for this gauss point at all elements in                    
@@ -156,7 +160,7 @@ c
          dgstrs(i,6) = zero                                                     
       end do                                                                    
 c                                                                               
-      if ( local_debug .and. gpn .eq. 1 ) then                                  
+      if( local_debug .and. gpn .eq. 1 ) then                                  
         write(iout,9000)                                                        
         do i = 1, span                                                          
           write(iout,9100) felem + i - 1                                        

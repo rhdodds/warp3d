@@ -1744,7 +1744,7 @@ c     *                      subroutine insave_value                 *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
-c     *                   last modified : 11/10/98                   *
+c     *                   last modified : 4/28/26 rhd                *
 c     *                                                              *
 c     *     set a value in the crack growth module block             *
 c     *                                                              *
@@ -1753,23 +1753,28 @@ c
       subroutine  insave_value( value, action )
 c
       use damage_data, only : perm_load_fact
+      use constants, only : rzero, rone
 c
-      implicit integer (a-z)
-      real :: value, zero, one
-      character :: dums
+      implicit none
+c      
+      integer :: action
+      real :: value
+c      
+      integer :: dumi
+      character(len=1) :: dums
       double precision :: dumd
-      include 'param_def'
-      data zero, one / 0.0, 1.0 /
 c
+      select case( action )                                                     
+      case( 1 )                                                                 
+         if ( value .le. rzero ) then
+            call errmsg(317,dumi,dums,value,dumd)
+            return
+         end if
+         perm_load_fact = rone / value
+      case default                                                              
+         return                                                                 
+      end select                                                                
 c
-      go to ( 100 ), action
-c
- 100  continue
-      if ( value .le. zero ) then
-        call errmsg(317,dum,dums,value,dumd)
-        return
-      end if
-      perm_load_fact = one / value
       return
 c
       end

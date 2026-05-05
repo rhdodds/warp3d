@@ -13,34 +13,38 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine infgm( sbflg1, sbflg2 )                                        
-      use global_data ! old common.main
+      subroutine infgm( sbflg1, sbflg2 )  
+c                                             
+      use global_data, only : nonode
       use main_data, only: fgm_node_values_defined,            
      &                     fgm_node_values_cols                                 
-      use allocated_integer_list
+      use allocated_integer_list, only : trlist_allocated
+      use constants, only : rzero
 c
-      implicit integer (a-z)           
+      implicit none
 c                                         
-      double precision :: dumd                                                                     
-      real dumr, young_mod, poisson_ratio, alpha, vol_fract_ductile,            
-     &     rho, tan_e, n_power, yld_pt, zero                                    
-      character(len=1) :: dums                                                  
-      logical :: sbflg1, sbflg2, prop_flags(fgm_node_values_cols)                                                  
-      logical, external :: matchs, matchs_exact, endcrd, true, numr                                  
+      logical :: sbflg1, sbflg2
+c 
+      integer :: errnum, param, dumi, lenlst, list_size      
       integer, allocatable :: intlst(:)
-      data zero / 0.d0 /                                                        
+      double precision :: dumd                                                                     
+      real :: dumr, young_mod, poisson_ratio, alpha, vol_fract_ductile,            
+     &        rho, tan_e, n_power, yld_pt
+      character(len=1) :: dums                                                  
+      logical :: prop_flags(fgm_node_values_cols)                                                  
+      logical, external :: matchs, matchs_exact, endcrd, true, numr                                  
 c                                                                               
       if ( .not. fgm_node_values_defined )  call mem_allocate( 20 )             
 c                                                                               
  505  continue                                                                  
-      young_mod         = zero                                                  
-      poisson_ratio     = zero                                                  
-      alpha             = zero                                                  
-      vol_fract_ductile = zero                                                  
-      rho               = zero                                                  
-      tan_e             = zero                                                  
-      yld_pt            = zero                                                  
-      n_power           = zero                                                  
+      young_mod         = rzero                                                  
+      poisson_ratio     = rzero                                                  
+      alpha             = rzero                                                  
+      vol_fract_ductile = rzero                                                  
+      rho               = rzero                                                  
+      tan_e             = rzero                                                  
+      yld_pt            = rzero                                                  
+      n_power           = rzero                                                  
       prop_flags(1:fgm_node_values_cols) = .false.                              
 c                                                                               
       call readsc                                                               
@@ -60,7 +64,7 @@ c
       if( allocated( intlst ) ) deallocate( intlst )
       allocate( intlst(20) )                                                                
       call scan                                                                 
-      call trlist_allocated( intlst,list_size, nonode, 
+      call trlist_allocated( intlst, list_size, nonode, 
      &                       lenlst, errnum )                      
 c                                                                               
 c                       branch on the return code from trlist. a                
@@ -104,10 +108,10 @@ c **********************************************************************
 c                                                                               
 c                                                                               
  511  continue                                                                  
-      if ( true(dum) ) call splunj                                             
+      if ( true(dumr) ) call splunj                                             
       if ( matchs_exact('e') ) then                                             
         if ( .not. numr(young_mod) ) then                                       
-         call errmsg( 5,dum,'e   ',dumr,dumd )                                  
+         call errmsg( 5,dumi, 'e   ',dumr,dumd )                                  
         else                                                                    
          prop_flags(1) = .true.                                                 
          go to 511                                                              
@@ -116,7 +120,7 @@ c
 c                                                                               
       if ( matchs_exact('nu') ) then                                            
         if ( .not. numr(poisson_ratio) ) then                                   
-         call errmsg( 5,dum,'nu  ',dumr,dumd )                                  
+         call errmsg( 5,dumi,'nu  ',dumr,dumd )                                  
         else                                                                    
          prop_flags(2) = .true.                                                 
          go to 511                                                              
@@ -125,7 +129,7 @@ c
 c                                                                               
       if ( matchs_exact('tan_e') ) then                                         
         if ( .not. numr(tan_e) ) then                                           
-         call errmsg( 5,dum,'tan_e',dumr,dumd )                                 
+         call errmsg( 5,dumi,'tan_e',dumr,dumd )                                 
         else                                                                    
          prop_flags(6) = .true.                                                 
          go to 511                                                              
@@ -134,7 +138,7 @@ c
 c                                                                               
       if ( matchs_exact('yld_pt') ) then                                        
         if ( .not. numr(yld_pt) ) then                                          
-         call errmsg( 5,dum,'yld_pt',dumr,dumd )                                
+         call errmsg( 5,dumi,'yld_pt',dumr,dumd )                                
         else                                                                    
          prop_flags(7) = .true.                                                 
          go to 511                                                              
@@ -143,7 +147,7 @@ c
 c                                                                               
       if ( matchs_exact('n_power') ) then                                       
         if ( .not. numr(n_power) ) then                                         
-         call errmsg( 5,dum,'n_power',dumr,dumd )                               
+         call errmsg( 5,dumi,'n_power',dumr,dumd )                               
         else                                                                    
          prop_flags(8) = .true.                                                 
          go to 511                                                              
@@ -152,7 +156,7 @@ c
 c                                                                               
       if( matchs_exact('alpha') ) then                                          
         if ( .not. numr(alpha) ) then                                           
-         call errmsg( 5,dum,'alpha',dumr,dumd )                                 
+         call errmsg( 5,dumi,'alpha',dumr,dumd )                                 
         else                                                                    
          prop_flags(3) = .true.                                                 
          go to 511                                                              
@@ -161,7 +165,7 @@ c
 c                                                                               
       if( matchs('vol_fract_ductile',8) ) then                                  
         if ( .not. numr(vol_fract_ductile) ) then                               
-         call errmsg( 5,dum,'vol_fract_ductile',dumr,dumd )                     
+         call errmsg( 5,dumi,'vol_fract_ductile',dumr,dumd )                     
         else                                                                    
          prop_flags(4) = .true.                                                 
          go to 511                                                              
@@ -170,7 +174,7 @@ c
 c                                                                               
       if( matchs_exact('rho') ) then                                            
         if ( .not. numr(rho) ) then                                             
-         call errmsg( 5,dum,'rho',dumr,dumd )                                   
+         call errmsg( 5,dumi,'rho',dumr,dumd )                                   
         else                                                                    
          prop_flags(5) = .true.                                                 
          go to 511                                                              
@@ -182,18 +186,18 @@ c                       there is no match for a material property.
 c                       check for end of card. if not, print error              
 c                       message.                                                
 c                                                                               
-      if( endcrd(dum) ) then                                                    
+      if( endcrd(dumr) ) then                                                    
          go to 590                                                              
       else                                                                      
-         call errmsg2(29,dum,dums,dumr,dumd)                                    
-         if( true(dum) ) go to 511                                              
+         call errmsg2(29,dumi,dums,dumr,dumd)                                    
+         if( true(dumr) ) go to 511                                              
       end if                                                                    
 c                                                                               
 c                       comma separator. if at the end of a line,               
 c                       denotes continuation. otherwise, ignore.                
 c                                                                               
  525  continue                                                                  
-      if( endcrd(dum) ) then                                                    
+      if( endcrd(dumr) ) then                                                    
          call readsc                                                            
          go to 511                                                              
       else                                                                      
@@ -222,7 +226,7 @@ c
       sbflg1 = .true.                                                           
       sbflg2 = .true.                                                           
       call reset                                                                
-      if ( true(dum) ) return                                                   
+      if ( true(dumr) ) return                                                   
 c                                                                               
 c                                                                               
       return                                                                    
@@ -235,24 +239,29 @@ c     *                       written by : rhd                       *
 c     *                                                              *          
 c     *                   last modified : 04/26/01 mcw               *          
 c     *                                                              *          
-c     *     this subroutine stores the fgm material constants for    *          
+c     *     stores the fgm material constants for                    *          
 c     *     a list of nodes                                          *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
       subroutine instore_fgm( intlst, lenlst, young_mod, poisson_ratio,         
      &                        alpha, vol_fract_ductile, rho, tan_e,             
-     &                        yld_pt, n_power, prop_flags)                      
-      use global_data ! old common.main
+     &                        yld_pt, n_power, prop_flags) 
+c                           
+      use global_data, only : nonode
       use main_data, only: fgm_node_values
-      implicit integer (a-z)                                                    
-      real dumr, young_mod, poisson_ratio, alpha, vol_fract_ductile,            
-     &     rho, tan_e, yld_pt, n_power                                   
-      double precision                                                          
-     &     dumd                                                                 
-      logical prop_flags(*)                                                     
-      character :: dums                                                         
-      dimension intlst(*)                                                       
+c 
+      implicit none
+c  
+      integer :: intlst(*), lenlst                                          
+      logical :: prop_flags(*)                                                     
+      real    :: young_mod, poisson_ratio, alpha, vol_fract_ductile,            
+     &           rho, tan_e, yld_pt, n_power  
+c 
+      integer :: icn, iplist, node                                         
+      double precision :: dumd                                                                 
+      real :: dumr
+      character(len=1) :: dums                                                         
 c                                                                               
 c                       for each node in the list, set the                      
 c                       node temporary storage array.                           
@@ -304,12 +313,16 @@ c     *     at the model nodes                                       *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine infgm_dump                                                     
-      use global_data ! old common.main
-      use main_data, only: fgm_node_values, fgm_node_values_defined             
-      implicit integer (a-z)                                                    
-      real young_mod, poisson_ratio, alpha, vol_fract_ductile,                  
-     &     rho, tan_e, yld_pt, n_power                                
+      subroutine infgm_dump  
+c                                                          
+      use global_data, only : out, nonode
+      use main_data, only: fgm_node_values, fgm_node_values_defined        
+c            
+      implicit none    
+c                  
+      integer :: node                                     
+      real :: young_mod, poisson_ratio, alpha, vol_fract_ductile,                  
+     &        rho, tan_e, yld_pt, n_power                                
 c                                                                               
 c                       for each node, print the fgm material values            
 c                                                                               

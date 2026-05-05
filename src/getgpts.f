@@ -16,7 +16,7 @@ c
       subroutine getgpts( etype, order, gpn, xi, eta, zeta, weight )            
       implicit none                                                             
       double precision :: xi, eta, zeta, weight                                                
-      integer etype, order, gpn                                                 
+      integer :: etype, order, gpn                                                 
 c                                                                               
       if ( etype .le. 0 .or. etype .gt. 19 ) then                               
          write(*,9000) etype                                                    
@@ -174,10 +174,17 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine quad1( order, gpn, xi, eta, zeta, w )                          
-      implicit double precision (a-z)                                           
-      integer order, gpn                                                        
-      logical valid(9)                                                          
+      subroutine quad1( order, gpn, xi, eta, zeta, w )       
+c
+      use constants, only : zero
+c       
+      implicit none 
+c                                
+      double precision :: xi, eta, zeta, w
+      integer :: order, gpn          
+c 
+      double precision :: l1, l2, l3, w1, w2, w3, w4, g, g1                                                    
+      logical :: valid(9)                                                          
       data valid / .true., .true., .false., .false., .false.,                   
      &             .false., .false., .true., .true. /                           
 c                                                                               
@@ -395,7 +402,6 @@ c
          g1   = 0.774596669241483d0                                             
          w1   = 0.555555555555556d0                                             
          w2   = 3.555555555555556d0                                             
-         zero = 0.0d0                                                           
          go to (2010,2020,2030,2040,2050,2060,2070,2080,2090), gpn              
 c                                                                               
  2010       xi = -g1                                                            
@@ -637,16 +643,17 @@ c     *     element l3disop                                          *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
-      subroutine quad2( order, gpn, xi, eta, zeta, w )                          
-      implicit integer (a-z)                                                    
-      double precision :: xi,eta,zeta,w,l1,w1                                                  
-      double precision :: zero, one, three, four, root33                                          
-      data zero, one, three, four, root33                                       
-     & / 0.0d0, 1.0d0, 3.0d0, 4.0d0, 0.5773502691896257645d0 /                  
-c                                                                               
-c                                                                               
+      subroutine quad2( order, gpn, xi, eta, zeta, w ) 
+c            
+      use constants, only : zero, one, three, four, root33                          
+c 
+      implicit none
+c 
+      integer :: order, gpn      
+      double precision :: xi, eta, zeta, w
+c 
+      double precision :: l1, w1                                                  
+c 
 c                       branch on the order of quadrature. possible             
 c                       integration schemes are :                               
 c                                                                               
@@ -768,14 +775,15 @@ c
 c          weight = Gauss integration weight at the current point returned      
 c                                                                               
 c                                                                               
-      subroutine quad6( order, point, s2, s3, s4, weight )                      
+      subroutine quad6( order, point, s2, s3, s4, weight ) 
+c                            
       implicit none                                                             
-      integer order,point                                                       
-      double precision                                                          
-     &         s2,s3,s4,weight                                                  
+c 
+      integer :: order, point                                                       
+      double precision :: s2, s3, s4, weight                                                  
 c                                                                               
-      double precision                                                          
-     &        a,b,w,s1, r, r1, t1, b1, r2, t2, b2, u, v, c,sqrt15               
+      double precision :: a, b, w, s1, r, r1, t1, b1, r2, t2,
+     &                    b2, u, v, c, sqrt15               
       logical valid                                                             
 c                                                                               
 c         check the requested integration order for permitted values.           
@@ -894,7 +902,7 @@ c                   - a. h. stroud, 1971, prentice-hall inc.
 c                     pp. 315, section 5-1                                      
 c                                                                               
 c                                                                               
-          sqrt15 = dsqrt(15.0D0)                                                
+        sqrt15 = dsqrt(15.0D0)                                                
 c                                                                               
         if( point .eq. 1) then                                                  
           r = 0.25D0                                                            
@@ -1058,22 +1066,19 @@ c                          -1 <= s1,s2 <= 1
 c         s3 = dummy coordinate for "Zeta", set to zero                         
 c         weight = Gauss integration weight at the current point returned       
 c                                                                               
-      subroutine quad10( order, point, s1, s2, s3, weight )                     
-      implicit none                                                             
-      integer order,point                                                       
-      double precision                                                          
-     &         s1, s2, s3, weight                                               
+      subroutine quad10( order, point, s1, s2, s3, weight )
+c
+      use constants, only : zero
+c                                   
+      implicit none  
+c                                                               
+      integer :: order, point                                                       
+      double precision :: s1, s2, s3, weight                                               
 c                                                                               
-c           local variables                                                     
-c                                                                               
-      double precision                                                          
-     &        w1, w2, zero                                                      
-      integer p1, p2                                                            
-      logical flag, debug                                                       
-c                                                                               
-      data zero                                                                 
-     & / 0.0d0 /                                                                
-c                                                                               
+      double precision :: w1, w2
+      integer :: p1, p2                                                            
+      logical :: flag, debug                                                       
+c
       flag  = .false.                                                           
       debug = .false.                                                           
 c                                                                               
@@ -1259,18 +1264,16 @@ c            s   = 1-D coordinate at the current integration point,
 c                   -1 <= s <= 1                                                
 c            w = integration weight at the current point                        
 c                                                                               
-      subroutine gauss1d( num, p, s, w )                                        
-      implicit none                                                             
-      integer num,p                                                             
-      double precision                                                          
-     &         s, w                                                             
+      subroutine gauss1d( num, p, s, w )   
+c
+      use constants, only : zero, one, two
+c                                                  
+      implicit none                 
+c                                                  
+      integer :: num,p                                                             
+      double precision  :: s, w                                                             
 c                                                                               
-      double precision                                                          
-     &         zero, one, two, a1, a2, w1, w2                                   
-c                                                                               
-      zero = 0.0D0                                                              
-      one  = 1.0D0                                                              
-      two  = 2.0D0                                                              
+      double precision :: a1, a2, w1, w2                                   
 c                                                                               
       if( num.eq.1 ) then                                                       
         s = zero                                                                
@@ -1367,23 +1370,21 @@ c                                   0 <= s1,s2,s3 <= 1
 c         weight = Gauss integration weight at the current point returned       
 c                                                                               
 c                                                                               
-      subroutine quad11( order, point, s1, s2, s3, weight )                     
-      implicit none                                                             
-      integer order,point                                                       
-      double precision                                                          
-     &         s1, s2, s3, weight                                               
-c                                                                               
-c        Local Variables:                                                       
+      subroutine quad11( order, point, s1, s2, s3, weight ) 
+c                           
+      implicit none  
+c                                                                  
+      integer :: order, point                                                       
+      double precision :: s1, s2, s3, weight                                               
 c                                                                               
 c         subcase = integer flag set in this subroutine to choose on of the     
 c                   two 3-point integration rules. For axisymmetric             
 c                   elements use the second choice with the points              
 c                   just inside the triangle corners.                           
 c                                                                               
-      integer subcase                                                           
-      double precision                                                          
-     &        sqrt15,a1,a2,b1,b2,w1,w2,w3                                       
-      logical valid(7)                                                          
+      integer :: subcase                                                           
+      double precision :: sqrt15, a1, a2, b1, b2, w1, w2, w3                                       
+      logical :: valid(7)                                                          
       data valid / .true.,.false.,.true.,.true.,.false.,.true.,.true. /         
 c                                                                               
 c          check the requested integration order for permitted values.          
@@ -1632,13 +1633,13 @@ c
 c                                                                               
 c                                                                               
       subroutine inter_gp( order, gpn, xi, eta, zeta, w )                       
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &  xi,eta,zeta,w,l1,w1                                                     
-      double precision                                                          
-     &  zero, one, three, four, root33                                          
-      data zero, one, three, four, root33                                       
-     & / 0.0d0, 1.0d0, 3.0d0, 4.0d0, 0.5773502691896257645d0 /                  
+c 
+      use constants, only : zero, one, three, four, root33     
+c      
+      implicit none
+c 
+      integer :: order, gpn
+      double precision :: xi, eta, zeta, w, l1, w1                                                     
 c                                                                               
 c                       branch on the order of quadrature. possible             
 c                       integration schemes are :                               
@@ -1740,22 +1741,14 @@ c                    by Zienkiewicz and Taylor
 c              2.  Concepts and Application of FEM                              
 c                    by Cook, Malkus and Plesha                                 
 c                                                                               
-      subroutine trint6_gp( order, point, s1, s2, zeta, weight )                
+      subroutine trint6_gp( order, point, s1, s2, zeta, weight )
+c   
+      use constants, only : zero, one, half, third, sixth, two_third 
+c           
       implicit none                                                             
-      integer order, point                                                      
-      double precision                                                          
-     &         s1, s2, s3, zeta, weight                                         
-c                                                                               
-c     Local variables                                                           
-c                                                                               
-      double precision                                                          
-     &  zero, one, half, third, sixth, two_third                                
-c                                                                               
-      data zero, one, half                                                      
-     & /0.0d0, 1.0d0, 0.5d0/                                                    
-c                                                                               
-      third = 1.0d0/3.0d0; sixth = 1.0d0/6.0d0                                  
-      two_third = 2.0d0/3.0d0                                                   
+c 
+      integer :: order, point                                                      
+      double precision :: s1, s2, s3, zeta, weight                                         
 c                                                                               
       if( (order.lt.1) .or. (order.gt.3) ) then                                 
         write(*,9000) order                                                     
@@ -1894,23 +1887,19 @@ c                    by Zienkiewicz and Taylor
 c              2.  Concepts and Application of FEM                              
 c                    by Cook, Malkus and Plesha                                 
 c                                                                               
-      subroutine trint12_gp( order, point, s1, s2, zeta, weight )               
-      implicit none                                                             
-      integer order,point                                                       
-      double precision                                                          
-     &         s1, s2, s3, zeta, weight                                         
+      subroutine trint12_gp( order, point, s1, s2, zeta, weight ) 
+c       
+      use constants, only : half, zero, one, two, three, four, five, 
+     &                      six, pt6=>ptsix, pt2=>pt_two, third            
+      implicit none        
+c                                                            
+      integer :: order, point                                                       
+      double precision :: s1, s2, s3, zeta, weight                                         
 c                                                                               
-c        Local Variables:                                                       
+      double precision :: sqrt15, a1, a2, b1, b2, w1, w2, w3                     
+      logical :: valid(7)                                                          
 c                                                                               
-      double precision                                                          
-     & half, zero, one, two, three, four, five, six,                            
-     & sqrt15, a1, a2, b1, b2, w1, w2, w3, pt6, pt2, third                      
-      logical valid(7)                                                          
-c                                                                               
-      data half, zero, one, two, three, four, five, six                         
-     &  / 0.5d0, 0.0d0, 1.0d0, 2.0d0, 3.0d0, 4.0d0, 5.0d0, 6.0d0 /              
-      data  pt6, pt2, sqrt15, third                                             
-     &   /  0.6d0, 0.2d0, 3.872983346207417d0, 0.33333333333333333d0 /          
+      data  sqrt15 / 3.872983346207417d0 /
       data valid / .true.,.true.,.true.,.true.,.false.,.true.,.true. /          
 c                                                                               
       if( (order.lt.1) .or. (order.gt.7) .or. (order.eq.5) ) then               
@@ -2164,23 +2153,16 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine line3( order, gpn, xi, w )                          
+      subroutine line3( order, gpn, xi, w )    
+c 
+      use constants, only : op2=>pt_two, p6=>ptsix, zero, one, two, 
+     &                      three, four, five, six, seven,              
+     &                      eight, nine  
+c 
       implicit none                                                             
-c                                                                               
-c             dummy variables                                                   
-c                                                                               
+c 
       integer :: order, gpn                                                        
       double precision :: xi, w                                                     
-c                                                                               
-c             local variables                                                   
-c                                                                               
-      double precision ::                                                        
-     &     op2, p6, zero, one, two, three, four, five, six, seven,              
-     &     eight, nine                                                          
-      data op2, p6, zero, one, two, three, four, five, six, seven,              
-     &     eight, nine                                                          
-     & / 0.2d0, 0.6d0, 0.d0, 1.d0, 2.d0, 3.d0, 4.d0, 5.d0, 6.d0,                
-     &   7.d0, 8.d0, 9.d0 /                                                     
 c                                                                               
       if( order.lt.1 .or. order.gt.4 ) then                                    
          write(*,9000) order                                                    

@@ -14,7 +14,7 @@ c
 c
 c
       subroutine initst( sbflg1, sbflg2 )
-      use global_data ! old common.main
+      use global_data 
 c
       use elem_load_data, only : elem_loads
       use segmental_curves
@@ -391,6 +391,7 @@ c
       solver_mkl_iterative = .false.
       nasa_vss     = .false.
       mumps_solve  = .false.
+      mumps_solver_type = 1    ! symmetric, positive definite
       mkl_solve    = .false.
       solver_flag  = -1  
 #ifndef MKL

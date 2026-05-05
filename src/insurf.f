@@ -4,35 +4,34 @@ c     *                      subroutine insurf                       *
 c     *                                                              *          
 c     *                       written by : bjb                       *          
 c     *                                                              *          
-c     *                   last modified : 12/3/2019  rhd             *          
+c     *                   last modified : 4/25/26 rhd                *          
 c     *                                                              *          
-c     *     this subroutine supervises and conducts the input of     *          
-c     *         surfaces that define regions of mesh tieing          *          
+c     *        parse input of surfaces that define regions           *
+c     *        of mesh tieing                                        *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
-      subroutine insurf()                                                       
-      use global_data ! old common.main
-      use allocated_integer_list
-c                                                                               
+      subroutine insurf( )                                                       
+c
+      use global_data, only : max_surfaces, mxel, noelem
+      use allocated_integer_list, only : trlist_allocated
       use mod_mpc, only : surface_table   
-c                                      
-c      parameter (max_ele=mxel/10)                                               
+c   
+      implicit none
+c                                         
       integer :: ele, nelem, face, dumi, errnum, icn, iplist, count,              
-     &           len, err                                                         
+     &           len, err, lenlst, list_size, max_ele, param                                                     
       integer, allocatable, dimension (:) :: faces, elems, intlst                       
       real :: dumr                                                             
       double precision ::  dumd                                                    
       character(len=16) :: surfid                                               
       character(len=1) ::  dums                                                
-      logical ::  bad_surf, abaqus_face_flag                                                 
+      logical :: bad_surf, abaqus_face_flag                                                 
       logical, external ::  label, matchs, integr, true
 c  
       max_ele = max( 5000, mxel/10 )                                                                             
-      allocate (surface_table(max_surfaces),                                    
-     &          faces(max_ele), elems(max_ele), stat=err)   
+      allocate( surface_table(max_surfaces),                                    
+     &          faces(max_ele), elems(max_ele), stat=err )   
       if( err .ne. 0 ) then                                                      
          call errmsg2(45,dumi,dums,dumr,dumd)                                   
          call die_abort                                                         
@@ -43,18 +42,18 @@ c
 c                                                                               
 c        check for name of surface, if none found, skip surface data            
 c                                                                               
-         if (.not. label(dumi)) then                                            
+         if(.not. label(dumi) ) then                                            
             call errmsg2(36,dumi,dums,dumr,dumd)                                
             do                                                                  
                call readsc                                                      
-               if (matchs('element',7))  cycle                                  
-               if (integr(ele))          cycle                                  
-               if (matchs('surface',3)) then                                    
+               if(matchs('element',7) )  cycle                                  
+               if(integr(ele) )          cycle                                  
+               if(matchs('surface',3) ) then                                    
                   cycle  new_surface                                            
                else                                                             
                   call reset                                                    
-                  if (true(dumi))  call splunj                                  
-                  deallocate (faces, elems)                                     
+                  if( true(dumi) )  call splunj                                  
+                  deallocate(faces, elems)                                     
                   return                                                        
                end if                                                           
             end do                                                              
@@ -69,11 +68,11 @@ c
          nelem = 0                                                              
          surface_data: do                                                       
             call readsc                                                         
-            if (matchs('surface',3)) then                                       
+            if( matchs('surface',3) ) then                                       
 c                                                                               
 c              a new surface found, store current surface data (if any)         
 c                                                                               
-               if (nelem .gt. 0) then                                           
+               if(nelem .gt. 0)  then                                           
                   call insurf_store(nelem,elems,faces,surfid)                   
                   cycle  new_surface                                            
                else                                                             
@@ -81,7 +80,7 @@ c
                   cycle  new_surface                                            
                end if                                                           
             end if                                                              
-            if (matchs('element',7))  cycle surface_data                        
+            if( matchs('element',7) )  cycle surface_data                        
             call trlist_allocated( intlst, list_size, noelem, 
      &                             lenlst, errnum )                      
 c                                                                               
@@ -96,36 +95,36 @@ c                ignored and a new node list will be sought.
 c           a value of 4 indicates that no list was found.                      
 c               in this case, surface input has ceased.                         
 c                                                                               
-            if (errnum .eq. 1) then                                             
+            if(errnum .eq. 1) then                                             
                   iplist   = 1                                                  
                   icn      = 0                                                  
                   count    = 0                                                  
                   bad_surf = .false.                                            
                   call backsp(1)                                                
                   if (true(dumi))  call splunj                                  
-               else if (errnum .eq. 2) then                                     
+               else if(errnum .eq. 2) then                                     
                   param = 1                                                     
                   call errmsg(24,param,dums,dumr,dumd)                          
                   cycle  surface_data                                           
-               else if (errnum .eq. 3) then                                     
+               else if(errnum .eq. 3) then                                     
                   param = 2                                                     
                   call errmsg(24,param,dums,dumr,dumd)                          
                   cycle  surface_data                                           
-               else if (errnum .eq. 4) then                                     
+               else if(errnum .eq. 4) then                                     
 c                                                                               
 c                 something other than a list found                             
 c                 store current surface data (if any)                           
 c                                                                               
-                  if (nelem .gt. 0) then                                        
+                  if(nelem .gt. 0) then                                        
                      call insurf_store(nelem,elems,faces,surfid)                
                      call reset                                                 
-                     if (true(dumi))  call splunj                               
+                     if( true(dumi))  call splunj                               
                      deallocate (faces, elems)                                  
                      return                                                     
                   else                                                          
                      call errmsg2(57,dumi,surfid,dumr,dumd)                     
                      call reset                                                 
-                     if (true(dumi))  call splunj                               
+                     if( true(dumi))  call splunj                               
                      deallocate (faces, elems)                                  
                      return                                                     
                   end if                                                        
@@ -137,14 +136,14 @@ c
 c                                                                               
 c           integer list found and read, check for face data                    
 c                                                                               
-            if (.not. matchs("face",4)) then                                    
+            if(.not. matchs("face",4)) then                                    
                call errmsg2(37,dumi,dums,dumr,dumd)                             
                cycle  surface_data                                              
             end if                                                              
 c                                                                               
             abaqus_face_flag = .false.                                          
             if( matchs('abaqus',4) ) abaqus_face_flag = .true.                  
-            if (.not. integr(face)) then                                        
+            if(.not. integr(face)) then                                        
                call errmsg2(37,dumi,dums,dumr,dumd)                             
                cycle  surface_data                                              
             end if                                                              
@@ -176,12 +175,12 @@ c
                                                                                 
                call trxlst(intlst,lenlst,iplist,icn,ele)                        
                                                                                 
-               if ((ele .gt. noelem).or.(ele .le. 0)) then                      
+               if((ele .gt. noelem).or.(ele .le. 0)) then                      
                   call errmsg2(38,ele,dums,dumr,dumd)                           
                   bad_surf = .true.                                             
                end if                                                           
                                                                                 
-               if (nelem+count .gt. max_ele) then                               
+               if(nelem+count .gt. max_ele) then                               
                   call errmsg2(44,max_ele,dums,dumr,dumd)                       
                   call die_abort                                                
                end if                                                           
@@ -189,15 +188,15 @@ c
                elems(nelem+count) = ele                                         
                faces(nelem+count) = face                                        
                                                                                 
-               if (iplist .eq. 0)  exit                                         
+               if(iplist .eq. 0)  exit                                         
             end do                                                              
                                                                                 
-            if (face .le. 0) then                                               
+            if( face .le. 0) then                                               
                call errmsg2(39,ele,dums,dumr,dumd)                              
                bad_surf = .true.                                                
             end if                                                              
                                                                                 
-            if (bad_surf)  cycle surface_data                                   
+            if(bad_surf)  cycle surface_data                                   
                                                                                 
             nelem = nelem + count                                               
          end do  surface_data                                                   
@@ -212,29 +211,38 @@ c     *                       written by : bjb                       *
 c     *                                                              *          
 c     *                   last modified : 04/06/03                   *          
 c     *                                                              *          
-c     *   this subroutine stores the surface data for mesh tieing    *          
+c     *         stores the surface data for mesh tieing              *          
 c     *                into the proper data structures               *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-      subroutine insurf_store(nelem, elems, faces, surfid)                      
-      use global_data ! old common.main
-      use mod_mpc, only : num_surfaces, surface_table                           
-      integer  err, nelem, elems(*), faces(*)                                   
+      subroutine insurf_store( nelem, elems, faces, surfid ) 
+c                           
+      use global_data, only : max_surfaces
+      use mod_mpc, only : num_surfaces, surface_table  
+c            
+      implicit none
+                         
+      integer :: nelem, elems(*), faces(*)                                   
       character(len=16) :: surfid                                               
-c                                                                               
+c       
+      integer :: err, i                                   
+      integer :: dumi
+      character(len=1) :: dums
+      real :: dumr
+      double precision :: dumd
+c                                                                              
       num_surfaces = num_surfaces + 1                                           
-      if (num_surfaces .gt. max_surfaces) then                                  
+      if( num_surfaces .gt. max_surfaces ) then                                  
          call errmsg2(40,max_surfaces,dums,dumr,dumd)                           
          call die_abort                                                         
       end if                                                                    
       surface_table(num_surfaces)%id        = surfid                            
       surface_table(num_surfaces)%num_elems = nelem                             
-      allocate (surface_table(num_surfaces)%elem_list(nelem),                   
-     &          surface_table(num_surfaces)%face_list(nelem),stat=err)          
+      allocate( surface_table(num_surfaces)%elem_list(nelem),                   
+     &          surface_table(num_surfaces)%face_list(nelem),stat=err )          
 c                                                                               
-      if (err .ne. 0) then                                                      
+      if( err .ne. 0 ) then                                                      
          call errmsg2(45,dumi,dums,dumr,dumd)                                   
          call die_abort                                                         
       end if                                                                    
@@ -254,18 +262,25 @@ c     *                       written by : bjb                       *
 c     *                                                              *          
 c     *                   last modified : 01/06/04                   *          
 c     *                                                              *          
-c     *   this subroutine checks the surface name input to see if    *          
+c     *   checks the surface name input to see if                    *          
 c     *   it has already been used, then clears the previous entry   *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-      subroutine check_surfid(surfid)                                           
-      use mod_mpc, only : surface_table, num_surfaces                           
-      integer  surf                                                             
-      character(len=16) :: surfid                                               
+      subroutine check_surfid( surfid )  
+c                                               
+      use mod_mpc, only : surface_table, num_surfaces      
+c
+      implicit none
+c
+      integer ::  surf, dumi
+      character(len=1) :: dum3
+      real :: dumr
+      double precision :: dumd                                                             
+      character(len=16) :: surfid  
+c                                                   
       nxt_surf: do surf = 1, num_surfaces                                       
-         if (surfid .eq. surface_table(surf)%id) then                           
+         if( surfid .eq. surface_table(surf)%id ) then                           
             call errmsg2(61,dumi,surfid,dumr,dumd)                              
             surface_table(surf)%id        = ' '                                 
             surface_table(surf)%num_elems = 0                                   

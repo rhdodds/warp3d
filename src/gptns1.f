@@ -1304,14 +1304,17 @@ c
       use elem_block_data, only : gbl_cep_blocks => cep_blocks                  
       use tan_ek_work_mod, only : nonlinear_ek_work
 c
-      implicit integer (a-z)                                                    
+      implicit none
+c      
       include 'param_def'                                                       
       type(nonlinear_ek_work) :: local_work
+      integer :: gpn, iout
 c                                                                               
 c                     local variables                                           
-c                                                                               
-      double precision ::                                                         
-     & weight, symm_part_cep(21), factor                                        
+c        
+      integer :: i, j, k, ielem, noel, start_loc, span, felem,
+     &           now_blk
+      double precision :: weight, symm_part_cep(21), factor                                        
       logical :: local_debug, debug_now                                            
 c                                                                               
 c           1. pull a few values from work space for block                      
@@ -1320,7 +1323,7 @@ c
       felem             = local_work%felem                                      
       weight            = local_work%weights(gpn)                               
       now_blk           = local_work%blk                                        
-      local_debug       =  .false.                                              
+      local_debug       = .false.                                              
 c                                                                               
 c           2. the tangent [D] matrices are stored in the                       
 c              global_cep_blocks. only lower symmetric terms                    
