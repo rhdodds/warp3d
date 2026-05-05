@@ -120,7 +120,7 @@ c
      &              num_seg_curve_sets,
      &              solver_flag, old_solver_flag, solver_memory,
      &              solver_threads, eq_node_force_len,
-     &              ntimes_assembly,
+     &              ntimes_assembly, mumps_solver_type,
      &              one_crystal_hist_size, common_hist_size,
      &              initial_state_step, mxnmbl, J_count_exceeded,
      &              J_cutoff_num_frnt_positions,
