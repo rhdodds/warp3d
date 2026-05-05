@@ -295,7 +295,7 @@ ifeq ($(PLATFORM),silicon)
     METIS_LINK = -L../MUMPS_libs -lmetis_arm64 -Wl,-rpath,@loader_path/../MUMPS_libs         
 #
     ALL_PROCESSORS = -mcpu=apple-m1
-    HARDWARE_SPECIFIC = -mcpu=apple-m3   #  for example !
+    HARDWARE_SPECIFIC = -march=native  #  for example !
     MACHINE_TYPE =  $(ALL_PROCESSORS)  # $(HARDWARE_SPECIFIC) #$(ALL_PROCESSORS) 
 
     PRODUCTION = -DOSX -DBuild=$(BUILDNUM) -Dgfortran -I$(OD) -J$(OD) \
