@@ -107,7 +107,7 @@ c
      &    in, out, histep, lowstp, ltmstp, num_warn, num_error,
      &    num_fatal, solver_flag, old_solver_flag, solver_memory,
      &    num_threads,  max_mpc, max_mpc_tied,  node_causing_stop,
-     &    myid, numprocs, douextdb, mxnmbl,
+     &    myid, numprocs, douextdb, mxnmbl, mumps_solver_type,
      &    current_load_time_step, solver_threads
 c
 c                  counters to shut off error messages at some point
@@ -574,6 +574,7 @@ c
      &   pt25    = 0.25d0,
      &   fourth  = 0.25d0,
      &   third   = one/three,
+     &   one_third = one/three,
      &   pt4     = 0.4d0, 
      &   half    = 0.5d0,
      &   onehalf = 1.5d0, 
@@ -586,7 +587,9 @@ c
      &   onep5    = 1.5d0,
      &   hundredth = 0.01d0,
      &   onesixth = one / six,
+     &   sixth    = one / six,
      &   twothird = two / three,
+     &   two_third = two /three,
      &   thirteenpt5 = 13.5d0,
      &   sixpt75 = 6.75d0,
      &   twentyth = 0.05d0,
@@ -602,6 +605,7 @@ c
      &   root22    = sqrt(two)/two,
      &   root23    = sqrt(two/three),
      &   root32    = sqrt(three/two),
+     &   root33    = sqrt(three)/three, 
      &   iroot2    = one / sqrt(two),
      &   iroot3    = one / sqrt(three)
 c
@@ -616,7 +620,7 @@ c
 
 c     ****************************************************************
 c     *                                                              *
-c     *                    f-90 module constants                     *
+c     *                    f-90 module output indexes by name        *
 c     *                                                              *
 c     *                       written by : rhd                       *
 c     *                                                              *
