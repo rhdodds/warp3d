@@ -64,7 +64,7 @@
   nonlinear analysis parameters
    solution technique direct sparse
    maximum iterations 10
-   minimum iterations 1
+   minimum iterations 2
    convergence test norm res tol 0.01
    time step  1.0e06
    trace solution on
