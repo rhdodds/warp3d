@@ -1541,17 +1541,16 @@ c     ****************************************************************
 c                                                                               
 
       subroutine dam_debug                                                      
-      use global_data ! old common.main
+      use global_data, only : out, mxedof, noelem, nonode
       use elem_extinct_data                                                     
       use node_release_data                                                     
-      use damage_data                                                           
+      use damage_data
+      use constants, only : zero                                                 
 c                                                                               
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     zero                                                                 
-      data zero / 0.0 /                                                         
-                                                                                
-c                                                                               
+      implicit none                                                    
+c              
+      integer :: i, j
+c                                                                       
       write (out,*)                                                             
       write (out,*) '>>>>>>>> dumping all relevent crack growth info:'          
       write (out,*)                                                             

@@ -5,7 +5,7 @@ c     *                   subroutine cohes_cut_step                  *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 9/3/2010 RHD               *          
+c     *                   last modified : 4/27/26 rhd                *          
 c     *                                                              *          
 c     *         This routine checks if the load step size is too     *          
 c     *         large for analyses using cohesive elements to model  *          
@@ -17,25 +17,28 @@ c     *         adjust up the load step size                         *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine cohes_cut_step( debug )                                        
-      use global_data ! old common.main
+      subroutine cohes_cut_step( debug )    
+c                                          
+      use global_data, only : noelem, out, iprops
       use elem_extinct_data, only : cohes_old_deff, dam_state                         
-      use damage_data                                                           
-      implicit integer (a-z)                                                    
+      use damage_data, only : all_elems_killed, load_reduced, 
+     &                        max_deff_change, mxstp_store, 
+     &                        no_killed_elems, num_steps_min,
+     &                        perm_load_fact, dam_ptr, del_deff
+      use constants, only : zero, two
+c                                                              
+      implicit none
 c                                                                               
-      logical debug                                                             
+      logical :: debug                                                             
 c                                                                               
 c           local declarations                                                  
-c                                                                               
-      double precision                                                          
-     &     values(20), two, dumd1, dumd2, dumd3, dumd4, zero,                   
-     &     max_del_deff, new_deff, deff, peak_displ,                            
-     &     new_deff_normalized,  max_del_deff_normalized                        
-      logical not_cut, duml, all_killed, option_exponential,                    
-     &        option_ppr, local_debug                                           
-      character(len=1) :: dums                                                  
-      real dumr                                                                 
-      data two, zero / 2.0, 0.0 /                                               
+c                  
+      integer :: i, cohes_type, elem, elem_ptr                                                             
+      double precision :: values(20), max_del_deff, new_deff, deff, 
+     &                    peak_displ, new_deff_normalized,  
+     &                    max_del_deff_normalized                        
+      logical ::  not_cut, duml, all_killed, option_exponential,                    
+     &            option_ppr, local_debug                                           
 c                                                                               
       local_debug = .false.                                                     
       if( local_debug ) write(out,9800)                                         
@@ -43,7 +46,7 @@ c
 c           if all cohesive elements in the model have been killed, we          
 c           can skip processing here                                            
 c                                                                               
-      if ( all_elems_killed ) return                                            
+      if( all_elems_killed ) return                                            
 c                                                                               
 c           loop over all killable interface-cohesive elements                  
 c           to find the maximum change in adaptive criterion.                   
@@ -168,7 +171,7 @@ c     *                       written by : rhd                       *
 c     *                                                              *          
 c     *                   last modified : 9/3/2010 RHD               *          
 c     *                                                              *          
-c     *         This subroutine modifies the load factor for         *          
+c     *         modifies the load factor for                         *          
 c     *         cohesive crack growth analyses. The user specifies   *          
 c     *         a target for the maximum increase in effective       *          
 c     *         interface displacement per load step. If the actual  *          
@@ -186,26 +189,23 @@ c     ****************************************************************
 c                                                                               
       subroutine cohes_load_factor( del_deff, mxstp_store,                      
      &     max_deff_change, load_reduced, perm_load_fact,                       
-     &     num_steps_min, no_killed_elems, out )                                
-      implicit integer (a-z)                                                    
+     &     num_steps_min, no_killed_elems, out )    
+c         
+      use constants, only : zero, one, two, four, point_eight  
+c                           
+      implicit none                                                    
+c                    
+      integer :: mxstp_store, num_steps_min, out                                                     
+      logical :: load_reduced, no_killed_elems  
+      double precision :: del_deff(*), max_deff_change, perm_load_fact                  
+c  
+      integer :: j    
+      integer, parameter :: max_steps_min = 3                                           
+      double precision ::  max_factor, min_factor, ave_del_deff, 
+     &                     ratio, tfactor                   
+      logical, parameter :: local_debug = .false.                                             
+      data max_factor, min_factor  / 1.01, 0.5 /                        
 c                                                                               
-      logical load_reduced, no_killed_elems                                     
-      parameter (max_steps_min = 3)                                             
-c                                                                               
-c           local declarations                                                  
-c                                                                               
-      double precision                                                          
-     &     two, dumd1, dumd2, dumd3, dumd4, max_factor, min_factor,             
-     &     del_deff(*), max_deff_change, zero, one, point_eight,                
-     &     ave_del_deff, ratio, perm_load_fact, tfactor, four                   
-      logical duml, local_debug                                                 
-      character(len=1) :: dums                                                  
-      real dumr                                                                 
-      data two, max_factor, min_factor, one, point_eight, zero, four            
-     &     / 2.0, 1.01, 0.5, 1.0, 0.8, 0.0, 4.0 /                               
-c                                                                               
-c                                                                               
-      local_debug = .false.                                                     
       if( local_debug ) write (out,*) '   >>>>>> in cohes_load_factor'          
 c                                                                               
 c         del_eff(1) -- change in (effective) jump displacement                 
@@ -231,7 +231,7 @@ c         does not have "overshoot" control (use projections of changes
 c         in next step to pre-adjust load size). If it does, then               
 c         that needs to be factored into the load factor equation.              
 c                                                                               
-      if ( ratio .gt. max_factor ) then                                         
+      if( ratio .gt. max_factor ) then                                         
          perm_load_fact = perm_load_fact / ratio * point_eight                  
          load_reduced   = .true.                                                
          write(out,9983) del_deff(1), max_deff_change, perm_load_fact           
@@ -269,12 +269,12 @@ c
 c                                                                               
 c               compute load factor                                             
 c                                                                               
-            if ( abs(ave_del_deff) .le. 1.0e-10 ) then                          
+            if( abs(ave_del_deff) .le. 1.0e-10 ) then                          
               tfactor = two                                                     
             else                                                                
               tfactor = one / ( ave_del_deff / max_deff_change )                
             end if                                                              
-            if ( tfactor .gt. two ) tfactor = two                               
+            if( tfactor .gt. two ) tfactor = two                               
             perm_load_fact = perm_load_fact * tfactor                           
             write(out,9337) ave_del_deff, perm_load_fact                        
             num_steps_min = 0                                                   
