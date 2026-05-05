@@ -6,25 +6,25 @@ c     *                       written by : rhd                       *
 c     *                                                              *          
 c     *                   last modified : 10/25/00                   *          
 c     *                                                              *          
-c     *     this subroutine creates a table of nodal temperature     *          
+c     *     creates a table of nodal temperature                     *          
 c     *     values at the element nodes in the block for the user    *          
 c     *     specified reference (initial) temperatures               *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
       subroutine gartemps( rtemp_nodes, belinc, nnode,                          
-     &                     span, felem, rtemps_node_blk, mxvl  )                
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &      rtemp_nodes(*), rtemps_node_blk(mxvl,*)                             
-      integer belinc(nnode,*)                                                   
-      logical local_debug                                                       
-      data local_debug / .false./                                               
+     &                     span, felem, rtemps_node_blk, mxvl  ) 
+c                    
+      implicit none
+c      
+      integer :: nnode, span, felem, mxvl, belinc(nnode,*) 
+      double precision :: rtemp_nodes(*), rtemps_node_blk(mxvl,*) 
+c
+      integer :: i, j                                  
+      logical, parameter :: local_debug = .false.                                                    
 c                                                                               
 c           for each element in block gather the reference temperature          
 c           at element nodes from structure vector.                             
-c                                                                               
 c                                                                               
       do j = 1, nnode                                                           
         do i = 1, span                                                          
@@ -32,7 +32,7 @@ c
         end do                                                                  
       end do                                                                    
 c                                                                               
-      if ( local_debug ) then                                                   
+      if( local_debug ) then                                                   
           write(*,*) ' '                                                        
           write(*,*) '>> gartemps...'                                           
           do i = 1, span                                                        
@@ -58,16 +58,18 @@ c     *     increments for elements in this block. we add the        *
 c     *     constant element temperature change to the nodal changes *          
 c     *                                                              *          
 c     ****************************************************************          
-c                                                                               
-c                                                                               
+c                                                                                                                                                        
       subroutine gadtemps( dtemp_nodes, dtemp_elems, belinc, nnode,             
-     &                     span, felem, dtemps_node_blk, mxvl  )                
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &      dtemp_nodes(*), dtemp_elems(*), dtemps_node_blk(mxvl,*)             
-      integer belinc(nnode,*)                                                   
-      logical local_debug                                                       
-      data local_debug / .false./                                               
+     &                     span, felem, dtemps_node_blk, mxvl  )       
+c              
+      implicit none
+c 
+      integer :: nnode, span, felem, mxvl, belinc(nnode,*)                                                          
+      double precision :: dtemp_nodes(*), dtemp_elems(*), 
+     &                    dtemps_node_blk(mxvl,*)       
+c 
+      integer :: i, j           
+      logical, parameter :: local_debug = .false.
 c                                                                               
 c           for each element in block:                                          
 c             a) get element constant temperature change                        
@@ -84,7 +86,7 @@ c
         end do                                                                  
       end do                                                                    
 c                                                                               
-      if ( local_debug ) then                                                   
+      if( local_debug ) then                                                   
           write(*,*) ' '                                                        
           write(*,*) '>> gatemps...'                                            
           do i = 1, span                                                        
@@ -112,27 +114,22 @@ c     *     temperatures (reference temps were loaded into nodal     *
 c     *     temps at input time)                                     *          
 c     *                                                              *          
 c     ****************************************************************          
-c                                                                               
-c                                                                               
+c                                                                                                                                                          
       subroutine gatemps( temp_nodes, temp_elems, belinc, nnode,                
      &                    span, felem, temps_node_blk, mxvl,                    
-     &                    dtemps_node_blk, temps_node_to_process )              
-      implicit integer (a-z)                                                    
+     &                    dtemps_node_blk, temps_node_to_process )    
+c 
+      use constants, only : zero
+      implicit none
 c                                                                               
-c                    parameter declarations                                     
-c                                                                               
-      double precision                                                          
-     &      temp_nodes(*), temp_elems(*), temps_node_blk(mxvl,*),               
-     &      dtemps_node_blk(mxvl,*)                                             
-      integer belinc(nnode,*)                                                   
-      logical temps_node_to_process                                             
-c                                                                               
-c                    local declarations                                         
-c                                                                               
-      double precision                                                          
-     &  zero                                                                    
-      logical local_debug                                                       
-      data local_debug, zero / .false., 0.0 /                                   
+      integer :: nnode, span, felem, mxvl, belinc(nnode,*)       
+      double precision :: temp_nodes(*), temp_elems(*), 
+     &                    temps_node_blk(mxvl,*),               
+     &                    dtemps_node_blk(mxvl,*)                                             
+      logical :: temps_node_to_process                                             
+c                                                          
+      integer :: i, j                     
+      logical, parameter :: local_debug = .false.
 c                                                                               
 c           for each element in block:                                          
 c             a) get element constant temperature                               
@@ -152,7 +149,7 @@ c
         end do                                                                  
       end do                                                                    
 c                                                                               
-      if ( local_debug ) then                                                   
+      if( local_debug ) then                                                   
           write(*,*) ' '                                                        
           write(*,*) '>> gatemps...'                                            
           do i = 1, span                                                        

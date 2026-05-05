@@ -191,8 +191,12 @@ c
 c                                                                               
 c                                                                               
       subroutine mass_getint( elem_type, def_int_ord, def_num_pts,               
-     &                       int_ord, num_int_pts, iout )                             
-      implicit integer (a-z)                                                    
+     &                       int_ord, num_int_pts, iout )  
+c                                
+      implicit none
+c
+      integer :: elem_type, def_int_ord, def_num_pts, int_ord, 
+     &           num_int_pts, iout     
 c                                                                               
       select case( elem_type )                                                  
 c                                                                               

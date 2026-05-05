@@ -7,19 +7,22 @@ c     *           essentially de-blocks the indexes for a set of     *
 c     *           elements                                           *          
 c     *                                                              *          
 c     *                       written by  : rhd                      *          
-c     *                   last modified : 02/18/98                   *          
+c     *                   last modified : 4/25/26 rhd                *          
 c     *                                                              *          
 c     ****************************************************************          
                                                                                 
                                                                                 
       subroutine get_edest_terms( table, elem_list, list_length )               
-      use global_data ! old common.main
+c
+      use global_data, only : iprops, mxedof
       use elem_block_data, only :  edest_blocks                                 
       use main_data,       only :  elems_to_blocks                              
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none                                                    
 c                                                                               
-      dimension table(mxedof,*), elem_list(*)                                   
+      integer ::  table(mxedof,*), elem_list(*), list_length       
+c
+      integer :: i, elem, totdof, blk, rel_elem, dof                                
       integer, dimension (:,:), pointer :: edest                                
 c                                                                               
       do i = 1, list_length                                                     
@@ -43,18 +46,21 @@ c     *           displacmenent, velocity, acceleration vectors      *
 c     *           for equations for a single element.                *          
 c     *                                                              *          
 c     *                       written by  : rhd                      *          
-c     *                   last modified : 02/18/98                   *          
+c     *                   last modified : 04/25/26 rhd               *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
       subroutine get_single_edest_terms( edest_vec, elem )                      
-      use global_data ! old common.main
+c
+      use global_data,only : iprops
       use elem_block_data, only :  edest_blocks                                 
       use main_data,       only :  elems_to_blocks                              
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none                                                   
 c                                                                               
-      dimension edest_vec(*)                                                    
+      integer :: edest_vec(*), elem
+c
+      integer :: totdof, blk, rel_elem, dof                                                      
       integer, dimension (:,:), pointer :: edest                                
 c                                                                               
       if ( elem .le. 0 ) return                                                 

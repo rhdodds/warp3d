@@ -4,71 +4,67 @@ c     *                      subroutine con_dump                     *
 c     *                                                              *          
 c     *                       written by : ag                        *          
 c     *                                                              *          
-c     *                   last modified : 11/10/94                   *          
+c     *                   last modified : 4/25/26 rhd                *          
 c     *                                                              *          
-c     *     This routine dumps the constraints table for a model     *          
+c     *         dumps the constraints table for a model              *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
-      subroutine con_dump ( olddof )                                            
-      use global_data ! old common.main
-c                                                                               
+      subroutine con_dump( olddof ) 
+c                                                 
+      use global_data, only : nonode, out, iprops, dstmap, cstmap 
       use main_data, only : cnstrn, cnstrn_in, inverse_incidences               
       use mod_mpc, only : num_tied_con_mpc, tied_con_mpc_table,                 
      &                    num_user_mpc, user_mpc_table, mpcs_exist,             
      &                    tied_con_mpcs_constructed                             
 c                                                                               
-      implicit integer (a-z)                                                    
-      real  mult                                                                
-c                                                                               
-c                       locally allocated                                       
-c                                                                               
-c                                                                               
-      logical no_con, con_set(3)                                                
-c                                                                               
-      character(len=1) :: con_label(3), con_string*14                           
-      dimension con_string(3)                                                   
+      implicit none
+c
+      integer :: olddof   
+c         
+      integer :: node, i, k, dof, mpc, ntrms, trm, ndof
+      real ::   mult                                                                
+      logical :: no_con, con_set(3)                                                
+      character(len=1) :: con_label(3), con_string(3)*14                           
       data con_label(1),con_label(2),con_label(3)  /'u','v','w'/                
 c                                                                               
-      write (out,*) '>>>  Dumping constraints:'                                 
-      write (out,*)                                                             
-      write (out,*) '>>>    Absolute constraints:'                              
+      write(out,*) '>>>  Dumping constraints:'                                 
+      write(out,*)                                                             
+      write(out,*) '>>>    Absolute constraints:'                              
 c                                                                               
       do node = 1, nonode                                                       
 c                                                                               
 c               find the constrains on a node, if any                           
 c                                                                               
-         ndof= iprops(4,inverse_incidences(node)%element_list(1))               
+         ndof = iprops(4,inverse_incidences(node)%element_list(1))               
          no_con = .true.                                                        
          do i = 1,3                                                             
             con_string(i) = "             "                                     
             con_set(i) = .false.                                                
             dof = dstmap(node) + i - 1                                          
-            if (cstmap(dof).ne.0) then                                          
+            if( cstmap(dof) .ne. 0 ) then                                          
                con_set(i) = .true.                                              
                no_con = .false.                                                 
             endif                                                               
-         enddo                                                                  
+         end do                                                                  
 c                                                                               
 c               now print them                                                  
 c                                                                               
-         if (.not. no_con) then                                                 
-            do i=1, 3                                                           
+         if( .not. no_con ) then                                                 
+            do i = 1, 3                                                           
                dof = dstmap(node) + i - 1                                       
-               if (con_set(i) .or.(dof.eq.olddof)) then                         
-                  write (con_string(i),9010) cnstrn_in(dof)                     
+               if( con_set(i) .or. (dof.eq.olddof) ) then                         
+                  write(con_string(i),9010) cnstrn_in(dof)                     
                endif                                                            
-            enddo                                                               
-            write (out,9020)node,(con_label(k),con_string(k),k=1,3)             
+            end do                                                               
+            write(out,9020)node,(con_label(k),con_string(k),k=1,3)             
          end if                                                                 
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
-      if (mpcs_exist) then                                                      
-         write (out,*)                                                          
-         write (out,*) '>>>    User-defined multi-point constraints:'           
-         write (out,*) '>>>      ',num_user_mpc,' equations'                    
+      if( mpcs_exist ) then                                                      
+         write(out,*)                                                          
+         write(out,*) '>>>    User-defined multi-point constraints:'           
+         write(out,*) '>>>      ',num_user_mpc,' equations'                    
          do mpc = 1, num_user_mpc                                               
             ntrms = user_mpc_table(mpc)%num_terms                               
             write(out,*)                                                        
@@ -76,7 +72,7 @@ c
                node = user_mpc_table(mpc)%node_list(trm)                        
                dof  = user_mpc_table(mpc)%dof_list(trm)                         
                mult = user_mpc_table(mpc)%multiplier_list(trm)                  
-               if (trm .gt. 1) then                                             
+               if( trm .gt. 1 ) then                                             
                   write(out,9030) ' + ', node, mult, con_label(dof),','         
                else                                                             
                   write(out,9030) '   ', node, mult, con_label(dof),','         
@@ -86,10 +82,10 @@ c
          end do                                                                 
       end if                                                                    
                                                                                 
-      if (tied_con_mpcs_constructed) then                                       
-         write (out,*)                                                          
-         write (out,*) '>>>    Tied-mesh multi-point constraints:'              
-         write (out,*) '>>>      ',num_tied_con_mpc,' equations'                
+      if( tied_con_mpcs_constructed )  then                                       
+         write(out,*)                                                          
+         write(out,*) '>>>    Tied-mesh multi-point constraints:'              
+         write(out,*) '>>>      ',num_tied_con_mpc,' equations'                
          do mpc = 1, num_tied_con_mpc                                           
             ntrms = tied_con_mpc_table(mpc)%num_terms                           
             write(out,*)                                                        
@@ -97,7 +93,7 @@ c
                node = tied_con_mpc_table(mpc)%node_list(trm)                    
                dof  = tied_con_mpc_table(mpc)%dof_list(trm)                     
                mult = tied_con_mpc_table(mpc)%multiplier_list(trm)              
-               if (trm .gt. 1) then                                             
+               if( trm .gt. 1 ) then                                             
                   write(out,9030) ' + ', node, mult, con_label(dof),','         
                else                                                             
                   write(out,9030) '   ', node, mult, con_label(dof),','         
@@ -107,8 +103,8 @@ c
          end do                                                                 
       end if                                                                    
                                                                                 
-      write (out,*)                                                             
-      write (out,*) '<<<  Finished dumping constraints'                         
+      write(out,*)                                                             
+      write(out,*) '<<<  Finished dumping constraints'                         
       return                                                                    
 c                                                                               
  9010 format (e13.6)                                                            
@@ -123,22 +119,20 @@ c     *                      subroutine cons_sum                     *
 c     *                                                              *          
 c     *                       written by : rhd                       *          
 c     *                                                              *          
-c     *                   last modified : 6/26/2022 rhd              *          
+c     *                   last modified : 4/25/256 rhd               *          
 c     *                                                              *          
-c     *     This routine dumps the constraints table for a model     *          
+c     *            dumps the constraints table for a model           *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-c                                                                               
-c                                                                               
       subroutine cons_sum( sum_values, mpc_warning )
-      use global_data ! old common.main
-c                                                                               
+c
+      use global_data, only : nonode, dstmap, cstmap
       use main_data, only : cnstrn, cnstrn_in, inverse_incidences               
       use mod_mpc, only : num_tied_con_mpc, tied_con_mpc_table,                 
      &                    num_user_mpc, user_mpc_table, mpcs_exist,             
      &                    tied_con_mpcs_constructed   
-      use constants                          
+      use constants, only : zero                      
 c                                                                               
       implicit none
 c

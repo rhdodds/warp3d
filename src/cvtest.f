@@ -4,7 +4,7 @@ c     *                      subroutine cvtest                       *
 c     *                                                              *
 c     *                       written by : bh                        *
 c     *                                                              *
-c     *                   last modified : 12/26/2018 rhd             *
+c     *                   last modified : 4/25/26 rhd                *
 c     *                                                              *
 c     *     perform convergence tests specified                      *
 c     *     by the user. if any one of the convergence criteria is   *
@@ -15,29 +15,36 @@ c     *     set flag if solution appears to be diverging             *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine cvtest( cnverg, step, iter, magdu1, mgload,
      &                   adapt_load_fact, diverging_flag )
-      use global_data ! old common.main
+c     
+      use global_data, only : mxcvtests, nodof, num_term_ifv,
+     &                        num_term_loads, out, show_details,
+     &                        stname, sum_ifv, sum_loads, res, trace,
+     &                        convrg, idu, tol 
       use mod_mpc, only : tied_con_mpcs_constructed, mpcs_exist
       use stiffness_data, only : d_lagrange_forces
       use main_data, only : diverge_check_strict
-      implicit integer (a-z)
-      double precision
-     & magdu1, mgload, adapt_load_fact, res_max
-      logical cnverg, mducom, trcsol, diverging_flag
+c
+      implicit none
+c      
+      integer :: step, iter
+      double precision :: magdu1, mgload, adapt_load_fact 
+      logical :: cnverg, mducom,  diverging_flag
 c
 c                       locals
 c
+      integer :: i, j, max_tests, res_max_dof, res_max_node,
+     &           res_max_node_dof 
       integer, parameter :: num_local_flags = 15
-      double precision ::
+      double precision :: res_max,
      &  testvl(mxcvtests), ratio(mxcvtests), absval, zero,
      &  hundred, avg_force,
      &  term_count, sum, val_1, val_2, val_3, resforce
       double precision, save ::
      &  norm_resids_for_checking(50)
-      logical local_flags(num_local_flags), have_mpc_equations
+      logical local_flags(num_local_flags), have_mpc_equations,
+     &          trcsol
       data zero, hundred / 0.0d00, 100.0d00 /
 c
       have_mpc_equations = tied_con_mpcs_constructed .or. mpcs_exist
@@ -333,12 +340,12 @@ c     *     tests for global Newton iterations                       *
 c     *                                                              *
 c     ****************************************************************
 c
-c
       subroutine cv_outrac( step, iter, out, convrg, magdu1,
      &                      magdp, testvl, ratio, adapt_load_fact,
      &                     res_max, res_max_node, avg_force,
      &                     local_flags, stname, show_details,
      &                     res_max_node_dof, max_tests )
+c
       implicit none
 c
 c                        parameters
@@ -595,8 +602,10 @@ c     *                                                              *
 c     ****************************************************************
 c
       logical function warp3d_batch_message_file_info( bmout )
+c      
       use main_data, only :  batch_mess_fname
       use global_data, only : batch_messages, stname
+c       
       implicit none
 c
       integer :: bmout

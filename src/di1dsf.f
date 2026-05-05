@@ -366,9 +366,11 @@ c **********************************************************************
 c
       subroutine di_constant_alphas( span, first_elem, count_alpha,
      &                               snode_alpha_ij )
+c 
       use global_data, only : iprops, props, nonode ! old common.main
       use main_data, only : incmap, incid
-      implicit integer (a-z)
+c
+      implicit none
 c
 c             parameters
 c

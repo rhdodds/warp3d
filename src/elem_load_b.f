@@ -908,27 +908,24 @@ c *                                                              *
 c ****************************************************************              
 c                                                                               
 c                                                                               
-      subroutine interp_piston_params(                                          
-     &     p3, u3, m3, gam, fdirc, tabn, cmptime )                              
-      use main_data, only: tables                                               
+      subroutine interp_piston_params( p3, u3, m3, gam, fdirc, 
+     &                                 tabn, cmptime )  
+c                                 
+      use main_data, only : tables       
+      use constants, only : zero, one                                        
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                               
-c     parameter declarations                                                    
-c     ----------------------                                                    
+      integer :: tabn                                                                    
+      double precision :: p3, u3, m3, gam, fdirc(3), cmptime                                   
 c                                                                               
-      double precision                                                          
-     &     p3, u3, m3, gam, fdirc(3), cmptime                                   
-c                                                                               
-c     declare local variables                                                   
-c     -----------------------                                                   
-c                                                                               
-      double precision                                                          
-     &     t0, tf, tn, ti, pn, un, mn, gn, fn(3),                               
-     &     tn1, pn1, un1, mn1, gn1, fn1(3), one, fac1, fac2,                    
-     &     mx, my, mz, norm                                                     
-      logical debug                                                             
-      data zero, one, debug / 0.0d0, 1.0d0, .false. /                           
+      integer :: nrows, row, dum, k                                                                    
+      double precision :: t0, tf, tn, ti, pn, un, mn, gn, fn(3),                               
+     &     tn1, pn1, un1, mn1, gn1, fn1(3), fac1, fac2,                    
+     &     mx, my, mz, norm, dumd
+      real :: dumr 
+      character(len=1) :: dums                                                    
+      logical, parameter :: debug = .false.                                                            
 c                                                                               
       if (debug) write (*,*) ' >>>>> inside of interp_piston_params'            
 c                                                                               

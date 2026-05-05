@@ -1,4 +1,3 @@
-c                                                                               
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine find_neighbors               *          
@@ -7,19 +6,18 @@ c     *                       written by : AG                        *
 c     *                                                              *          
 c     *                   last modified : 08/22/95                   *          
 c     *                                                              *          
-c     *     this subroutine finds all of the neighboring crack       *          
+c     *     finds all of the neighboring crack                       *          
 c     *     plane nodes to a given crack plane node. This routine    *          
 c     *     assumes that all of the elements are l3disop w/ 8 nodes  *          
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
+      subroutine find_neighbors( node, num_neighbors, node_list,                
+     &           crack_node, inv_crkpln_nodes, crack_plane_normal )  
+c                      
+      use global_data, only : mxconn, iprops, dstmap   
 c                                                                               
-c                                                                               
-      subroutine find_neighbors (node, num_neighbors, node_list,                
-     &     crack_node, inv_crkpln_nodes, crack_plane_normal )                   
-      use global_data ! old common.main
-c                                                                               
-      use main_data, only : incmap, incid, cnstrn_in,                           
+      use main_data, only : incmap, incid, cnstrn_in, 
      &                      inverse_incidences                                  
 c                                                                               
 c              passed parameters:                                               
@@ -44,26 +42,29 @@ c                       or more neighboring nodes that are
 c                       unconstrained)                                          
 c                                                                               
 c                   NOTE: we assume 8 nodes per element here!                   
-c                                                                               
-c                                                                               
-      implicit integer (a-z)                                                    
-      real dumr                                                                 
+c                                                                                                                                                             
+      implicit none
+c
+      integer :: node,  num_neighbors, node_list(mxconn), 
+     &           inv_crkpln_nodes(*), crack_plane_normal
+      logical :: crack_node  
+c      
+      integer :: i, adj_node_inc(3,8), elem_list, num_elems, incptr,
+     &           node_inc, adj_loop, adj_node, axis, elem       
+      real :: dumr                                                                 
       character(len=1) :: dums                                                  
-      double precision                                                          
-     &     d32460, dumd                                                         
-      data d32460 / 32460.0/                                                    
-      dimension node_list(mxconn), adj_node_inc(3,8),                           
-     &     inv_crkpln_nodes(*)                                                  
-      logical crack_node, debug, already_in_list                                
+      double precision :: d32460, dumd                                                         
+      logical :: already_in_list    
+      logical, parameter :: debug = .false.                            
       data adj_node_inc /2,4,5,1,3,6,2,4,7,1,3,8,1,6,8,2,5,7,3,6,8,             
      &     4,5,7/                                                               
-      data debug /.false./                                                      
+      data d32460 / 32460.0/                                                    
 c                                                                               
-      if ( debug ) write (*,*) '>>>> entering find_neighbors'                   
+      if( debug ) write (*,*) '>>>> entering find_neighbors'                   
 c                                                                               
       do i = 1, mxconn                                                          
          node_list(i) = 0                                                       
-      enddo                                                                     
+      end do                                                                     
       num_neighbors = 0                                                         
       crack_node = .false.                                                      
 c                                                                               
@@ -80,7 +81,7 @@ c
       num_elems = inverse_incidences(node)%element_count                        
       do elem_list = 1, num_elems                                               
          elem = inverse_incidences(node)%element_list(elem_list)                
-         if ( iprops(2,elem).ne. 8 ) cycle                                      
+         if( iprops(2,elem).ne. 8 ) cycle                                      
          incptr = incmap(elem) - 1                                              
 c                                                                               
 c                     The neighboring nodes on the element can be found         
@@ -89,11 +90,11 @@ c
 c                     find which element node the given node is                 
 c                                                                               
          do i = 1, 8                                                            
-            if (node .eq. incid(incptr+i)) then                                 
+            if( node .eq. incid(incptr+i)) then                                 
                node_inc = i                                                     
                exit                                                             
             endif                                                               
-         enddo                                                                  
+         end do                                                                  
 c                                                                               
 c                     using the incidence relations, loop over the              
 c                     3 nodes adjacent to the node tfor wich we are             
@@ -108,8 +109,8 @@ c                         if it is not on the crack plane, go to next
 c                         adjacent node.  If it is on the crack plane,          
 c                         and it is the first neighbor found, start the list.   
 c                                                                               
-            if ( inv_crkpln_nodes(adj_node).eq.0 ) cycle                        
-            if ( num_neighbors .eq. 0 ) then                                    
+            if( inv_crkpln_nodes(adj_node).eq.0 ) cycle                        
+            if( num_neighbors .eq. 0 ) then                                    
                num_neighbors = 1                                                
                node_list(1) = adj_node                                          
             else                                                                
@@ -120,18 +121,18 @@ c                         to see if it is already in the list.
 c                                                                               
                already_in_list = .false.                                        
                do i = 1, num_neighbors                                          
-                  if ( node_list(i) .eq. adj_node ) then                        
+                  if( node_list(i) .eq. adj_node ) then                        
                      already_in_list = .true.                                   
                      exit                                                       
                   endif                                                         
-               enddo                                                            
-               if ( already_in_list ) cycle                                     
+               end do                                                            
+               if( already_in_list ) cycle                                     
 c                                                                               
 c                                                                               
 c                         node is not on list -- add to list.                   
 c                                                                               
                num_neighbors = num_neighbors + 1                                
-               if ( num_neighbors .gt.mxconn ) then                             
+               if( num_neighbors .gt.mxconn ) then                             
                   call errmsg(252,node,dums,dumr,dumd)                          
                   call die_abort                                                
                   stop                                                          
@@ -150,15 +151,15 @@ c                         then 'node' is on the crack front;
 c                         set crack_node as true.                               
 c                                                                               
             axis = crack_plane_normal-1                                         
-            if ( (cnstrn_in(dstmap(node)+axis).ne.d32460) .and.                 
+            if( (cnstrn_in(dstmap(node)+axis).ne.d32460) .and.                 
      &           cnstrn_in(dstmap(adj_node)+axis) .eq.d32460 )                  
      &           crack_node = .true.                                            
 c                                                                               
-         enddo                                                                  
-      enddo                                                                     
+         end do                                                                  
+      end do                                                                     
 c                                                                               
 c                                                                               
-      if ( debug ) then                                                         
+      if( debug ) then                                                         
          write (*,*) '>>>> For node ',node                                      
          write (*,*) '  # of neighbors:',num_neighbors                          
          write (*,*) '  list of neighbors:'                                     

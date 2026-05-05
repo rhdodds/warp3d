@@ -672,23 +672,26 @@ c     ****************************************************************
 c
 c
       subroutine nodal_incr_temps( mf, ldcond, temperatures, debug )
+c      
       use main_data, only : dtemp_nodes, node_load_defs
-      implicit integer (a-z)
+      use constants, only : zero
+c      
+      implicit none
 c
-      double precision
-     &  mf, zero
-      logical debug, temperatures
+      integer :: ldcond
+      double precision :: mf
+      logical :: debug, temperatures
 c
-      real node_vals(10)
+      integer :: col, node_count, node, loddat_col
+      real :: node_vals(10)
       integer, dimension(:,:), pointer :: node_lod_data
-      data zero / 0.0 /
 c
-      if ( debug ) write(*,*) '>> in nodal_incr_temps'
+      if( debug ) write(*,*) '>> in nodal_incr_temps'
 c
 c               check for nodal loads and process if they are defined.
 c
       node_count = node_load_defs(ldcond)%node_count
-      if ( node_count .eq. 0 ) return
+      if( node_count .eq. 0 ) return
       node_lod_data => node_load_defs(ldcond)%nodal_loads
 c
       do col = 1, node_count
@@ -705,11 +708,11 @@ c               step factor. assemble into in the structure size vector.
 c
          call loddat_ops( 3, node_vals, loddat_col )
          dtemp_nodes(node) = dtemp_nodes(node) + node_vals(4)*mf
-         if ( abs(dtemp_nodes(node)) .ne. zero ) temperatures = .true.
+         if( abs(dtemp_nodes(node)) .ne. zero ) temperatures = .true.
 c
       end do
 c
-      if ( debug ) write(*,*) '<< leave nodal_incr_temps'
+      if( debug ) write(*,*) '<< leave nodal_incr_temps'
       return
       end
 c
@@ -727,18 +730,20 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine nodal_loads( mf, ldcond, dstmap, rload, debug )
+c       
       use main_data, only : node_load_defs
-      implicit integer (a-z)
+c       
+      implicit none
 c
-      double precision
-     &  mf, rload(*)
-      integer dstmap(*)
-      logical debug
+      double precision :: mf, rload(*)
+      integer :: ldcond, dstmap(*)
+      logical :: debug
 c
-      real node_vals(10)
+      integer :: node_count, col, node, loddat_col, dloc 
+      real :: node_vals(10)
       integer, dimension(:,:), pointer :: node_lod_data
 c
-      if ( debug ) write(*,*) '>> in nodal_loads'
+      if( debug ) write(*,*) '>> in nodal_loads'
 c
 c               check for nodal loads and process if they are defined.
 c               this code works only for 3 dof per node.
@@ -767,7 +772,8 @@ c
 c
       end do
 c
-      if ( debug ) write(*,*) '<< leave nodal_loads'
+      if( debug ) write(*,*) '<< leave nodal_loads'
+c       
       return
       end
 c     ****************************************************************
@@ -778,16 +784,17 @@ c     *                       written by : bh                        *
 c     *                                                              *
 c     *                   last modified : 8/21/2016 rhd              *
 c     *                                                              *
-c     *     this subroutine rotates the global nodal load vector     *
+c     *     rotates the global nodal load vector                     *
 c     *     into constraint compatable global coordinates.           *
 c     *                                                              *
 c     ****************************************************************
 c
-c
       subroutine rotate_loads( rload, debug )
-      use global_data ! old common.main
-c
+c       
+      use global_data, only : mxvl, mxedof, mxndof, mxndel, nonode,
+     &                        dstmap, iprops 
       use main_data, only : trn, trnmat, inverse_incidences
+      use constants, only : zero
 c
       implicit none
 c
@@ -795,10 +802,9 @@ c
       logical :: debug
 c
       integer :: node, dptr, ndof
-      double precision ::
-     &  ndlod(mxvl,mxndof), zero, trnmte(mxvl,mxedof,mxndof)
+      double precision :: ndlod(mxvl,mxndof), 
+     &                    trnmte(mxvl,mxedof,mxndof)
       logical :: loads_found, trne(mxvl,mxndel)
-      data zero / 0.0d0 /
 c
       if( debug ) write(*,*) '>> in rotate_loads -- rotating loads'
 c
@@ -849,7 +855,7 @@ c
        trnmte(1,3,2) = trnmat(node)%mat(3,2)
        trnmte(1,3,3) = trnmat(node)%mat(3,3)
        call trnvec( ndlod, trnmte, trne, ndof, 1, 1, 1 )
-       if ( debug ) write(*,9000) ndlod(1,1:3)
+       if( debug ) write(*,9000) ndlod(1,1:3)
        rload(dptr+0) = ndlod(1,1)
        rload(dptr+1) = ndlod(1,2)
        rload(dptr+2) = ndlod(1,3)

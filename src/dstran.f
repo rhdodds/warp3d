@@ -6,7 +6,7 @@ c     *                       written by : bh                        *
 c     *                                                              *          
 c     *                   last modified : 07/02/90                   *          
 c     *                                                              *          
-c     *     this subroutine displays the transformation matrix from  *          
+c     *     displays the transformation matrix from                  *          
 c     *     uniform global corrdinates to constraint compatable glo- *          
 c     *     bal coordinates for the given node.                      *          
 c     *                                                              *          
@@ -14,17 +14,19 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine dstran( node )                                                 
-      use global_data ! old common.main
-c                                                                               
+      subroutine dstran( node ) 
+c                                                      
+      use global_data, only : out
       use main_data, only : trnmat, trn, inverse_incidences                     
 c                                                                               
-      implicit integer (a-z)                                                    
-      real dumr                                                                 
-      double precision                                                          
-     &     dumd                                                                 
-      character :: dums                                                         
-c                                                                               
+      implicit none
+c
+      integer :: node
+c
+      integer :: ndof, row     
+      real :: dumr                                                                 
+      double precision :: dumd
+      character(len=1):: dums                                                         
 c                                                                               
       ndof = iprops(4,inverse_incidences(node)%element_list(1))                 
 c                                                                               
