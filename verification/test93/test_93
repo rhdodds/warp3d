@@ -1,0 +1,113 @@
+! 
+!
+!     180-degree (quadrant 1,4) plane-strain model of thin-wall pipe.
+!     1 layer of 3D, 8-node hexes
+!
+!     Model in X-Y plane
+!     Ri = 35.375 in, t = 0.625 in. Pipe center at (0,0,0)
+!
+!     Double-V weld at top (X=0, Y>35.375) with cap passes on Ri and Ro.
+!
+!     Material is linear-elastic. Same E, nu for weld and base.
+!
+!     Uniform nodal temperature field applied on nodes in weld region.
+!     Spatially varying, anisotropic coefficients of thermal expansion 
+!     (CTEs) in weld & nearby base metal to define an initial strain
+!     field (eigenstrain).
+!     Non-zero computed stresses mimic welding residual stresses. 
+!
+!     No cracks in model.
+!     
+ structure pipe_weld
+! 
+ material weld  $ linear-elastic
+    properties bilinear e 30000 nu 0.3 yld_pt 1.0E+20,
+               tan_e 400 
+ material pipe  $ linear-elastic
+    properties bilinear e 30000 nu 0.3 yld_pt 1.0E+20,
+               tan_e 500
+! 
+ number of nodes 8076 elements 3692
+! 
+ elements
+       1-1164 type l3disop linear material pipe,
+                  order 2x2x2 bbar center_output short
+    1165-2444 type l3disop linear material pipe,
+                  order 2x2x2 bbar center_output short
+    2445-3692 type l3disop linear material weld,
+                  order 2x2x2 bbar center_output short
+! 
+* echo off
+* input from 'CTEs.inp'
+* input from file 'coordinates.inp'
+* input from file 'incidences.inp'
+*echo on
+! 
+ blocking  automatic
+! 
+loading unit
+  nodal loads
+   1-8076  temperature 1.0
+!
+ constraints
+   all w 0  $ plane-strain
+   plane x = 0 symmetry
+   1281 v 0
+! 
+ loading test
+  nonlinear
+    step 1 unit 1.0
+! 
+ nonlinear analysis parameters
+   solution technique direct sparse
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.01
+   nonconvergent solutions stop
+   adaptive on
+   batch messages off
+   cpu time limit off
+   material messages off
+   bbar stabilization factor 0.0
+   consistent q-matrix off
+   time step 1.0e06
+   trace solution on
+   extrapolate off
+!  
+ output model flat patran convention text file "model"
+! 
+ compute displacements for loading test step 1
+!
+ output wide stresses 1185
+ output displacements 1281 5 6115
+!
+!      nodes on X=0 symmetry plane at weld centerline
+!
+ list "react nodes" 2371 2372 2389 2390 2413 2414 2443 2444,
+     2479 2480 2519 2520 2563 2564 2611 2612,
+     2663 2664 2715 2716 2767 2768 2819 2820,
+     2871 2872 2929 2930 2993 2994 3067 3068,
+     3151 3152 3241 3242 3335 3336 3433 3434,
+     3537 3538 3645 3646 3759 3760 3887 3888,
+     4025 4026 4169 4170 4309 4310 4437 4438,
+     4561 4562 4685 4686 4817 4818 4941 4942,
+     5061 5062 5191 5192 5335 5336 5475 5476,
+     5611 5612 5743 5744 5871 5872 5995 5996,
+     6115 6116 6231 6232 6343 6344 6451 6452,
+     6555 6556 6655 6656 6751 6752 6843 6844,
+     6931 6932 7015 7016 7095 7096 7171 7172,
+     7247 7248 7323 7324 7399 7400 7425 7426,
+     7499 7500 7523 7524 7591 7592 7613 7614,
+     7675 7676 7695 7696 7751 7752 7769 7770,
+     7819 7820 7835 7836 7879 7880 7893 7894,
+     7931 7932 7943 7944 7975 7976 7985 7986,
+     8011 8012 8019 8020 8039 8040 8045 8046,
+     8059 8060 8063 8064 8071 8072 8073 8074,
+     8075 8076
+!
+ output reactions totals only "react nodes"
+! 
+ output flat stream displacements
+ output flat stream element stresses
+!
+stop
