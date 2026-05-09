@@ -126,6 +126,8 @@ def run_all():
  test_generic( "test89" )
  test_generic( "test90" )
  test_generic( "test91" )
+ test_generic( "test92" )
+ test_generic( "test93" )
 #
  time_end = time.time()
  print("  ... Elaspsed walltime: %0.1f" % (time_end-time_start))
@@ -649,14 +651,14 @@ def display_menu():
   m = ["All Problems"]
   m.append( "Test 14: (Linear elastic impact, sparse iterative solver)" )
   m.append( "Test 18: (Gurson model growth, impact loading, restart)" )
-  m.append( "Test 24: (hollow sphere, skew constraints, int press, large displ) " )
-  m.append( "Test 39: (CTOA and SMCS crack growth)" )
+  m.append( "Test 24: (hollow sphere, skew constraints, int press, nlgeom) " )
+  m.append( "Test 39: (CTOA,SMCS crack growth. PCHIP sig-eps curves)" )
   m.append( "Test 41: (rigid contact, large displacements)" )
   m.append( "Test 44: (Cohesive-interface growth, restart)" )
   m.append( "Test 47: (Bilinear, cyclic, thermo-plasticity)" )
   m.append( "Test 86: (SEB, FGMs, nonlinear, J-values)" )
   m.append( "Test 50: (Fatigue crack growth using node release)" )
-  m.append( "Test 51: (Nonlinear patch tests: tet elements)" )
+  m.append( "Test 51: (Nonlinear element loadings: tets, hexes)" )
   m.append( "Test 54: (FGM, linear, SE(T), non-global constraints)" )
   m.append( "Test 57: (SSY, mises + hydrogen effects)" )
   m.append( "Test 60: (Advanced cyclic plasticty model)" )
@@ -685,6 +687,8 @@ def display_menu():
   m.append( "Test 89: (SMCS ductile growth. C(T), blunt with hole, restart)" )
   m.append( "Test 90: (RVEs with periodic boundary conditions)" )
   m.append( "Test 91: (Crystal plasticity for Ti6242)" )
+  m.append( "Test 92: (Hex 9, 12 node transition elements, nlgeom) " )
+  m.append( "Test 93: (Eigenstrains for residual stresses in pipe weld) " )
   m.append( "Quit" )
 #
   print("> Select a problem to run:\n")
@@ -835,6 +839,8 @@ def main():
    if choice == 37: test_generic( "test89" )
    if choice == 38: test_generic( "test90" )
    if choice == 39: test_generic( "test91" )
+   if choice == 40: test_generic( "test92" )
+   if choice == 41: test_generic( "test93" )
 #
 # ----------------------------------------------------------------------------
 #
