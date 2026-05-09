@@ -3,6 +3,30 @@
            Highest Level README File for WARP3D
            ====================================
 
+            Last Update: May 5, 2026 
+            
+              Retains release number 5110.
+                          
+            - Changed MUMPS solver yo use symmetric positive definite
+              factorization by default. Switches to symmetric indefinite
+              (LDL^T) if model has multi-point constraints or the
+              positive definite factorization fails.
+              
+              WARP3D set indefinite version of Pardiso solver by
+              defaults as the performance penalty is vanishingly small.
+              
+            - Found and fixed some uninitialized variables that gfortran 
+              trapped that Intel ifort/ifx passed over at run time
+              (solutions were correct)
+              
+            - Continue to remove last occurrences of implicit integer 
+              in code and replaced with implicit none.
+            
+            - Fixed multiple places in store/reopen that gfortran complained
+              about mismatch of argument types in calls to helper
+              routines. The code is legally ok - especially in legacy
+              approaches - but needed to be improved.  
+            
             Last Update: April 17, 2026
             
             Since early April update: changed to Metis reordering
