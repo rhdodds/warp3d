@@ -16,6 +16,7 @@ c
 c                              
       use global_data, only: out, mxedof, nelblk, nonode, noelem,
      &                       mxconn, props, incflg
+      use damage_elem_vals, only : values_T     
       use elem_extinct_data                                                     
       use node_release_data                                                     
       use damage_data   
@@ -33,7 +34,6 @@ c
       logical :: debug, duml, standard_kill_method, get_princ                                                      
       real :: dumr
 c
-      include 'include_damage_values'   
       type(values_T) :: elem_values
 c                                                                               
       debug = .false.
