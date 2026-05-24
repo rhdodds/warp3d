@@ -5,23 +5,25 @@ c *                                                              *
 c ****************************************************************              
 c                                                                               
 c                                                                               
-       subroutine body_load( element, etype, nnode, body_dir,                   
-     &                       body_intens, ecoord, equiv_loads_bdf )             
-      implicit double precision (a-h,o-z)                                       
+      subroutine body_load( element, etype, nnode, body_dir,                   
+     &                       body_intens, ecoord, equiv_loads_bdf )        
+c 
+      use constants, only : zero, sixth 
+c                
+      implicit none                                   
 c                                                                               
-      dimension  equiv_loads_bdf(*), ecoord(3,*)                                
-      integer element, etype, body_dir                                          
-c                                                                               
-c                local arrays                                                   
-c                                                                               
-      double precision                                                          
-     &    jacob, jacobi, sixth                                                  
-c                                                                               
-      dimension qvec(32), dsf(32,3), jacob(3,3), jacobi(3,3),                   
-     &          sf(32)                                                          
-      logical local_debug, tet_elem                                             
-      integer enode                                                             
-      data zero, local_debug / 0.0, .false. /                                   
+      double precision :: equiv_loads_bdf(*), ecoord(3,*), 
+     &                    body_intens                              
+      integer :: element, etype, nnode, body_dir                                          
+c                                                                              
+      integer :: i 
+      double precision :: qvec(32), dsf(32,3), jacob(3,3),
+     &                    jacobi(3,3), sf(32), vol, det,
+     &                    totlod, xi, eta, zeta, scale, 
+     &                    weight                                                          
+      logical :: tet_elem                                             
+      logical, parameter :: local_debug = .false.
+      integer :: enode, ngp, iorder, igp, ierr                                                              
 c                                                                               
 c                                                                               
 c                if element is a tetrahedron, we must use a                     
@@ -29,9 +31,6 @@ c                1/6 multiple for integration.
 c                                                                               
 c                                                                               
       tet_elem = etype .eq. 6 .or. etype .eq. 13                                
-c                                                                               
-c                                                                               
-      sixth = 1.0D0/6.0D0                                                       
 c                                                                               
 c                                                                               
 c                compute the {q} vector by integrating the                      
@@ -741,14 +740,14 @@ c *******************************************************************
 c                                                                               
 c                                                                               
       subroutine tet_get_nodes(fnodes, etype, face, nfnode)                     
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                               
 c              put the node numbers for face "face" , element                   
 c              type "etype" into vector fnodes and set number of                
 c              nodes on the face.                                               
 c                                                                               
-      dimension :: fnodes(*), tet_10node(6,4), tet_4node(3,4)                     
-c                                                                               
+      integer :: fnodes(*), tet_10node(6,4), tet_4node(3,4),
+     &           i, nfnode, etype, face                                                                                                      
       logical :: etype_tet10, etype_tet4                                           
 c                                                                               
 c                                                                               
@@ -874,14 +873,15 @@ c *******************************************************************
 c                                                                               
 c                                                                               
       subroutine eqelfn( fnodes, etype, face, nfnode )                          
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                               
 c              put the node numbers for face "face" , element                   
 c              type "etype" into vector fnodes and set number of                
 c              nodes on the face.                                               
 c                                                                               
-      dimension  fnodes(*), f8nod(4,6), f20nod(8,6), f12nod(8,6),               
-     &           f15nod(8,6), nfnodes(6,5), f9nod(5,6)                          
+      integer :: fnodes(*), f8nod(4,6), f20nod(8,6), f12nod(8,6),               
+     &           f15nod(8,6), nfnodes(6,5), f9nod(5,6)  
+      integer :: etype, face, nfnode, i                        
 c                                                                               
       data   f8nod   / 4,3,2,1,                                                 
      &                 5,6,7,8,                                                 
@@ -1118,9 +1118,9 @@ c
       subroutine piston_face_intens(                                            
      &   face_intens, element, etype, nnode, face,                              
      &   p3, u3, m3, gam, fdirc, tet_elem, elem_nodes, ecoord )                 
-      use global_data ! old common.main
-c                                                                               
-      use main_data                                                             
+c
+      use global_data, only : mxndel, u, v, c
+      use main_data, only : crdmap                                                          
 c                                                                               
       implicit none                                                             
 c                                                                               
@@ -1277,9 +1277,9 @@ c
 c     parameter declarations                                                    
 c     ----------------------                                                    
 c                                                                               
-      integer face                                                              
-      logical tet_elem                                                          
-      double precision                                                          
+      integer :: face                                                              
+      logical :: tet_elem                                                          
+      double precision ::                                                          
      &     xi, eta, zeta                                                        
 c                                                                               
 c     declare local variables                                                   
@@ -1395,20 +1395,20 @@ c
 c     parameter declarations                                                    
 c     ----------------------                                                    
 c                                                                               
-      integer element, etype, nnode, face                                       
-      logical tet_elem                                                          
-      double precision                                                          
+      integer :: element, etype, nnode, face                                       
+      logical :: tet_elem                                                          
+      double precision ::                                                          
      &     xi, eta, zeta, ecoord(3,*), nrmvec(3)                                
 c                                                                               
 c     declare local variables                                                   
 c     -----------------------                                                   
 c                                                                               
-      double precision                                                          
+      double precision ::                                                         
      &     dsf(32,3), temp_dsf(32,3), sf(32), temp_sf(32),                      
      &     darea, mag1, mag2, mag_max, vec1(3), vec2(3), rlen,                  
      &     fcoor_tri6(3,6), fcoor_tri3(3,3), zero                               
-      logical debug                                                             
-      integer fnodes(10), index, nfnode                                         
+      logical :: debug                                                             
+      integer :: fnodes(10), index, nfnode                                         
       data zero, debug / 0.0, .false. /                                         
 c                                                                               
 c                                                                               

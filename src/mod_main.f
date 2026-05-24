@@ -565,6 +565,7 @@ c
      &   pt_zero_one = 0.01d0,
      &   pt_one  = 0.1d0,
      &   ptone   = 0.1d0,
+     &   eighth  = 0.125d0, 
      &   point_two = 0.2d0,
      &   pt_two  = 0.2d0, 
      &   pt_three = 0.3d0,

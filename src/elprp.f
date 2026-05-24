@@ -50,9 +50,9 @@ c
 c
       subroutine elprp18( elem, type )
 c
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
+      use global_data, only : props, lprops, iprops, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp
 c
       implicit none
 c
@@ -259,9 +259,9 @@ c
 c
       subroutine elprp19( elem, type )
 c
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
+      use global_data, only : props, lprops, iprops, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp
 c
       implicit none
 c
@@ -468,15 +468,21 @@ c     ****************************************************************
 c
 c
       subroutine elprp1( elem, type )
-      use global_data 
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222
+      use constants, only : zero, one, rzero
+      implicit none
+c 
+      integer :: elem, type      
 c
-      character :: dums
-      real :: e, et, h,  dumr, rzero
-      double precision :: zero, one, dumd
-      data zero, one, rzero / 0.0d0, 1.0d0, 0.0 /
+      integer :: param, outloc, matnum, intord, iloc, geonl, outfmt
+      character :: dums*1
+      real :: e, et, h,  dumr
+      double precision :: dumd
 c
 c
 c                       note: data stored in the element properties
@@ -713,17 +719,24 @@ c     ****************************************************************
 c
 c
       subroutine elprp2( elem, type )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222, id_o06p
+      use constants, only : zero, one, rzero
+c       
+      implicit none
 c
-      character :: dums
-      real :: rzero, e, et, h,  dumr
-      double precision :: zero, one, dumd
-      logical local_debug
-      data zero, one, local_debug, rzero
-     &    / 0.0d0, 1.0d0, .true., 0.0 /
+      integer :: elem, type
+c 
+      integer :: bbar, geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param       
+      character :: dums*1
+      real :: e, et, h,  dumr
+      double precision :: dumd
+      logical, parameter :: local_debug = .false.
 c
 c
 c                       note: data stored in the element properties
@@ -947,20 +960,21 @@ c     *     element given into global storage.                       *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine elprp3( elem, type )
       use global_data ! old common.main
       use main_data
       use segmental_curves
-      implicit integer (a-z)
+      use constants, only : zero, one
 c
-      character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      data zero, one
-     &    / 0.0, 1.0 /
+      implicit none
+c
+      integer :: elem, type
+c
+      integer :: geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param       
+      character :: dums*1
+      real :: e, et, h, dumr
+      double precision :: dumd
 c
 c
 c                       note: data stored in the element properties
@@ -1179,20 +1193,23 @@ c     *     element into global storage.                             *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine elprp4( elem, type )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c       
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222
+      use constants, only : zero, one
+c      
+      implicit none
 c
-      character :: dums
+      integer :: elem, type
+c
+      integer :: geonl, iloc, intord, matnum, outfmt, outloc, param       
+      character :: dums*1
       real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      data zero, one
-     &    / 0.0, 1.0 /
+      double precision :: dumd
 c
 c
 c                       note: data stored in the element properties
@@ -1411,20 +1428,24 @@ c     *     element into global storage.                             *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine elprp5( elem, type )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222
+      use constants, only : zero, one
+c      
+      implicit none
 c
+      integer :: elem, type
+c 
+      integer :: geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param       
       character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      data zero, one
-     &    / 0.0, 1.0 /
+      real :: e, et, h,  dumr
+      double precision :: dumd
 c
 c
 c                       note: data stored in the element properties
@@ -1647,18 +1668,23 @@ c
 c
 c
       subroutine elprp6( elem, type )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222, id_o01p, id_o04p, id_o05p
+      use constants, only : zero, one
+c      
+      implicit none
+c 
+      integer :: elem, type
 c
-      character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      data zero, one
-     &    / 0.0, 1.0 /
-c
+      integer :: bbar, geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param       
+      character :: dums*1
+      real :: e, et, h, dumr
+      double precision :: dumd
 c
 c                       note: data stored in the element properties
 c                       table is all single precision.
@@ -1878,20 +1904,20 @@ c     *     element into global storage.                             *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine elprp7( elem, type )
-      use global_data ! old common.main
+c       
+      use global_data
       use main_data
-      use segmental_curves
-      implicit integer (a-z)
+      use constants, only : zero, one
+      implicit none
 c
-      character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      data zero, one
-     &    / 0.0, 1.0 /
+      integer :: elem, type
+c 
+      integer :: bbar, geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param       
+      character :: dums*1
+      real :: e, et, h,  dumr
+      double precision :: dumd
 c
 c
 c                       note: data stored in the element properties
@@ -2110,21 +2136,25 @@ c     *     element into global storage.                             *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine elprp8( elem, type )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222
+      use constants, only : zero, one
+c      
+      implicit none
 c
-      character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      data zero, one
-     &    / 0.0, 1.0 /
+      integer :: elem, type
 c
+      integer :: bbar, geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param       
+      character :: dums*1
+      real :: e, et, h,  dumr
+      double precision :: dumd
+      logical, parameter :: local_debug = .false.
 c
 c                       note: data stored in the element properties
 c                       table is all single precision.
@@ -2341,21 +2371,26 @@ c     *     element into global storage.                             *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine elprp9( elem, type )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222
+c      
+      use constants, only : zero, one
+c 
+      implicit none
 c
-      character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      data zero, one
-     &    / 0.0, 1.0 /
-c
+      integer :: elem, type
+c 
+      integer :: bbar, geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param       
+      character :: dums*1
+      real :: e, et, h,  dumr
+      double precision :: dumd
+      logical, parameter :: local_debug = .false.
 c
 c                       note: data stored in the element properties
 c                       table is all single precision.
@@ -2574,21 +2609,25 @@ c     *     element into global storage.                             *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine elprp10( elem, type )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222, id_o01p, id_o04p
+      use constants, only : zero, one
+c 
+      implicit none
 c
-      character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      data zero, one
-     &    / 0.0, 1.0 /
-c
+      integer :: elem, type
+c 
+      integer :: bbar, geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param       
+      character :: dums*1
+      real :: e, et, h,  dumr
+      double precision :: dumd
+      logical, parameter :: local_debug = .false.
 c
 c                       note: data stored in the element properties
 c                       table is all single precision.
@@ -2810,22 +2849,26 @@ c     *     element into global storage.                             *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine elprp11( elem, type )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222, id_o01p, id_o04p,
+     &                      id_o03p, id_o06p, id_o07p
+      use constants, only : zero, one
+c 
+      implicit none
 c
-      character :: dums
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      logical local_debug
-      data zero, one, local_debug
-     &    / 0.0, 1.0, .false. /
-c
+      integer :: elem, type
+c 
+      integer :: bbar, geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param       
+      character :: dums*1
+      real :: e, et, h,  dumr
+      double precision :: dumd
+      logical, parameter :: local_debug = .false.
 c
 c                       note: data stored in the element properties
 c                       table is all single precision.
@@ -3064,19 +3107,27 @@ c     *     element given into global storage.                       *
 c     *                                                              *
 c     ****************************************************************
 c
-c
       subroutine elprp12( elem, type )
-      use global_data ! old common.main
-      use main_data
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222, id_o01p, id_o04p,
+     &                      id_o03p, id_o06p, id_o07p, id_o111, 
+     &                      id_o22g, id_o22n
+      use constants, only : zero, one
+c      
+      implicit none
 c
-      character :: dums
-      real  dumr
-      double precision
-     &    zero, one, dumd
-      logical exponential_type, ppr_type, cavit_type
-      data zero, one
-     &    / 0.0, 1.0 /
+      integer :: elem, type
+c
+      integer :: geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param, surf     
+      character :: dums*1
+      real  :: dumr
+      double precision :: dumd
+      logical :: exponential_type, ppr_type, cavit_type
 c
 c
 c                       note: data stored in the element properties
@@ -3437,18 +3488,26 @@ c
 c
 c
       subroutine elprp13( elem, type )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
+c 
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222, id_o01p, id_o04p,
+     &                      id_o03p, id_o06p, id_o07p, id_o111, 
+     &                      id_o22g, id_o22n, id_o05p
+      use constants, only : zero, one
+c      
+      implicit none
 c
-      character :: dums
+      integer :: elem, type
 c
-      real e, et, h,  dumr
-      double precision
-     &    zero, one, dumd
-      data zero, one
-     &    / 0.0, 1.0 /
+      integer :: geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param, surf     
+      character :: dums*1
+      real :: dumr, e, et, h
+      double precision :: dumd
+
 c
 c                       note: data stored in the element properties
 c                       table is all single precision.
@@ -3669,19 +3728,27 @@ c     *     element given into global storage.                       *
 c     *                                                              *
 c     ****************************************************************
 c
-c
       subroutine elprp14( elem, type )
-      use global_data ! old common.main
-      use main_data
-      implicit integer (a-z)
+c       
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222, id_o01p, id_o04p,
+     &                      id_o03p, id_o06p, id_o07p, id_o111, 
+     &                      id_o22g, id_o22n, id_o05p, id_o3mp
+      use constants, only : zero
+c      
+      implicit none
 c
-      character :: dums
-      real dumr
-      double precision
-     &    dumd,zero
-      logical exponential_type, ppr_type, cavit_type
-c
-      data zero /0.0/
+      integer :: elem, type
+c 
+      integer :: geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param, surf     
+      character :: dums*1
+      real :: dumr
+      double precision :: dumd
+      logical :: exponential_type, ppr_type, cavit_type
 c
 c                       note: data stored in the element properties
 c                       table is all single precision.
@@ -3895,19 +3962,27 @@ c     *     element given into global storage.                       *
 c     *                                                              *
 c     ****************************************************************
 c
-c
       subroutine elprp15( elem, type )
-      use global_data ! old common.main
-      use main_data
-      implicit integer (a-z)
+c       
+      use global_data, only : out, iprops, lprops, props, mxgp,
+     &                        num_error, two16
+      use main_data, only : id_cent, id_defa, id_node, id_true, elstor,
+     &                      matprp, lmtprp, id_o09p, id_o14p, id_o333,
+     &                      id_shrt, id_o222, id_o01p, id_o04p,
+     &                      id_o03p, id_o06p, id_o07p, id_o111, 
+     &                      id_o22g, id_o22n, id_o05p, id_o3mp
+      use constants, only : zero
+c      
+      implicit none
 c
-      character :: dums
-      real dumr
-      double precision
-     &    dumd,zero
-      logical exponential_type, ppr_type, cavit_type
-c
-      data zero /0.0/
+      integer :: elem, type
+c 
+      integer :: geonl, iloc, intord, matnum, outfmt, outloc,
+     &           param, surf     
+      character :: dums*1
+      real :: dumr
+      double precision :: dumd
+      logical :: exponential_type, ppr_type, cavit_type
 c
 c                       note: data stored in the element properties
 c                       table is all single precision.
@@ -4122,19 +4197,21 @@ c     ****************************************************************
 c
 c
       subroutine elem_set_segmental( elem, matnum )
-      use global_data ! old common.main
-      use main_data
-      use segmental_curves
-      implicit integer (a-z)
 c
-c                 local variables
+      use global_data, only : iprops, props
+      use main_data, only : lmtprp, matprp
+      use segmental_curves, only : num_seg_curve_sets, seg_curve_table, 
+     &                             seg_curves
+c       
+      implicit none
 c
-      character :: dums
-      real dumr
-      double precision
-     &    dumd
-      logical local_debug
-      data local_debug / .false. /
+      integer :: elem, matnum
+c      
+      integer :: curve_one, curve_set
+      character :: dums*1
+      real :: dumr
+      double precision :: dumd
+      logical, parameter :: local_debug = .false.
 
 c
 c

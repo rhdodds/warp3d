@@ -25,8 +25,11 @@ c
      &                 beta, hprime_n1, lnelas, yld_n1, cgn, cgn1,
      &                 deps, history, history1, rtse, dtemps,
      &                 ym_n, nu_n, local_out, eps_elas )
-      implicit integer (a-z)
-      include 'param_def'
+c
+      use global_data, only : mxvl, nstr
+      use constants, only : zero
+c        
+      implicit none
 c
 c          update the stresses and internal state variables at gauss
 c          point "gpn" for "span" elements in the current block.
@@ -102,7 +105,7 @@ c
 c
 c                     parameters
 c
-      integer :: span, felem, gpn, step, iter
+      integer :: span, felem, gpn, step, iter, local_out
       double precision ::
      &   nu_n1(*), beta(*), hprime_n1(*), cgn(mxvl,*),
      &   cgn1(mxvl,*), deps(mxvl,*), ym_n1(*), history(span,*),
@@ -119,16 +122,14 @@ c
       double precision ::
      &   yfn(mxvl), mrts(mxvl), alpha_n(mxvl,6), devstr_n1(mxvl,nstr),
      &   shear_mod_n1(mxvl), lk(mxvl), kbar(mxvl), eps_vol_n1(mxvl)
-      double precision, parameter :: zero = 0.d0
       integer :: iostat(mxvl), instat(mxvl)
-      logical :: yield(mxvl), local_debug, prior_linear(mxvl),
-     &           isothermal
+      logical :: yield(mxvl), prior_linear(mxvl), isothermal
+      logical, parameter :: local_debug = .false.
 c
 c                       get the current output device for any meesages.
 c                       set up history if this is an iteration during
 c                       load step 1.
 c
-      local_debug = .false.
       if( local_debug ) then
         write(local_out,9000) span, felem, gpn, step, iter
       end if
@@ -234,6 +235,7 @@ c     ****************************************************************
 c
       subroutine mm01_set_history( history, history1, cgn, sigma_o,
      &                             hprime, span, mxvl )
+c 
       implicit none
 c
 c                     parameters
@@ -602,17 +604,17 @@ c
 c
 c                     parameters
 c
-      integer span, mxvl, instat(*)
-      logical debug
-      double precision
+      integer :: span, mxvl, instat(*)
+      logical :: debug
+      double precision ::
      & cgn(mxvl,*), cgn1(mxvl,*),
      & ym(*), nu(*), shear_mod(*), devstr_n1(mxvl,*), deps(mxvl,*),
      & history1(span,*), eps_vol_n1(*)
 c
 c                     locals
 c
-      integer i, iword(2)
-      double precision
+      integer :: i, iword(2)
+      double precision ::
      & sig_mean_np1, one, two, three, half, dword
       equivalence ( dword, iword )
       data one, two, three, half
@@ -680,22 +682,22 @@ c
 c
 c                     parameters
 c
-      integer  mxvl, span
-      logical  yield(*)
-      double precision
+      integer :: mxvl, span
+      logical :: yield(*)
+      double precision ::
      & history(span,*), history1(span,*), kbar(*),
      & mrts(*), shear_mod_n1(*), hprime_n1(*), beta(*),
      & rtse(mxvl,*), devstr_n1(mxvl,*)
 c
 c                     locals
 c
-      integer i
-      double precision
+      integer :: i
+      double precision ::
      & lambda_deltat, k_np1, hbark_np1, const1, hbari_np1, const2
 c
 c                     numerical constants
 c
-      double precision
+      double precision :: 
      & root2, twthrd, one, two, three, root23
       data root2, twthrd, one, two, three, root23
      & / 1.414213562373095d00, 0.666666666666667d00, 1.0d00,
@@ -778,24 +780,24 @@ c
 c
 c                     parameters
 c
-      integer  mxvl, span, iout
-      logical debug, yield(*)
-      double precision
+      integer :: mxvl, span, iout
+      logical::  debug, yield(*)
+      double precision ::
      & history(span,*), history1(span,*), kbar(*),
      & mrts(*), shear_mod_n1(*), hprime_n1(*), beta(*),
      & rtse(mxvl,*), devstr_n1(mxvl,*), lk(*)
 c
 c                     locals
 c
-      integer i
-      double precision
+      integer :: i
+      double precision ::
      & lambda_deltat, hbark_np1, const1, 
      & hbari_np1, const2, a, b, d, vbar, wbar, vwbar,
      & t1, t2, t3, hbark_n, discr, qroot1, qroot2, hbari_n
 c
 c                     constants
 c
-      double precision
+      double precision ::
      & root2, twthrd, one, two, three, root23, four, zero, root2o3
       data root2, twthrd, one, two, three, root23, four, zero,
      &     root2o3
@@ -950,7 +952,7 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine mm01_set_sizes( info_vector )
-      dimension info_vector(*)
+      integer :: info_vector(*)
 c
 c        set infor_data
 c
@@ -990,28 +992,23 @@ c     ****************************************************************
 c
       subroutine mm01_states_values( itype, elem_states_output,
      &                                nrow_states, num_states  )
-      use global_data ! old common.main
 c
-c                       access some global data structures
-c
+      use global_data, only : out, iprops, elblks 
       use elem_block_data, only: history_blocks, history_blk_list
-      use main_data, only: elems_to_blocks
+      use main_data, only : elems_to_blocks
+      use constants, only : zero
 c
-      implicit integer (a-z)
-c
-c                       parameters
+      implicit none
 c
       integer :: nrow_states, itype, num_states
       double precision :: elem_states_output(nrow_states,*)
 c
-c                       locals
-c
       double precision,
      & allocatable :: history_dump(:,:,:), one_elem_states(:)
-      integer :: relem, elnum, hist_size, blockno
-      logical :: do_a_block, local_debug
-      double precision :: zero
-      data zero / 0.0d00 /
+      integer :: relem, elnum, hist_size, blockno, elem_type, felem, 
+     &           int_points, mat_type, span
+      logical :: do_a_block
+      logical, parameter :: local_debug = .false.
 c
 c           build deformation plasticity states values output.
 c
@@ -1031,7 +1028,6 @@ c
          blockno = elems_to_blocks(elnum,1)
       end if
 c
-      local_debug = .false.
       felem       = elblks(1,blockno)
       elem_type   = iprops(1,felem)
       mat_type    = iprops(25,felem)
@@ -1192,8 +1188,10 @@ c
 c
       subroutine cnst1( span, cep, rtsg, nu, e, kn1, hprime,
      &                  beta, ldt, dstates, felem, iout )
+c
+      use global_data, only : mxvl, nstr
+c       
       implicit none
-      include 'param_def'
 c
 c                       parameter declarations
 c

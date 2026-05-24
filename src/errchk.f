@@ -6,29 +6,31 @@ c     *                       written by : bh                        *
 c     *                                                              *
 c     *                   last modified : 02/17/2017 rhd             *
 c     *                                                              *
-c     *     this subroutine checks various program variables and     *
+c     *     checks various program variables and                     *
 c     *     arrays for errors after the input of data pertaining to  *
 c     *     the variables and arrays in question.                    *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine errchk( lsn, chkprm, debug1 )
-      use global_data ! old common.main
-      implicit integer (a-z)
-      logical debug1
+c      
+      use global_data, only : out
+c       
+      implicit none
+c       
+      integer :: lsn, chkprm
+      logical :: debug1
 c
-      if (lsn .eq. 32) then
+      if( lsn .eq. 32 )  then
             call chk_crystal(chkprm)
-            go to 9999
+            return
       end if
 c                       branch on subroutine number
 c
-      if (debug1) write (out,*) '   branching on lsn  (errchk) ', lsn
+      if( debug1 ) write (out,*) '   branching on lsn  (errchk) ', lsn
       go to (100,200,300,400,500,600,700,800,900,1000,1100,1200,
      &       1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,
-     &       2300,2400,2500) lsn
+     &       2300,2400,2500), lsn
 c
 c         ******** Structure name was input ********
 c
@@ -187,12 +189,11 @@ c     *    will stop at the first compute command.                   *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine errchk_2( matnum )
-      use global_data ! old common.main
+c      
+      use global_data, only : out, matnam, num_fatal, input_ok
       use main_data, only : matprp, lmtprp
-      use erflgs
+c      
       implicit none
 c
 c
@@ -202,7 +203,7 @@ c
       character :: dums
       double precision :: dumd
       logical :: is_matl_cohesive, is_matl_cp
-      character(len=50) erprms
+      character(len=50) :: erprms
 c
       erprms = ' '
 c
@@ -394,17 +395,18 @@ c
 c
 c
       subroutine errchk_4( debug1 )
-      use global_data ! old common.main
-c
+c       
+      use global_data, only : out, nonode
       use main_data, only : crdmap
-      use erflgs
+      use erflgs, only : coor
 c
       implicit none
+c       
       integer :: i
       real :: dumr
       character :: dums*1
       double precision :: dumd
-      logical debug1
+      logical :: debug1
 c
 c                       check to make sure that all structural
 c                       nodes have been given coordinates.
@@ -434,12 +436,11 @@ c     *     consistency.                                             *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine errchk_5( debug1 )
-      use global_data ! old common.main
+c 
+      use global_data, only : out, noelem
       use main_data, only : elstor
-      use erflgs
+      use erflgs, only : elprop
 c
       implicit none
       integer :: i
@@ -447,7 +448,6 @@ c
       character :: dums*1
       double precision :: dumd
       logical :: debug1
-c
 c
 c                       check to make sure that all elements have
 c                       been given the necessary properties and its
@@ -466,9 +466,7 @@ c                       data for all elements has been temporarily
 c                       stored. store this information permanently.
 c
       if( debug1 ) write(out,*)'    calling prcsel from errchk ',elprop
-c
       if( elprop ) call prcsel
-c
       if( debug1 ) write(out,*)'     returned from prcsel '
 c
       return
@@ -485,12 +483,11 @@ c     *     this subroutine checks the incidences for consistency    *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine errchk_6
-      use global_data ! old common.main
+c 
+      use global_data, only : out, mxndel, noelem, iprops
       use main_data, only : incmap, incid
-      use erflgs
+      use erflgs, only : elinc, fatal
 c
       implicit none
 c
@@ -620,10 +617,11 @@ c     ****************************************************************
 c
 c
       subroutine errchk_7
+c       
       use global_data ! old common.main
-c
       use main_data, only : trn, trnmat, cnstrn_in, inverse_incidences
-      use erflgs
+      use erflgs, only : constr
+      use constants, only : zero, d32460
 c
       implicit none
 c
@@ -631,7 +629,6 @@ c
       real :: dumr
       character :: dums*1
       double precision :: dumd
-      double precision, parameter :: zero=0.d0, d32460=32460.0d0
 c
 c                       check transformation matrix for each pertinent node.
 c
@@ -696,13 +693,16 @@ c     *                       written by : asg                       *
 c     *                                                              *
 c     *                   last modified : 2/8/2018 rhd               *
 c     *                                                              *
-c     *  this subroutine checks the loading input for constistency.  *
+c     *  checks the loading input for constistency.                  *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine errchk_8( chkprm )
-      use global_data ! old common.main
+c       
+      use global_data, only : out, histep, lowstp, num_error, lodtyp,
+     &                        lodnam, stprng 
       use main_data, only : stpchk
+c
       implicit none
 c
       integer :: i, chkprm, lodnum, step
@@ -759,13 +759,17 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 5/12/2015                  *
 c     *                                                              *
-c     *  check that a convergence test is defined                    *
+c     *           check that a convergence test is defined           *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine errchk_10
-      use global_data ! old common.main
-      implicit integer (a-z)
+c       
+      use global_data, only : out, mxcvtests, convrg
+c       
+      implicit none
+c 
+      integer :: i      
       logical :: found
 c
 c                       at least one convergence test must be defined.
@@ -788,15 +792,16 @@ c     *                       written by : rhd                       *
 c     *                                                              *
 c     *                   last modified : 6/5/2017 rhd               *
 c     *                                                              *
-c     *    this subroutine checks the blocking input                 *
-c     *    for constistency.                                         *
+c     *    checks the blocking input for constistency.               *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine errchk_18 (debug1)
-      use global_data ! old common.main
+      subroutine errchk_18( debug1 )
+c
+      use global_data, only : out, nelblk, noelem, nonode, elblks,
+     &                        scalar_blocking, iprops, lprops, props
       use main_data, only : incmap, incid
-      use erflgs
+      use erflgs, only : block
 c
       implicit none
 c
@@ -967,22 +972,34 @@ c     *                       written by : asg                       *
 c     *                                                              *
 c     *                   last modified : 9/7/23 rhd                 *
 c     *                                                              *
-c     *    checks the parameters for crack growth                    *
-c     *    for consistency.                                          *
+c     *    checks the parameters for crack growth for consistency.   *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine errchk_21
-      use global_data 
+c       
+      use global_data, only : input_ok	 
+      use damage_data, only : char_length, const_front, 
+     &                        crack_growth_type, critical_angle,
+     &                        crk_pln_normal_idx, ctoa_dist, 
+     &                        enforce_node_release, 
+     &                        g_stp_cntrl_allocated, growth_by_kill, 
+     &                        growth_by_release, gurson_cell_size,
+     &                        init_crit_ang, init_ctoa_dist, 
+     &                        load_size_control_crk_grth, 
+     &                        master_lines_set, max_porosity_change,
+     &                        num_crack_fronts, num_nodes_thick,
+     &                        overshoot_allocated, porosity_limit,
+     &                        release_fraction, release_type,
+     &                        overshoot_control_crk_grth
+      use constants, only : zero, tenth 
+c      
+      implicit none
 c
-      use damage_data
-      implicit integer (a-z)
-c
-      real dumr
+      integer :: dum 
+      real :: dumr
       character :: dums
-      double precision
-     &   dumd, zero, tenth
-      data zero, tenth / 0.0, 0.1 /
+      double precision :: dumd
 c
 c            If the crack growth type is element_extinction, then:
 c             - if load step size control has been activated and the
@@ -1116,21 +1133,23 @@ c     *                       written by : asg                       *
 c     *                                                              *
 c     *                   last modified : 10/09/95                   *
 c     *                                                              *
-c     *   this subroutine checks the segmental stress-strain curves  *
+c     *   checks the segmental stress-strain curves                  *
 c     *   for constistency.                                          *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine errchk_23
-      use global_data ! old common.main
-      use segmental_curves
-      implicit integer (a-z)
-      real dumr
-      character :: dums
-      double precision
-     &   dumd
-c
-c
+c       
+      use segmental_curves, only : max_current_curves, num_curve, 
+     &                             num_points, max_current_pts, 
+     &                             num_seg_points, seg_curve_def
+c 
+      implicit none
+c       
+      integer :: dum 
+      real :: dumr
+      character(len=1) :: dums
+      double precision :: dumd
 c
       if ( num_points .eq. 0 ) then
          call errmsg( 221, dum, dums, dumr, dumd )
@@ -1158,21 +1177,23 @@ c     *                       written by : asg                       *
 c     *                                                              *
 c     *                   last modified : 5/10/04                    *
 c     *                                                              *
-c     *   this subroutine checks the contact plane definitions       *
-c     *   for constistency.                                          *
+c     *   checks the contact plane definitions for consistency       *
 c     *                                                              *
 c     ****************************************************************
 c
       subroutine errchk_25
+c       
       use contact, only : use_contact, maxcontact, contact_shape,
      &                    num_contact
-      implicit integer (a-z)
-      include 'param_def'
-      double precision, parameter :: zero = 0.0d0
+      use constants, only : zero
+c 
+      implicit none
+c       
+      integer :: i      
 c
       use_contact = .false.
 c
-c              Here we check each plane
+c              check each plane
 c
       do i = 1, maxcontact
          if( contact_shape(i) .ne. 0 ) then
@@ -1186,16 +1207,8 @@ c
          write (*,*) '>>> No contact planes defined.'
       end if
 c
-c             IF we are using MPI:
-c                send all processors copies of the contact information
-c             If we are using the serial version:
-c                return
-c
-c
       return
       end
-
-
 c
 c     ****************************************************************
 c     *                                                              *
@@ -1209,12 +1222,16 @@ c     *   checks crystal plasticity material definitions for errors  *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine chk_cp(matnum)
-      use global_data ! old common.main
+      subroutine chk_cp( matnum )
+c       
+      use global_data, only : out, max_crystals, matnam
       use main_data, only: imatprp, dmatprp, smatprp
       use crystal_data, only: c_array
-      implicit integer (a-z)
+c       
+      implicit none
+c      
       integer, intent(in) :: matnum
+c       
       logical :: exists
       character :: matname*24
 c
@@ -1304,19 +1321,23 @@ c     *                                                              *
 c     *                   last modified : 3/21/12                    *
 c     *                                                              *
 c     *   helper method check is list is defined, and compares it's  *
-c     *     length to a provided value (if value is zero, don't      *
-c     *     compare                                                  *
+c     *   length to a provided value (if value is zero, don't        *
+c     *   compare                                                    *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine chk_list(list,length,valid)
+      subroutine chk_list( list, length, valid)
+c       
       use main_data, only : tables
+c       
       implicit none
+c       
       character, intent(in) :: list*24
       integer, intent(in), dimension(2) :: length
       logical, intent(out) :: valid
       integer :: i
       logical :: found,sz
+c      
       write (*,*) list
 c           First check existence
       found = .false.
@@ -1355,86 +1376,89 @@ c     *   checks a crystal definition for errors                     *
 c     *                                                              *
 c     ****************************************************************
 c
-      subroutine chk_crystal(cnum)
-      use global_data ! old common.main
+      subroutine chk_crystal( cnum )
+c       
+      use global_data, only : out
       use crystal_data, only: c_array
-      implicit integer (a-z)
+c      
+      implicit none
+c      
       integer, intent(in) :: cnum
-
+c 
       if (c_array(cnum)%elastic_type .ne. 3) then ! ti6242
 
         if (c_array(cnum)%C11 .le. 0.0) then
             write(out,9001) cnum, 'C11'
             go to 1001
         end if
-
+c 
         if (c_array(cnum)%C12 .le. 0.0) then
             write(out,9001) cnum, 'C12'
             go to 1001
         end if
-
+c 
         if (c_array(cnum)%C13 .le. 0.0) then
             write(out,9001) cnum, 'C13'
             go to 1001
         end if
-
+c 
         if (c_array(cnum)%C33 .le. 0.0) then
             write(out,9001) cnum, 'C33'
             go to 1001
         end if
-
-        if (c_array(cnum)%C44 .le. 0.0) then
+c 
+        if (c_array(cnum)%C44 .le. 0.0) then 
             write(out,9001) cnum, 'C44'
             go to 1001
         end if
-
+c 
         if (c_array(cnum)%C55 .le. 0.0) then
             write(out,9001) cnum, 'C55'
             go to 1001
         end if
-
+c
       end if ! elasticity = ti6242
-
+c 
       if (c_array(cnum)%harden_n .le. 0.0) then
             write(out,9001) cnum, 'harden_n'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%iD_v .lt. 0.0) then
             write (out,9003) cnum, 'iD_v'
             go to 1001
       end if
-
+c  
       if (c_array(cnum)%h_type .eq. 1) then
 c           simple voche
-
+c 
       if (c_array(cnum)%k_o .lt. 0.0) then
             write (out,9003) cnum, 'k_o'
             go to 1001
       end if
-
+c 
 c     ! Now softening is allowed
 c      if (c_array(cnum)%theta_o .le. 0.0) then
 c            write(out,9001) cnum, 'theta_o'
 c            go to 1001
 c      end if
-
+c 
       if (c_array(cnum)%tau_y .le. 0.0) then
             write(out,9001) cnum, 'tau_y'
             go to 1001
       end if
-
+c 
 c     ! Now softening is allowed
 c      if (c_array(cnum)%tau_v .le. 0.0) then
 c            write(out,9001) cnum, 'tau_v'
 c            go to 1001
 c      end if
-
+c 
       if (c_array(cnum)%voche_m .le. 0.0) then
             write(out,9001) cnum, 'voche_m'
             go to 1001
       end if
-
+c 
       elseif (c_array(cnum)%h_type .eq. 2) then
 c           MTS
 c     Things that must be greater than zero:
@@ -1446,107 +1470,104 @@ c     Handle errors locally
             write(out,9001) cnum, 'theta_o'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%k_o .lt. 0.0) then
             write (out,9003) cnum, 'k_o'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%tau_a .lt. 0.0) then
             write(out,9001) cnum, 'tau_a'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%tau_hat_y .le. 0.0) then
             write(out,9001) cnum, 'tau_hat_y'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%g_o_y .le. 0.0) then
             write(out,9001) cnum, 'g_o_y'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%tau_hat_v .le. 0.0) then
             write(out,9001) cnum, 'tau_hat_v'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%g_o_v .le. 0.0) then
             write(out,9001) cnum, 'g_o_v'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%b .le. 0.0) then
             write(out,9001) cnum, 'b'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%p_v .le. 0.0) then
             write(out,9001) cnum, 'p_v'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%q_v .le. 0.0) then
             write(out,9001) cnum, 'q_v'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%p_y .le. 0.0) then
             write(out,9001) cnum, 'p_y'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%q_y .le. 0.0) then
             write(out,9001) cnum, 'q_y'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%boltz .le. 0.0) then
             write(out,9001) cnum, 'boltz'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%eps_dot_o_v .le. 0.0) then
             write(out,9001) cnum, 'eps_dot_o_v'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%eps_dot_o_y .le. 0.0) then
             write(out,9001) cnum, 'eps_dot_o_y'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%mu_o .le. 0.0) then
             write(out,9001) cnum, 'mu_o'
             go to 1001
       end if
-
+d 
       if (c_array(cnum)%D_o .lt. 0.0) then
             write(out,9001) cnum, 'D_o'
             go to 1001
       end if
-
+c 
       if (c_array(cnum)%t_o .le. 0.0) then
             write(out,9001) cnum, 't_o'
             go to 1001
       end if
-
+c 
       else
 c           User, just exit
-
       end if
-
-
-
+c
       return
-
+c
  1001 continue
       call die_gracefully
-
+c
  9001 format(/1x,'>>>> Fatal error in crystal ', i3, '. Property ',
      &            a8, ' must be greater than zero.'/)
  9003 format(/1x,'>>>> Fatal error in crystal ', i3, '. Property ',
      &            a8, ' must not be less than zero.'/)
-
+c
       end subroutine

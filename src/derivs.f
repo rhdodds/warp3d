@@ -179,13 +179,14 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine deriv1(r,s,t,nr,ns,nt)                                         
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     nr(*),ns(*),nt(*),rp1,rm1,sp1,sm1,tp1,tm1,rps,rms,spt,smt,           
-     &     r,s,t,one,half,fourth,eighth                                         
-c                                                                               
-      data one,half,fourth,eighth /1.0d0,0.5d0,0.25d0,0.125d0/                  
+      subroutine deriv1( r, s, t, nr, ns, nt )  
+c 
+      use constants, only : one, half, fourth, eighth                                           
+      implicit none                                                    
+      double precision :: nr(*), ns(*), nt(*), r, s, t
+c     
+      double precision :: rp1, rm1, sp1, sm1, tp1, tm1, rps, rms, 
+     &                    spt, smt
 c                                                                               
       rp1 = one+r                                                               
       rm1 = one-r                                                               
@@ -281,12 +282,13 @@ c
 c                                                                               
 c                                                                               
       subroutine deriv2( xi, eta, zeta, nxi, neta, nzeta )                      
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     & xi,eta,zeta,nxi(*),neta(*),nzeta(*),xp,ep,zp,xm,em,zm                    
-      double precision                                                          
-     &  one, one25                                                              
-      data one, one25 / 1.0d0, 0.125d0 /                                        
+c 
+      use constants, only : one, eighth, half, fourth                                          
+      implicit none
+      double precision ::  xi, eta, zeta, nxi(*), neta(*), 
+     &                     nzeta(*)
+     
+      double precision :: xp, ep, zp, xm, em, zm                    
 c                                                                               
 c                       set basic parameters                                    
 c                                                                               
@@ -299,30 +301,30 @@ c
 c                                                                               
 c                       corner nodes                                            
 c                                                                               
-      nxi(1)=   -em*zp*one25                                                    
-      neta(1)=  -xm*zp*one25                                                    
-      nzeta(1)=  xm*em*one25                                                    
-      nxi(2)=   -em*zm*one25                                                    
-      neta(2)=  -xm*zm*one25                                                    
-      nzeta(2)= -xm*em*one25                                                    
-      nxi(3)=   -ep*zm*one25                                                    
-      neta(3)=   xm*zm*one25                                                    
-      nzeta(3)= -xm*ep*one25                                                    
-      nxi(4)=   -ep*zp*one25                                                    
-      neta(4)=   xm*zp*one25                                                    
-      nzeta(4)=  xm*ep*one25                                                    
-      nxi(5)=    em*zp*one25                                                    
-      neta(5)=  -xp*zp*one25                                                    
-      nzeta(5)=  xp*em*one25                                                    
-      nxi(6)=    em*zm*one25                                                    
-      neta(6)=  -xp*zm*one25                                                    
-      nzeta(6)= -xp*em*one25                                                    
-      nxi(7)=    ep*zm*one25                                                    
-      neta(7)=   xp*zm*one25                                                    
-      nzeta(7)= -xp*ep*one25                                                    
-      nxi(8)=    ep*zp*one25                                                    
-      neta(8)=   xp*zp*one25                                                    
-      nzeta(8)=  xp*ep*one25                                                    
+      nxi(1)=   -em*zp*eighth                                                    
+      neta(1)=  -xm*zp*eighth                                                    
+      nzeta(1)=  xm*em*eighth                                                    
+      nxi(2)=   -em*zm*eighth                                                    
+      neta(2)=  -xm*zm*eighth                                                    
+      nzeta(2)= -xm*em*eighth                                                    
+      nxi(3)=   -ep*zm*eighth                                                    
+      neta(3)=   xm*zm*eighth                                                    
+      nzeta(3)= -xm*ep*eighth                                                    
+      nxi(4)=   -ep*zp*eighth                                                    
+      neta(4)=   xm*zp*eighth                                                    
+      nzeta(4)=  xm*ep*eighth                                                    
+      nxi(5)=    em*zp*eighth                                                    
+      neta(5)=  -xp*zp*eighth                                                    
+      nzeta(5)=  xp*em*eighth                                                    
+      nxi(6)=    em*zm*eighth                                                    
+      neta(6)=  -xp*zm*eighth                                                    
+      nzeta(6)= -xp*em*eighth                                                    
+      nxi(7)=    ep*zm*eighth                                                    
+      neta(7)=   xp*zm*eighth                                                    
+      nzeta(7)= -xp*ep*eighth                                                    
+      nxi(8)=    ep*zp*eighth                                                    
+      neta(8)=   xp*zp*eighth                                                    
+      nzeta(8)=  xp*ep*eighth                                                    
 c                                                                               
       return                                                                    
       end                                                                       
@@ -341,14 +343,15 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine deriv3(r,s,t,nr,ns,nt)                                         
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     nr(*),ns(*),nt(*),rp1,rm1,sp1,sm1,tp1,tm1,spt,smt,                   
-     &     r,s,t,one,half,fourth,eighth                                         
+      subroutine deriv3( r, s, t, nr, ns, nt )    
+c      
+      use constants, only : one, half, fourth, eighth    
+c                                        
+      implicit none                                                    
+      double precision :: nr(*), ns(*), nt(*), r, s, t
+c
+      double precision :: rp1, rm1, sp1, sm1, tp1, tm1, spt, smt
 c                                                                               
-      data one,half,fourth,eighth /1.0d0,0.5d0,0.25d0,0.125d0/                  
-                                                                                
       rp1 = one + r                                                             
       rm1 = one - r                                                             
       sp1 = one + s                                                             
@@ -414,13 +417,16 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine deriv4(r,s,t,nr,ns,nt)                                         
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     nr(*),ns(*),nt(*),rp1,rm1,sp1,sm1,tp1,tm1,rpt,rmt,spt,smt,           
-     &     r,s,t,one,half,fourth,eighth                                         
+      subroutine deriv4( r, s, t, nr, ns, nt )                                         
+c
+      use constants, only : one, half, fourth, eighth                                           
+c
+      implicit none
+c
+      double precision :: nr(*), ns(*), nt(*), r, s, t
 c                                                                               
-      data one,half,fourth,eighth /1.0d0,0.5d0,0.25d0,0.125d0/                  
+      double precision :: rp1, rm1, sp1, sm1, tp1, tm1, rpt, rmt,
+     &                   spt, smt
 c                                                                               
       rp1 = one + r                                                             
       rm1 = one - r                                                             
@@ -498,13 +504,15 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine deriv5(r,s,t,nr,ns,nt)                                         
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     nr(*),ns(*),nt(*),rp1,rm1,sp1,sm1,tp1,tm1,                           
-     &     r,s,t,one,half,fourth,eighth                                         
-c                                                                               
-      data one,half,fourth,eighth /1.0d0,0.5d0,0.25d0,0.125d0/                  
+      subroutine deriv5( r, s, t, nr, ns, nt )                                         
+c 
+      use constants, only : one, half, fourth, eighth    
+c                                              
+      implicit none                
+c       
+      double precision :: nr(*), ns(*), nt(*), r, s, t
+c     
+      double precision :: rp1, rm1, sp1, sm1, tp1, tm1                                   
 c                                                                               
       rp1 = one+r                                                               
       rm1 = one-r                                                               
@@ -603,18 +611,18 @@ c       when taking derivatives.  s1 appears in the shape functions and
 c       derivatives for simplicity of evaluating the values given a Gauss       
 c       integration point coordinate set.                                       
 c                                                                               
-      subroutine deriv6( s2, s3, s4, qs2, qs3, qs4 )                            
-      implicit none                                                             
-      double precision                                                          
-     &         s2, s3, s4, qs2(*), qs3(*), qs4(*)                               
+      subroutine deriv6( s2, s3, s4, qs2, qs3, qs4 )     
+c 
+      use constants, only : zero, one, four          
+c                          
+      implicit none            
+c                                                        
+      double precision :: s2, s3, s4, qs2(*), qs3(*), qs4(*)                               
+      double precision :: s1                                                  
 c                                                                               
 c           s1 = fourth tetrahedron natural coordinate, used here               
 c                to keep the simplicity of the functions below                  
 c                                                                               
-      double precision                                                          
-     &     zero, one, four, s1                                                  
-c                                                                               
-      zero = 0.0d0; one  = 1.0d0; four = 4.0d0                                  
       s1 = one - s2 - s3 - s4                                                   
 c                                                                               
 c           evaluate the shape function derivatives with respect to the         
@@ -726,15 +734,11 @@ c                       quadrilateral coordinate s2, evaluated at the
 c                       given Gauss point                                       
 c        (where numnode = 8 for the 8-node quadrilateral element)               
 c                                                                               
-      subroutine deriv9( s1, s2, qs1, qs2 )                                     
+      subroutine deriv9( s1, s2, qs1, qs2 )      
+c 
+      use constants, only : one, two, four                                        
       implicit none                                                             
-      double precision                                                          
-     &         s1, s2, qs1(*), qs2(*)                                           
-c                                                                               
-      double precision                                                          
-     &         one, two, four                                                   
-c                                                                               
-      one  = 1.0d0; two  = 2.0d0; four = 4.0d0                                  
+      double precision :: s1, s2, qs1(*), qs2(*)                                           
 c                                                                               
 c         dq_i/ds1, derivatives with respect to s1, the first local             
 c         coordinate (or dq_i/dXi with Xi as the first local coordinate)        
@@ -823,15 +827,12 @@ c                       given Gauss point
 c        (where numnode = 8 for the 8-node axisymmetric quadrilateral           
 c                         element)                                              
 c                                                                               
-      subroutine deriv10( s1, s2, qs1, qs2 )                                    
-      implicit none                                                             
-      double precision                                                          
-     &         s1, s2, qs1(*), qs2(*)                                           
-c                                                                               
-      double precision                                                          
-     &         one, two, four                                                   
-c                                                                               
-      one  = 1.0d0; two = 2.0d0; four = 4.0d0                                   
+      subroutine deriv10( s1, s2, qs1, qs2 )  
+c
+      use constants, only : one, two, four
+      implicit none                                                    
+c                                         
+      double precision :: s1, s2, qs1(*), qs2(*)                                           
 c                                                                               
 c         dq_i/ds1, derivatives with respect to s1, the first local             
 c         coordinate (or dq_i/dXi with Xi as the first local coordinate)        
@@ -930,15 +931,12 @@ c       qs2(numnode) = shape function derivatives with respect to triangle
 c                     coordinate s2, evaluated at the given Gauss point         
 c       (where numnode = 6 for the 6-node triangle element)                     
 c                                                                               
-      subroutine deriv11( s1, s2, s3, qs1, qs2 )                                
+      subroutine deriv11( s1, s2, s3, qs1, qs2 )    
+c 
+      use constants, only : zero, one, four    
+c                                       
       implicit none                                                             
-      double precision                                                          
-     &          s1, s2, s3, qs1(*), qs2(*)                                      
-c                                                                               
-      double precision                                                          
-     &          zero, one, four                                                 
-c                                                                               
-      zero = 0.0d0; one = 1.0d0;  four = 4.0d0                                  
+      double precision :: s1, s2, s3, qs1(*), qs2(*)                                      
 c                                                                               
 c          evaluate the shape function derivatives with respect to the          
 c          triangle coordinates at the current Gauss point.                     
@@ -985,13 +983,12 @@ c     *     for element inter_8                                      *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine deriv12( xi, eta, nxi, neta )                                  
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     & xi,eta,nxi(*),neta(*),xp,ep,xm,em, zero                                  
-      double precision                                                          
-     &  one, one4                                                               
-      data one, one4, zero / 1.0d0, 0.25d0, 0.0d0 /                             
+      subroutine deriv12( xi, eta, nxi, neta )     
+c 
+      use constants, only : one, fourth, zero                                   
+      implicit none
+      double precision :: xi, eta, nxi(*), neta(*)                               
+      double precision :: xp, ep, xm, em
 c                                                                               
 c            nodes 1-4 are bottom; 5-8 top surface                              
 c                                                                               
@@ -1002,14 +999,14 @@ c
 c                                                                               
 c                       corner nodes                                            
 c                                                                               
-      nxi(1)  = -em*one4                                                        
-      neta(1) = -xm*one4                                                        
-      nxi(2)  =  em*one4                                                        
-      neta(2) = -xp*one4                                                        
-      nxi(3)  =  ep*one4                                                        
-      neta(3) =  xp*one4                                                        
-      nxi(4)  = -ep*one4                                                        
-      neta(4) =  xm*one4                                                        
+      nxi(1)  = -em*fourth                                                        
+      neta(1) = -xm*fourth                                                        
+      nxi(2)  =  em*fourth                                                        
+      neta(2) = -xp*fourth                                                        
+      nxi(3)  =  ep*fourth                                                        
+      neta(3) =  xp*fourth                                                        
+      nxi(4)  = -ep*fourth                                                        
+      neta(4) =  xm*fourth                                                        
       nxi(5:8)  =  zero                                                         
       neta(5:8) =  zero                                                         
 c                                                                               
@@ -1047,15 +1044,12 @@ c       qs4(numnode) = shape function derivatives with respect to triangle
 c                      coordinate s4, evaluated at the given Gauss point        
 c       (where numnode=4 for the 4-node tetrahedron element)                    
 c                                                                               
-      subroutine deriv13( s2, s3, s4, qs2, qs3, qs4 )                           
+      subroutine deriv13( s2, s3, s4, qs2, qs3, qs4 )       
+c 
+      use constants, only :  zero, one, minus_one
       implicit none                                                             
-      double precision                                                          
-     &         s2, s3, s4, qs2(*), qs3(*), qs4(*)                               
-      double precision                                                          
-     &     zero, one, minusone, s1                                              
-c                                                                               
-      zero = 0.0d0; one = 1.0d0; minusone = -1.0d0                              
-c                                                                               
+      double precision :: s2, s3, s4, qs2(*), qs3(*), qs4(*), s1                               
+c 
 c           s1 = fourth tetrahedron natural coordinate, used here               
 c                to keep the simplicity of the functions below                  
 c                                                                               
@@ -1065,7 +1059,7 @@ c           dq_i/ds2, derivatives with respect to s2, the first
 c           independent local coordinate (substituted for s1)                   
 c           ex: qs2(1) = dq1/s2, qs2(2) = dq2/s2, qs2(3) = dq3/s2, etc.         
 c                                                                               
-      qs2(1)  = minusone                                                        
+      qs2(1)  = minus_one                                                        
       qs2(2)  = one                                                             
       qs2(3)  = zero                                                            
       qs2(4)  = zero                                                            
@@ -1074,7 +1068,7 @@ c           dq_i/ds3, derivatives with respect to s3, the second
 c           independent local coordinate (substituted for s1)                   
 c           ex: qs3(1) = dq1/s3, qs3(2) = dq2/s3, qs3(3) = dq3/s3, etc.         
 c                                                                               
-      qs3(1)  = minusone                                                        
+      qs3(1)  = minus_one                                                        
       qs3(2)  = zero                                                            
       qs3(3)  = one                                                             
       qs3(4)  = zero                                                            
@@ -1083,7 +1077,7 @@ c           dq_i/ds4, derivatives with respect to s4, the third
 c           independent local coordinate (substituted for s1)                   
 c           ex: qs3(1) = dq1/s4, qs3(2) = dq2/s4, qs3(3) = dq3/s4, etc.         
 c                                                                               
-      qs4(1)  = minusone                                                        
+      qs4(1)  = minus_one                                                        
       qs4(2)  = zero                                                            
       qs4(3)  = zero                                                            
       qs4(4)  = one                                                             
@@ -1149,15 +1143,11 @@ c       qs1(num_enodes) = derivatives wrt s1
 c       qs2(num_enodes) = derivatives wrt s2                                    
 c       (where num_enodes = 6)                                                  
 c                                                                               
-      subroutine deriv14( s1, s2, qs1, qs2 )                                    
+      subroutine deriv14( s1, s2, qs1, qs2 )    
+c 
+      use constants, only : zero, one                                      
       implicit none                                                             
-      double precision                                                          
-     &          s1, s2, s3, qs1(*), qs2(*)                                      
-c                                                                               
-      double precision                                                          
-     &          zero, one                                                       
-c                                                                               
-      zero = 0.0d0; one  = 1.0d0                                                
+      double precision :: s1, s2, s3, qs1(*), qs2(*)                                      
 c                                                                               
 c          before differentiating the shape functions,                          
 c          the dependent coordinate s3 was substituted into the shape           
@@ -1238,15 +1228,11 @@ c       qs1(num_enodes) = derivatives wrt s1
 c       qs2(num_enodes) = derivatives wrt s2                                    
 c       (where num_enodes = 12)                                                 
 c                                                                               
-      subroutine deriv15( s1, s2, qs1, qs2 )                                    
+      subroutine deriv15( s1, s2, qs1, qs2 )   
+c 
+      use constants, only : zero, one, four                                       
       implicit none                                                             
-      double precision                                                          
-     &          s1, s2, qs1(*), qs2(*)                                          
-c                                                                               
-      double precision                                                          
-     &          zero, one, four, s3                                             
-      data zero, one, four                                                      
-     &  / 0.0d0, 1.0d0, 4.0d0 /                                                 
+      double precision :: s1, s2, qs1(*), qs2(*), s3                                         
 c                                                                               
 c          before differentiating the shape functions,                          
 c          the dependent coordinate s3 was substituted into the shape           
@@ -1331,17 +1317,11 @@ c                       quadrilateral coordinate s2, evaluated at the
 c                       given Gauss point                                       
 c        (where numnode = 4 for the 4-node quadrilateral element)               
 c                                                                               
-      subroutine deriv16( s1, s2, qs1, qs2 )                                    
+      subroutine deriv16( s1, s2, qs1, qs2 )     
+c 
+      use constants, only : one, two, four                                     
       implicit none                                                             
-      double precision                                                          
-     &         s1, s2, qs1(*), qs2(*)                                           
-c                                                                               
-      double precision                                                          
-     &         one, two, four                                                   
-c                                                                               
-      one  = 1.0D0                                                              
-      two  = 2.0D0                                                              
-      four = 4.0D0                                                              
+      double precision :: s1, s2, qs1(*), qs2(*)                                           
 c                                                                               
 c         dq_i/ds1, derivatives with respect to s1, the first local             
 c         coordinate (or dq_i/dXi with Xi as the first local coordinate)        

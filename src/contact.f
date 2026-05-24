@@ -16,22 +16,26 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine contact_find                                                   
-      use global_data ! old common.main
-c                                                                               
+c 
+      use global_data, only : dt, nonode, dstmap, out, nodof
       use main_data, only : trn, trnmat                                         
-      use contact                                                               
+      use contact, only : maxcontact, num_contact, contact_force,
+     &                    cshape_rate, contact_cause, use_contact, 
+     &                    cshape_pnt, contact_stiff
+      use constants, only : zero                                                              
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-      double precision ::                                                     
-     &     pen_dist(maxcontact), zero, force, normal(3,maxcontact),             
-     &     transmat(3,3), dumd, new_pen_sign   
-      double precision :: pen_sign(maxcontact)                                         
+      implicit none                                                    
+c     
+      integer :: cause, count_nodes_active_contact, dof, dum, i, j,
+     &           loop, node                                                                           
+      double precision :: pen_dist(maxcontact), force, dumd,
+     &                    normal(3,maxcontact), transmat(3,3), 
+     &                    new_pen_sign, pen_sign(maxcontact)                                         
       real :: dumr                                                                 
       character(len=1) :: dums                                                  
-      logical :: debug, penetrated, allow_trn, referenced, owned,
-     &           found_contact                  
-      data debug, zero / .false., 0.0d0 /                                         
+      logical :: penetrated, allow_trn, referenced, owned,
+     &           found_contact
+      logical, parameter :: debug = .false.                  
 c                                                                               
 c         tell slaves we are about to assess contact                            
 c                                                                               
@@ -40,7 +44,7 @@ c          zero out all the contact forces.
 c                                                                               
       do dof = 1, nodof                                                         
          contact_force(dof) = zero                                             
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
 c          skip this routine if we dont have any contact.                       
 c                                                                               
@@ -136,8 +140,8 @@ c
             do i = 1, 3                                                           
                do j = 1, 3                                                       
                   trnmat(node)%mat(i,j) = transmat(i,j)                         
-               enddo                                                            
-            enddo                                                               
+               end do                                                            
+            end do                                                               
 c                  Modify all vectors that are                                  
 c                  effected by a change in the transformation                   
 c                  matricies; u, du, idu, v, a, forces, etc.                    
@@ -151,15 +155,6 @@ c             from each valid contact shape. If we have more than one
 c             contact shape currently acting upon the node, then sum            
 c             the force from each shape into the contact force for the          
 c             node.                                                             
-c                                                                               
-c                 If this processor does not own the node, then                 
-c                 don't calculate the contact force.                            
-c                                                                               
-         if( .not. owned ) then                                                
-            if( debug ) write (*,*) myid,': ---->',node,                         
-     &           ' but I dont own it.'                                          
-            cycle                                                               
-         end if                                                                  
 c                                                                               
 c                 Loop over the contact shapes.                                 
 c                                                                               
@@ -195,15 +190,15 @@ c
                   contact_force( dstmap(node)+i-1 ) =                           
      &                 contact_force( dstmap(node)+i-1 ) +                      
      &                 force * normal(i,cause)                                  
-               enddo                                                            
+               end do                                                            
 c                                                                               
             end if                                                               
 c                                                                               
-         enddo                                                                  
+         end do                                                                  
 c                                                                               
 c               if debug, output calculated contact force.                      
 c                                                                               
-         if( debug ) write (*,'(i2,": ---->",i7,4e13.6)')myid,node,              
+         if( debug ) write (*,'(": ---->",i7,4e13.6)')node,              
      &        pen_dist ( contact_cause (1,node)),                               
      &        (contact_force (dstmap(node)+i-1),i=1,3)                          
 c                                                                               
@@ -217,14 +212,12 @@ c               root processor
 c                                                                               
 c                                                                               
       if( debug ) then                                                         
-         if( root_processor) then                                              
             write(*,*) '>> NONZERO CONTACT FORCE TERMS'                        
             do i = 1, nodof                                                       
                if( contact_force(i) .ne. zero ) then                           
                   write(*,'(6x,i7,3x,e13.6)')i,contact_force(i)                
                end if                                                            
-            enddo                                                               
-         end if                                                                  
+            end do                                                               
       end if                                                                     
 c                                                                               
       return      
@@ -249,18 +242,17 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine contact_remove(call_others)                                    
-      use global_data ! old common.main
-c                                                                               
+c 
+      use global_data, only : nonode
       use main_data, only : trn, trnmat, cnstrn                                 
-      use contact                                                               
+      use contact, only : contact_cause, use_contact, maxcontact                                                            
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                               
-c                                                                               
-      double precision                                                          
-     &     dumvec(3)                                                            
-      logical debug, ldum, call_others                                          
-      data debug /.false./                                                      
+      integer :: node, dum                                                                               
+      double precision :: dumvec(3)                                                            
+      logical :: ldum, call_others                  
+      logical, parameter :: debug = .false.
 c                                                                               
 c          if this subroutine was called from a place other than                
 c          contact_find, then alert the slaves to remove effects of             
@@ -282,7 +274,7 @@ c                 coordinates, rotate it back to global coordinates
 c                 and deallocate the transformation matrix.                     
 c                                                                               
             if (trn(node)) then                                                 
-               if ( debug ) write (*,*) myid,':-> undoing trn on node ',        
+               if ( debug ) write (*,*) ':-> undoing trn on node ',        
      &              node                                                        
                call trn2all (node, 2)                                           
                call allo_trnmat(node,2,dum)                                     
@@ -294,7 +286,7 @@ c                 zero.
 c                                                                               
             contact_cause (1:maxcontact,node) = 0                               
          endif                                                                  
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
       return                                                                    
       end                                                                       
@@ -317,24 +309,25 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine contact_find_node( node, pen_dist, pen_sign, 
-     &                              normal, found_contact )                   
-      use global_data ! old common.main
-c                                                                               
+     &                              normal, found_contact )  
+c                      
+      use global_data, only : c, u, du, dstmap
       use main_data, only : crdmap, trn, trnmat                                 
-      use contact                                                               
+      use contact, only : maxcontact, num_contact, contact_cause  
+      use constants,only : zero                                                             
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                                                                                                              
+      integer :: i, node, j, pen_list(maxcontact) , entry, loop, 
+     &           num_pen, shape                                                       
       double precision :: pen_sign(*), new_pen_sign,                                                         
-     &     pen_dist(*), zero, curr_coord(3),                                    
+     &     pen_dist(*), curr_coord(3),                                    
      &     normal(3,*), tmp_coord(3),                                           
      &     dumvec(3), new_dist, curr_normal(3), curr_dist,                      
      &     tmp_coord2(3)                                                        
-      logical ::  debug, penetrated, found_entry, rebuild_norm, first,              
-     &            new_coords, found_contact                                                           
-      dimension :: pen_list(maxcontact)                                            
-      integer :: i, node, j                                                        
-      data debug, zero /.false., 0.0d0/                                           
+      logical ::  penetrated, found_entry, rebuild_norm, first,              
+     &            new_coords, found_contact        
+      logical, parameter :: debug = .false.                                                   
 c                                                                               
 c             get coords of node, initialize vars for this node                 
 c                                                                               
@@ -347,7 +340,7 @@ c
             write (*,'(40x,4e13.6)') c(crdmap(node)+i-1),                       
      &           u(dstmap(node)+i-1),du(dstmap(node)+i-1),                      
      &           curr_coord(i)                                                  
-         enddo                                                                  
+         end do                                                                  
       end if                                                                     
 c        
       num_pen = 0     
@@ -355,7 +348,7 @@ c
 c                                                                               
       do i = 1, maxcontact                                                        
          pen_list(i) = 0                                                        
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
 c             loop over all contact planes                                      
 c 
@@ -382,16 +375,16 @@ c
                if( pen_dist(pen_list(i)) .gt. pen_dist(shape) ) then            
                   do j = num_pen, i+1 , -1                                      
                      pen_list(j) = pen_list(j-1)                                
-                  enddo                                                         
+                  end do                                                         
                   pen_list(i) = shape                                           
                   found_entry = .true.                                          
                   exit                                                          
                end if                                                            
-            enddo                                                               
+            end do                                                               
             if( .not. found_entry ) pen_list(num_pen) = shape                  
          end if                                                                  
 c                                                                               
-      enddo ! over do shape  for this node      
+      end do ! over do shape  for this node      
 !      if( num_pen > 0 ) stop                                                       
 c                                                                               
 c             If no contact was found, return                                   
@@ -406,7 +399,7 @@ c
          do i=1, num_pen                                                        
             write (*,*) '     shape:',pen_list(i),' pen:',                      
      &           pen_dist(pen_list(i))                                          
-         enddo                                                                  
+         end do                                                                  
       endif                                                                     
 c                                                                               
 c             Now run through the penetration list to determine which           
@@ -453,7 +446,7 @@ c                to the contact shape with the smallest penetration.
 c                                                                               
       do i=1, 3                                                                 
          curr_normal(i) = normal(i,pen_list(1))                                 
-      enddo                                                                     
+      end do                                                                     
       curr_dist = pen_dist (pen_list(1))                                        
       new_coords = .true.                                                       
 c                                                                               
@@ -472,7 +465,7 @@ c
          if ( new_coords) then                                                  
             do i = 1, 3                                                         
                tmp_coord(i) = curr_coord(i) + curr_dist * curr_normal(i)        
-            enddo                                                               
+            end do                                                               
             new_coords = .false.                                                
          endif                                                                  
 c                                                                               
@@ -502,7 +495,7 @@ c
          do i = 1, 3                                                            
             tmp_coord2(i) = curr_coord(i) +                                     
      &           pen_dist(pen_list(loop)) * normal(i,pen_list(loop))            
-         enddo                                                                  
+         end do                                                                  
          new_coords = .true.                                                    
 c                                                                               
 c                       loop over previous contact shapes.                      
@@ -531,7 +524,7 @@ c
                cycle                                                            
             endif                                                               
 c                                                                               
-         enddo                                                                  
+         end do                                                                  
 c                                                                               
 c                    if we invalidated any previously valid contact planes,     
 c                    then we need to rebuild the vector which would move the    
@@ -546,13 +539,13 @@ c
                if ( first) then                                                 
                   do i=1,3                                                      
                      curr_normal(i) = normal(i,pen_list(j))                     
-                  enddo                                                         
+                  end do                                                         
                   first = .false.                                               
                else                                                             
                   call correct_normal (curr_normal, curr_dist,                  
      &                 normal(1,pen_list(j)),pen_dist(pen_list(j)))             
                endif                                                            
-            enddo                                                               
+            end do                                                               
          endif                                                                  
 c                                                                               
 c                    compute vector which moves the node to location            
@@ -566,7 +559,7 @@ c
          call correct_normal ( curr_normal, curr_dist,                          
      &        normal(1,pen_list(loop)), pen_dist(pen_list(loop)))               
 c                                                                               
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
 c             print order of penetration shapes for debugging                   
 c                                                                               
@@ -575,7 +568,7 @@ c
          do i=1, num_pen                                                        
             write (*,*) '     shape:',pen_list(i),' pen:',                      
      &           pen_dist(pen_list(i))                                          
-         enddo                                                                  
+         end do                                                                  
       endif                                                                     
 c                                                                               
 c             construct contact_cause for this node, listing the                
@@ -587,7 +580,7 @@ c
             entry = entry + 1                                                   
             contact_cause(entry,node) = pen_list(i)                             
          endif                                                                  
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
 c                                                                               
  9999 continue                                                                  
@@ -615,19 +608,20 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine correct_normal ( curr_norm, curr_dist, new_norm,               
-     &     new_dist )                                                           
-      use global_data ! old common.main
-c                                                                               
-      use contact                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     curr_norm(3), new_norm(3), curr_dist, new_dist,                      
-     &     alpha, dot, zero, corr_dist,                                         
+     &                            new_dist )      
+c                                                           
+      use constants, only : zero                                                          
+c 
+      implicit none
+c 
+      double precision :: curr_norm(3), new_norm(3), curr_dist, 
+     &                    new_dist
+c                 
+      integer :: i                                                                                                                                            
+      double precision :: alpha, dot, corr_dist,                                         
      &     tolval, val, plane_norm(3), corr_norm(3), dumd                       
-      logical debug                                                             
-      data debug, zero, tolval  /.false., 0.0, .00001/                          
+      logical, parameter :: debug = .false.                                                             
+      data tolval / 0.00001d0/                          
 c                                                                               
 c            compute angle between normals.                                     
 c                                                                               
@@ -684,24 +678,26 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine find_shape_contact( curr_coord, shape, pen_dist,               
-     &     pen_sign, penetrated, normal, node )                                           
-      use global_data ! old common.main
-c                                                                               
-      use contact                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
+     &                               pen_sign, penetrated, normal,
+     &                               node )        
+c
+      use contact, only : contact_shape      
+      use constants, only : one                                              
+c
+      implicit none
+c                                                                                         
+      integer :: node, shape                                                                  
       double precision :: pen_dist, pen_sign, curr_coord(3), normal(3)                                   
-      logical :: debug, penetrated                                                 
-      data debug /.false./                                                      
+      logical :: penetrated       
+      logical, parameter :: debug = .false.                                                 
 c                                                                               
-c      if ( debug)  write (*,*) '                 >> looking for',              
-c     &     ' contact: node, shape:',node, shape                                
+      if ( debug)  write (*,*) '                 >> looking for',              
+     &     ' contact: node, shape:',node, shape                                
 c                                                                               
       if (contact_shape(shape) .eq. 1) then                                     
          call find_plane_contact( curr_coord, shape, pen_dist,                  
      &        penetrated, normal, node, debug )  
-         pen_sign = 1.0d0                               
+         pen_sign = one                              
       else if (contact_shape(shape) .eq. 2) then                                
          call find_cyl_contact( curr_coord, shape, pen_dist,                    
      &        pen_sign, penetrated, normal, node, debug )                                 
@@ -731,9 +727,10 @@ c
       subroutine find_plane_contact( curr_coord, shape, pen_dist,               
      &                               penetrated, normal, node, debug ) 
 c                                        
-      use global_data                                                                               
-      use contact     
-      use constants
+      use global_data , only : dt                                                                              
+      use contact, only : cshape_rate, cshape_pnt, cshape_norm, 
+     &                    contact_depth, cplane_vec
+      use constants, only : zero
 c                                                                
       implicit none
 c       
@@ -835,22 +832,27 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine find_cyl_contact( curr_coord, shape, pen_dist,               
-     &      pen_sign, penetrated, normal, node, debug )                                    
-      use global_data ! old common.main
+     &                             pen_sign, penetrated, normal, 
+     &                             node, debug ) 
+c                                         
+      use global_data, only : dt
+      use contact, only : contact_outside, cshape_param, cshape_rate,
+     &                    cshape_pnt, cshape_norm
+      use constants, only : zero, one                                                     
+c 
+      implicit none
 c                                                                               
-      use contact                                                               
-      implicit integer (a-z)                                                    
+      integer :: shape, node                                                                            
+      double precision :: pen_sign, pen_dist, curr_coord(3), normal(3)
+      logical :: penetrated, debug
+c 
+      integer :: i, j
+      logical :: outside, inside                                                
+      double precision :: vprime(3), dot, proj_dist, mag, angle, 
+     &                    point(3), dumd, dist, radius, length                                                               
 c                                                                               
-c                                                                               
-      double precision :: pen_sign,                                                          
-     &     pen_dist, zero, curr_coord(3), vprime(3), dot, proj_dist,            
-     &     normal(3), mag, angle, point(3), dumd, dist, radius,                 
-     &     length                                                               
-      logical debug, penetrated, outside, inside                                                
-      data zero /0.0/                                                           
-c                                                                               
-c      if( debug)  write (*,*) '                 >> looking for',              
-c     &     ' contact: node,pln:',node, shape                                   
+      if( debug)  write (*,*) '                 >> looking for',              
+     &     ' contact: node,pln:',node, shape                                   
 c                                                                               
 c                check if node is penetrating cylinder. Do this by the          
 c                following method:                                              
@@ -884,13 +886,13 @@ c
       pen_dist = radius - proj_dist     
 c
       if( outside ) then
-        pen_sign = 1.0d0
-        if( pen_dist <= zero) go to 9999   ! node still outside cylinder  
+        pen_sign = one
+        if( pen_dist .le. zero) go to 9999   ! node still outside cylinder  
       end if
       if( inside ) then
-        pen_sign = -1.0d0
+        pen_sign = -one
         pen_dist = proj_dist - radius
-        if( pen_dist <= zero ) go to 9999 ! node still inside cycliner                                       
+        if( pen_dist .le. zero ) go to 9999 ! node still inside cycliner                                       
       end if                                                                                        
 c                      if we haven't penetrated, exit                           
 c                                                                               
@@ -905,30 +907,28 @@ c
  9999 continue                                                                  
 c                                                                               
       if ( penetrated .and. debug ) then                                        
-         write (*,*) myid,':           -> penetration of cyl by node: ',        
+         write (*,*) ':           -> penetration of cyl by node: ',        
      &        node                                                              
-         write (*,*)  myid,':                dist ,length:',                    
+         write (*,*) ':                dist ,length:',                    
      &        pen_dist, dist                                                    
-         write (*,*)  myid,':                coords:',                          
+         write (*,*) ':                coords:',                          
      &        (curr_coord(j),j=1,3)                                             
-         write (*,*)  myid,':                proj_point:',                      
+         write (*,*) ':                proj_point:',                      
      &        (point(j),j=1,3)                                                  
-         write (*,*)  myid,':                normal:',                          
+         write (*,*) ':                normal:',                          
      &        (normal(j),j=1,3)                                                 
-         write (*,*) myid,':          vprime, mag:',                            
+         write (*,*) ':          vprime, mag:',                            
      &        (vprime(i),i=1,3),mag                                             
-         write (*,*) myid,':          dot:',dot,' angle:',angle,                
+         write (*,*) ':          dot:',dot,' angle:',angle,                
      &        ' proj_dist:', proj_dist                                          
-         write (*,*) myid,':          radius:',radius,' tot length:',           
+         write (*,*) ':          radius:',radius,' tot length:',           
      &        length                                                            
-         write (*,*) myid,':          dt:',dt                                   
+         write (*,*) ':          dt:',dt                                   
       endif                                                                     
-c                                                                               
-c                                                                               
+c                                                                                                                                                              
       return                                                                    
       end                                                                       
-c                                                                               
-c                                                                               
+c                                                                                                                                                            
 c     ****************************************************************          
 c     *                                                              *          
 c     *                      subroutine find_sph_contact             *          
@@ -943,19 +943,24 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine find_sph_contact ( curr_coord, shape, pen_dist,                
-     &      pen_sign, penetrated, normal, node, debug )                                    
-      use global_data ! old common.main
-c                                                                               
-      use contact                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-      double precision :: pen_sign,                                                         
-     &     pen_dist, zero, curr_coord(3), vprime(3),                            
-     &     normal(3), mag, angle, point(3), dumd, dist, radius,                 
-     &     length                                                               
-      logical debug, penetrated, outside, inside                                                 
-      data zero /0.0/                                                           
+     &                              pen_sign, penetrated, normal, node,
+     &                              debug )                                    
+c
+      use global_data, only : dt
+      use contact, only : contact_outside, cshape_param, cshape_rate, 
+     &                    cshape_pnt  
+      use constants, only : zero, one                                                       
+c
+      implicit none
+c           
+      integer :: shape, node                                                                    
+      double precision :: pen_sign, pen_dist, curr_coord(3), normal(3)              
+      logical :: debug, penetrated
+c 
+      integer :: i, j      
+      logical :: outside, inside                                                 
+      double precision :: vprime(3), mag, angle, point(3), dumd, 
+     &                    dist, radius, length                                                               
 c                                                                               
 c      if ( debug)  write (*,*) '                 >> looking for',              
 c     &     ' contact: node,pln:',node, shape                                   
@@ -973,7 +978,7 @@ c
       inside = .not. outside                                                                       
       radius = cshape_param(1,shape)                                            
       penetrated = .false.     
-      pen_sign = 1.0d0                                                 
+      pen_sign = one
 c                                                                               
       do i = 1, 3                                                               
          vprime(i) = curr_coord(i) - ( cshape_pnt(i,shape) +                    
@@ -987,14 +992,14 @@ c
           penetrated = .true.                                                     
           pen_dist = radius - dist                                                
           normal(1:3) = vprime(1:3)  
-          pen_sign = 1.0d0                                             
+          pen_sign = one
         end if 
       else ! chk penetration from inside sphere
         if( dist .gt. radius ) then
           penetrated = .true.                                                     
           pen_dist = abs( radius - dist )                                           
           normal(1:3) = vprime(1:3)  
-          pen_sign = -1.0d0                                             
+          pen_sign = -one
         end if 
       end if  
 c                                                                               
@@ -1027,17 +1032,18 @@ c     *        shape at that point.                                  *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine find_shape_normal ( node, curr_coord, shape, normal )          
-      use global_data ! old common.main
-c                                                                               
-      use contact                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     normal(3), curr_coord(3), zero                                       
-      data zero /0.0/                                                           
-c                                                                               
+      subroutine find_shape_normal ( node, curr_coord, shape, normal )  
+c               
+      use contact, only : contact_shape  
+      use constants, only : zero                                                             
+c
+      implicit none
+c     
+      integer :: node, shape                                                                         
+      double precision :: normal(3), curr_coord(3)                                     
+c     
+      integer :: i    
+c                                                                             
 c             branch on contact shape                                           
 c                                                                               
       if ( contact_shape(shape) .eq. 1 ) then                                   
@@ -1069,19 +1075,20 @@ c     *        normal to the plane.                                  *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine find_plane_normal( shape, normal)                              
-      use global_data ! old common.main
-c                                                                               
-      use contact                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     normal(3)                                                            
+      subroutine find_plane_normal( shape, normal)        
+c                            
+      use contact, only : cshape_norm                                                              
+c
+      implicit none
+c
+      integer :: shape
+      double precision :: normal(3)                                                            
+c
+      integer :: j      
 c                                                                               
       do j = 1, 3                                                               
          normal(j) = cshape_norm(j,shape)                                       
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
       return                                                                    
       end                                                                       
@@ -1100,23 +1107,25 @@ c     *        cylinder at that point.                               *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine find_cyl_normal ( curr_coord, shape, normal )                  
-      use global_data ! old common.main
+      subroutine find_cyl_normal ( curr_coord, shape, normal )    
+c                    
+      use global_data, only : dt
+      use contact, only : cshape_pnt, cshape_rate, cshape_norm                                                               
+c
+      implicit none                                                    
 c                                                                               
-      use contact                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     curr_coord(3), vprime(3), normal(3), vec(3), dumd                    
-      logical debug                                                             
-c                                                                               
+      integer :: shape 
+      double precision :: curr_coord(3), normal(3)
+c
+      integer :: i
+      double precision :: vprime(3), vec(3), dumd                    
+c
 c                calc vector between node and start point of cylinder           
 c                                                                               
       do i = 1, 3                                                               
          vprime(i) = curr_coord(i) - ( cshape_pnt(i,shape) +                    
      &        cshape_rate(i,shape)*dt )                                         
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
 c                now calc normal                                                
 c                                                                               
@@ -1142,21 +1151,24 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine find_sph_normal ( curr_coord, shape, normal )                  
-      use global_data ! old common.main
-      use contact                                                               
+c
+      use global_data, only : dt
+      use contact, only : cshape_pnt, cshape_rate                                                             
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                               
-c                                                                               
-      double precision                                                          
-     &     curr_coord(3), normal(3), dumd                                       
+      integer :: shape                                                                                
+      double precision :: curr_coord(3), normal(3)
+c
+      integer :: i       
+      double precision :: dumd
 c                                                                               
 c                calc vector between node and start point of sphere             
 c                                                                               
       do i = 1, 3                                                               
          normal(i) = curr_coord(i) - ( cshape_pnt(i,shape) +                    
      &        cshape_rate(i,shape)*dt )                                         
-      enddo                                                                     
+      end do                                                                     
 c                                                                               
 c                now calc normal                                                
 c                                                                               
@@ -1181,23 +1193,24 @@ c     *        transformation matrix.                                *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine contact_trnmat (node, curr_norm, transmat, success)            
-      use global_data ! old common.main
-c                                                                               
+      subroutine contact_trnmat (node, curr_norm, transmat, success)
+c      
+      use global_data, only : dstmap, cstmap
       use main_data, only : cnstrn, cnstrn_in                                   
-      use contact                                                               
+      use constants, only : zero, one                                                        
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     zero, one, transmat(3,3),                                            
-     &     d32460, dumd, workvec(3), vec1(3),                                   
-     &     vec2(3), dot, tolval, curr_norm(3)                                   
-      logical debug, done, undo, success, calc_trnmat, orthog,                  
-     &     anticonst                                                            
-      data debug, zero, one, d32460, tolval                                     
-     &     /.false., 0.0, 1.0, 32460.0, 0.0001 /                                
+      implicit none                                                    
+c   
+      integer :: node 
+      logical :: success      
+      double precision :: transmat(3,3), curr_norm(3)                                   
+c             
+      integer :: dof, ent2, ent3, entry, i, j, k, num_const                                                                  
+      double precision :: d32460, dumd, workvec(3), vec1(3),                                   
+     &                    vec2(3), dot, tolval
+      logical ::  done, undo, calc_trnmat, orthog, anticonst     
+      logical, parameter :: debug = .false.
+      data d32460, tolval / 32460.0, 0.0001 /                                
 c                                                                               
 c           We want to compute a transformation matrix for the contacting       
 c           node.                                                               
@@ -1394,25 +1407,28 @@ c     *        stiffnesses for a block of elements.                  *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine contact_stfadd (span, felem, totdof, edest,                    
-     &     ek, nrowek, nnode, belinc )                                          
-      use global_data ! old common.main
-c                                                                               
+      subroutine contact_stfadd( span, felem, totdof, edest,                    
+     &                           ek, nrowek, nnode, belinc )                                          
+c 
+      use global_data, only : dcp
       use main_data, only : invdst, trn, trnmat, crdmap,                        
-     &                      inverse_incidences,                                 
-     &                      asymmetric_assembly                                 
-      use contact                                                               
+     &                      inverse_incidences, asymmetric_assembly                                 
+      use contact, only : contact_cause, num_contact, use_contact,
+     &                    contact_stiff
+      use constants, only : zero                                                            
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
 c                                                                               
-c                                                                               
-      double precision                                                          
-     &     zero, stiff, ek (nrowek, span) , normal(3), transmat(3,3),           
+      integer :: span, felem, totdof, nnode, nrowek, edest(totdof,*),
+     &           belinc(nnode,*)                                                                                  
+      double precision :: ek(nrowek,span)
+c
+      integer :: cause, elem, i, j, k, node, gelem, node_loop                                                   
+      double precision :: stiff, normal(3), transmat(3,3),           
      &     mat(3,3), mat2(3,3), nodstf(3,3), elstf(24,24),                      
-     &     curr_coord(3), factor                                                
-      dimension edest(totdof,*), belinc(nnode,*)                                
-      logical debug                                                             
-      data debug, zero, factor /.false., 0.0, 1.001/                            
+     &     curr_coord(3), factor  
+      logical, parameter :: debug = .false.                                                             
+      data factor /1.001/                            
 c                                                                               
 c     For now, trigger an error if we try to do contact with asymmetric         
 c     assembly                                                                  
@@ -1613,16 +1629,15 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine trn2all ( node, status )                                       
-      use global_data ! old common.main
-c                                                                               
+c
+      use global_data, only : u, du, idu, ifv, v, a, load
       use main_data, only : trnmat, pbar                                        
-      use contact                                                               
 c                                                                               
-      implicit integer (a-z)                                                    
+      implicit none
+c
+      integer :: node, status      
 c                                                                               
-c                                                                               
-      double precision                                                          
-     &     trans(3,3)                                                           
+      double precision :: trans(3,3)                                                           
 c                                                                               
 c            get the nodal transformation matrix.  If status is 1,              
 c            then use the normal matix; if 2, then use the transpose.           
@@ -1659,8 +1674,6 @@ c
       call trnnvec (trans, idu, node, 3)                                        
       call trnnvec (trans, ifv, node, 3)                                        
 c                                                                               
-      if (slave_processor) return                                               
-c                                                                               
       call trnnvec (trans, pbar, node, 3)                                       
       call trnnvec (trans, v, node, 3)                                          
       call trnnvec (trans, a, node, 3)                                          
@@ -1683,9 +1696,10 @@ c     *        to a vector which ranges over the dofs in the model.  *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine trnnvec( trans, vec, node, nod_dof )                            
-      use global_data
-      use constants
+      subroutine trnnvec( trans, vec, node, nod_dof )      
+c                            
+      use global_data, only : mxndof, mxndof, dstmap
+      use constants, only : zero
       use main_data, only : trn, trnmat                                         
 c                                                                               
       implicit none
@@ -1723,7 +1737,9 @@ c     ****************************************************************
 c                                                                               
       subroutine dot_prod (vec1, vec2, dot)                                     
 c
-      use constants                                                                               
+      use constants, only : zero      
+c      
+      implicit none                                                                               
 c   
       integer :: i                                                                            
       double precision :: vec1(3), vec2(3), dot
@@ -1776,8 +1792,6 @@ c     ****************************************************************
 c                                                                               
       subroutine normalize( vec, mag )                                           
 c  
-      use constants
-c
       implicit none                                                                                   
 c                                                                               
       double precision :: vec(3), mag                                                    
@@ -1806,17 +1820,15 @@ c     ****************************************************************
 c                                                                               
       subroutine get_coords ( node, curr_coord )   
 c                                   
-      use global_data                                                                               
+      use global_data, only : u, dstmap, du, c                                                                               
       use main_data, only : crdmap, trn, trnmat  
-      use constants                               
+      use constants, only : zero                               
 c                                                                               
       implicit none
 c       
       integer :: node
       double precision :: curr_coord(3)
 c
-c              locals
-c      
       integer :: j, i 
       double precision :: u_new(3), du_new(3)
 c                                                                               
@@ -1871,13 +1883,16 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine updt_contact                                                   
-      use global_data ! old common.main
-c                                                                               
-      use contact                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c                                                                               
-c                update goddamn center point.                                   
+c
+      use global_data, only : dt
+      use contact, only : num_contact, cshape_pnt, cshape_pnt,
+     &                    cshape_rate                                                            
+c
+      implicit none
+c
+      integer :: shape, i       
+c                                                                                                                                                              
+c                update center point.                                   
 c                                                                               
       do shape = 1, num_contact                                                 
 c                                                                               

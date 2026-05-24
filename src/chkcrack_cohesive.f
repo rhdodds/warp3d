@@ -23,39 +23,35 @@ c
 c                                                                               
       subroutine dam_param_cohes( elem, kill_now, debug, values,                
      &                            compute_type )                                
-      use global_data ! old common.main
-c                                                                               
-      use main_data,       only : elems_to_blocks                               
+      use global_data, only : nstr, nstrs, out, iprops, props
+      use main_data, only : elems_to_blocks                               
       use elem_block_data, only : history_blocks, eps_n_blocks,                 
-     &                            urcs_n_blocks, history_blk_list               
-      use damage_data                                                           
+     &                            urcs_n_blocks, history_blk_list    
+      use damage_data, only : critical_cohes_deff_fract,
+     &                        ppr_kill_displ_fraction          
+      use constants, only : zero, one, half                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-c                                                                               
-c              parameter declarations                                           
-c                                                                               
-      logical kill_now, debug                                                   
-      double precision                                                          
-     &     values(*)  ! see caller for size                                     
-c                                                                               
-c              local declarations                                               
-c                                                                               
-      double precision                                                          
-     &     zero, one, half, t1, t2, tn, d1, d2, dn, fpngp, beta,                
+      implicit none
+c
+      integer :: elem, compute_type                                                                               
+      logical :: kill_now, debug                                                   
+      double precision :: values(*)
+c        
+      integer :: blk, cohes_type, epsoffset, gp, hist_size, hoffset,
+     &           i, j, ngp, rel_elem, sigoffset                                                                        
+      double precision ::                                                         
+     &     t1, t2, tn, d1, d2, dn, fpngp, beta,                
      &     deff, deff_peak, teff, normalized_teff, teff_peak,                   
      &     normalized_deff, peak_normal_stress,                                 
      &     peak_shear_stress, dn_max_hist, ds_max_hist,                         
      &     dn_limit, ds_limit, dn_at_peak, ds_at_peak,                          
      &     ratio_normal, ratio_shear, dn_half_peak, ds_half_peak,               
      &     kill_fract, deff_ratio, deff_gp, deff_peak_gp                        
-      real chk_value                                                            
-      double precision,                                                         
-     &  dimension(:), pointer :: history, urcs_n, eps_n                         
-      logical beyond_peak, fgm_cohes, option_ppr,                               
-     &        option_exponential, kill_criterion_element,                       
-     &        kill_gp, local_debug, option_cavit                                
-      data zero, one, half                                                      
-     &       / 0.0d00, 1.0d00, 0.5d00 /                                         
+      real :: chk_value                                                            
+      double precision, pointer :: history(:), urcs_n(:), eps_n(:)                  
+      logical :: beyond_peak, fgm_cohes, option_ppr,                               
+     &         option_exponential, kill_criterion_element,                       
+     &         kill_gp, local_debug, option_cavit                                
 c                                                                               
 c                                                                               
 c               elem -- absolute number for interface element                   
@@ -253,7 +249,8 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine dam_param_cohes_exp                                            
-      implicit integer (a-z)                                                    
+c 
+      implicit none
 c                                                                               
       beta        = props(23,elem)                                              
       fgm_cohes   = abs(props(34,elem)) .gt. 0.1                                
@@ -314,7 +311,11 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine dam_param_cohes_ppr                                            
-      implicit integer (a-z)                                                    
+c 
+      implicit none
+c 
+      integer :: num_dn_half_peak, num_dn_past_peak, num_ds_half_peak,
+     &           num_ds_past_peak
 c                                                                               
 c              loop over integration pts of this interface element.             
 c               o pull from history the maximum normal and sliding              
@@ -478,10 +479,12 @@ c     *                   last modified : 7/31/2013 rhd              *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine dam_param_cohes_cavit                                          
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     tn_max_over_history, dn_max_at_tn_max                                
+      subroutine dam_param_cohes_cavit            
+c                                     
+      implicit none
+c                 
+      integer :: count_past_peak                                    
+      double precision :: tn_max_over_history, dn_max_at_tn_max                                
 c                                                                               
 c              loop over integration pts of this interface element.             
 c                                                                               
@@ -566,24 +569,31 @@ c     *     marked as killable at the beginning of a load step       *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine dam_print_elem4( step, iter )                                  
-      use global_data ! old common.main
+      subroutine dam_print_elem4( step, iter )     
+c                                    
+      use global_data, only : out, iprops, props
       use elem_extinct_data, only : dam_state, dam_print_list                   
       use main_data, only : output_packets, packet_file_no                      
-      use damage_data                                                           
-      implicit integer (a-z)                                                    
-c                                                                               
-c                    declare local variables                                    
-c                                                                               
-      double precision                                                          
-     &    dummy, eps_plas, eps_crit, sig_mean, sig_mises, eps_plas_tol,         
-     &    d_eps_plas, max_d_eps_plas, values(20),half                           
+      use damage_data, only : num_print_list, dam_ptr
+      use constants, only : half, zero
+c                                                           
+      implicit none
+c
+      integer :: step, iter
+c         
+      integer :: cohes_type, elem_loop, elem_ptr, element, local_count,
+     &           num_gp_half_peak_normal, num_gp_half_peak_shear,
+     &           num_gp_post_peak_normal, num_gp_post_peak_shear, k                                                                       
+      double precision :: dummy, eps_plas, eps_crit, sig_mean, 
+     &                   sig_mises, eps_plas_tol, d_eps_plas, 
+     &                   max_d_eps_plas, values(20)                      
       character(len=10) :: special_char                                         
-      logical ldummy, debug, all_killed, beyond_peak,                           
-     & found_fgm_cohes, found_homog_cohes, found_ppr,                           
-     & found_exponential, option_ppr, option_exponential,                       
-     & write_header, show_results, option_cavit, found_cavit                    
-      data zero, half, debug, eps_plas_tol / 0.0, 0.5, .false., 1.0e-9 /        
+      logical :: ldummy, all_killed, beyond_peak, found_fgm_cohes, 
+     &           found_homog_cohes, found_ppr, found_exponential, 
+     &           option_ppr, option_exponential, write_header, 
+     &           show_results, option_cavit, found_cavit          
+      logical, parameter :: debug = .false.          
+      data eps_plas_tol / 1.0e-9 /        
 c                                                                               
 c          1.0  print the header                                                
 c                                                                               

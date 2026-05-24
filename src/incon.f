@@ -13,7 +13,9 @@ c
 c
 c
       subroutine release_constraints( sbflg1, sbflg2 )
-      use global_data ! old common.main
+c       
+      use global_data, only : out, max_mpc, num_error, nonode,
+     &                        ifv, dstmap, a  
 c
       use main_data, only : cnstrn_in, release_cons_table,
      &                      release_cons_steps, mdiag, rload
@@ -22,11 +24,7 @@ c
 c
       implicit none
 c
-c              parameters
-c
       logical :: sbflg1, sbflg2
-c
-c              locals
 c
       integer :: list_size, list_size_mpc, lenlst, 
      &           mpc_lenlst, warn_mess_num_steps
@@ -36,6 +34,7 @@ c
       logical ::  found_list, bad_list, release_flags(3), debug,
      &            compact_mpc_table, warn
       logical, save :: delete_release_cons
+      real :: dumr
 c
 c              if sub flag 1 is on, there is re-entry after an error
 c              in input. if we have bad input somewhere here,
@@ -160,18 +159,20 @@ c
 c
 c
       subroutine release_cons_init
+c
+      use constants, only : zero
+c            
       implicit none
 c
       integer :: i, dummy
       logical, external :: matchs, endcrd, integr
-      double precision, parameter :: zero = 0.d0
 c
       release_cons_steps = 1
       if( matchs( 'constraints', 4 ) ) call splunj
       if( matchs( 'steps',4 ) ) call splunj
       if( matchs( '=',1 ) ) call splunj
       if( .not. integr( release_cons_steps ) ) then
-         if( .not. endcrd(dummy) ) then
+         if( .not. endcrd(dumr) ) then
            write(out,9120)
            num_error = num_error + 1
          end if
@@ -213,7 +214,7 @@ c
 c
       subroutine release_cons_scan
 c
-c              locals
+      implicit none      
 c
       integer :: strlng, errnum, param, dummy
       logical :: ok, done_input
@@ -289,7 +290,7 @@ c
       if( errnum .eq. 1 ) then
           found_list = .true.
           call backsp(1)
-          if( true(dummy) ) call splunj
+          if( true(dumr) ) call splunj
       else
          write(out,9000)
          call die_abort
@@ -315,7 +316,7 @@ c
              release_flags(3) = .true.
              cycle
          end if
-         if( endcrd(dummy) ) then
+         if( endcrd(dumr) ) then
              done_input = .true.
              exit
          end if
@@ -371,7 +372,7 @@ c
 c
       if( errnum .eq. 1 ) then
          call backsp(1)
-         if( true(dummy) ) call splunj
+         if( true(dumr) ) call splunj
       else
          write(out,9000)
          call die_abort
@@ -401,6 +402,7 @@ c     ****************************************************************
 c
 c
       subroutine release_cons_abs
+c      
       implicit none
 c
       integer :: icn, iplist, node, param, idof, nsteps, sdof
@@ -755,6 +757,8 @@ c
 c
       subroutine release_empty_cons_table
 c
+      implicit none      
+c
 c              delete an empty release constraints table
 c
       logical :: found_entry
@@ -797,8 +801,8 @@ c     ****************************************************************
 c
 c
       subroutine release_cons_update_constraints( sdof )
-      use global_data ! old common.main
-c
+c      
+      use global_data, only : csthed, cstmap  
       use main_data, only : cnstrn_in, cnstrn
       use damage_data, only : csttail
 c
@@ -858,9 +862,6 @@ c
 c
       return
       end
-
-
-
 c     ****************************************************************
 c     *                                                              *
 c     *                      subroutine incon                        *
@@ -874,32 +875,37 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine incon( sbflg1, sbflg2, olddof )
-      use global_data ! old common.main
-      use allocated_integer_list
-c
+c      
+      use global_data, only : mxndof, csthed, new_constraints, nodof,
+     &                        nonode, num_error, out, cstmap, iprops,
+     &                        dstmap
       use main_data, only : trn, trnmat, cnstrn_in,
      &                      inverse_incidences, force_solver_rebuild
       use mod_mpc, only : mpcs_exist, num_user_mpc, user_mpc_table
       use damage_data, only : csttail
+      use constants, only : zero, one
+      use allocated_integer_list
 c
-      implicit integer (a-z)
+      implicit none
 c
-c                       locally allocated
+      integer :: olddof
+      logical :: sbflg1, sbflg2
 c
       integer, allocatable :: intlst(:)
-      integer :: list_size
+      integer :: i, j, lenlst, ndof, node, param, row, type, icn, 
+     &           list_size, col, dof, dofn, dum, errnum, felem, 
+     &           iplist
       double precision :: 
      &  convec(mxndof), trans(mxndof,mxndof), tval, cval, dumd, 
      &  rlen1, rlen2, rlen3, t11, t12, t13,
      &  t21, t22, t23, t31, t32, t33
-      real :: dumr, rnode
+      real :: dumr, rnode, dummy
       character :: dums, curtyp *1
-      logical :: sbflg1, sbflg2, skew, inpflg(mxndof), defcon(3),
+      logical :: skew, inpflg(mxndof), defcon(3),
      &           rflag1, rflag2
       logical, save :: cons_defined = .false. 
       logical, external :: matchs, endcrd, true, numd
-      double precision, parameter :: zero = 0.d0, one = 1.d0,
-     &                               d32460 = 32460.0d0,
+      double precision, parameter :: d32460 = 32460.0d0,
      &                               rottol = 0.0001d0
 c
 c                       if sub flag 1 is on, there is reentry into
@@ -1043,7 +1049,7 @@ c
       else
          if( errnum .eq. 1 ) then
             call backsp(1)
-            if( true(dummy) ) go to 715
+            if( true(dumr) ) go to 715
          end if
          param = 3
          call errmsg(24,param,dums,dumr,dumd)
@@ -1101,7 +1107,7 @@ c                       if not, ignore the current entity and search
 c                       for another row to input. check validity of
 c                       3x3 rotation matrix.
 c
-         if( endcrd(dum) ) then
+         if( endcrd(dumr) ) then
           rlen1 = sqrt( trans(1,1)**2 + trans(1,2)**2 +trans(1,3)**2 )
           rlen2 = sqrt( trans(2,1)**2 + trans(2,2)**2 +trans(2,3)**2 )
           rlen3 = sqrt( trans(3,1)**2 + trans(3,2)**2 +trans(3,3)**2 )
@@ -1138,14 +1144,14 @@ c
           go to 730
          else
             call errmsg(84,dum,dums,dumr,dumd)
-            if( true(dum) ) go to 717
+            if( true(dumr) ) go to 717
          end if
 c
 c                       if there is a comma at the end of a line, the
 c                       input line is continued.
 c
  718     continue
-         if( endcrd(dum) ) then
+         if( endcrd(dumr) ) then
             call readsc
          end if
          go to 717
@@ -1172,7 +1178,7 @@ c
                col = mxndof
                write(out,9073) 'columns ', node, 'columns '
                num_error = num_error + 1
-               if( true(dum) ) go to 717
+               if( true(dumr) ) go to 717
             end if
             trans(row,col) = tval
          end if
@@ -1223,18 +1229,18 @@ c                       ended. branch to store the temp. vec. globally.
 c                       if not, ignore the current entity and search
 c                       for another dof to input.
 c
-         if(endcrd(dum)) then
+         if(endcrd(dumr)) then
             go to 730
          else
             call errmsg(72,dum,dums,dumr,dumd)
-            if(true(dum)) go to 726
+            if(true(dumr)) go to 726
          end if
 c
 c                       if there is a comma at the end of a line, the
 c                       input line is continued.
 c
  727     continue
-         if(endcrd(dum)) then
+         if(endcrd(dumr)) then
             call readsc
          end if
          go to 726
@@ -1415,29 +1421,29 @@ c     ****************************************************************
 c
 c
       subroutine inconplane( olddof, defcon )
-      use global_data ! old common.main
-c
+c       
+      use global_data, only : mxndof, nonode, out, csthed, c, dstmap,
+     &                        cstmap
       use main_data, only : cnstrn_in, crdmap
+      use constants, only : zero
 c
-      implicit integer (a-z)
+      implicit none
 c
-c                       parameters
+      integer :: olddof
+      logical :: defcon(*)
 c
-      logical defcon(*)
-c
-c
-c                       locally allocated
-c
-      double precision
-     & convec(mxndof), dumd, zero, proximity_distance,
+      integer :: dofn, dum, node, plane, con_node_count, dof, i
+      double precision ::
+     & convec(mxndof), dumd, proximity_distance,
      & d32460, xmin, xmax, ymin, ymax, zmin, zmax, x, y, z,
      & coordtol(3), plane_coord, ctol, coordvec(3)
-      real dumr
+      real :: dumr
       character(len=1) :: dums
-      logical inpflg(mxndof), verify
-      logical matchs, numd, local_debug, endcrd
-      data zero, d32460 / 0.0d00, 32460.0 /
-      data ctol, local_debug / 0.00001, .false. /
+      logical :: inpflg(mxndof), verify
+      logical, external ::  matchs, numd, endcrd
+      logical, parameter ::  local_debug = .false.
+      data d32460 / 32460.0 /
+      data ctol / 0.00001 /
 c
 c                  find min and max coordinates for the body
 c
@@ -1556,7 +1562,7 @@ c
            verify = .true.
            cycle
         end if
-        if( endcrd( dummy ) ) then
+        if( endcrd( dumr ) ) then
           write(out,9100) coordtol(1:3)
           call inconplane_store
           return
@@ -1598,6 +1604,8 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine inconplane_store
+c
+      implicit none      
 c
 c                  search for nodes that lie on the specified plane.
 c                  impose constraints on nodes. output verification list
@@ -1674,17 +1682,14 @@ c     ****************************************************************
 c
 c
       subroutine incon_mpcs
-      use global_data ! old common.main
+c
+      use global_data, only : max_mpc, nonode, num_error, out
       use mod_mpc, only : mpcs_exist, num_user_mpc, user_mpc_table
       use main_data, only : modified_mpcs
 c
       implicit none
 c
-c              locals
-c
       integer, parameter :: max_trm = 100 ! limit on terms per mpc eqn
-c
-c              scan support
 c
       integer :: dumi
       real    :: dumr
@@ -1749,7 +1754,7 @@ c
          end if
 c
          call reset
-         if( true(dumi) )  call splunj
+         if( true(dumr) )  call splunj
          if( .not. found_mpc ) return
 c
 c              loop across line to extract each node number, its
@@ -1810,7 +1815,7 @@ c
                if( now_node .gt. nonode .or. now_node .le. 0  ) then
                   call errmsg2( 34, now_node, dums, dumr, dumd )
                   call reset
-                  if( true(dumi) ) call splunj
+                  if( true(dumr) ) call splunj
                   call incon_flushline
                   nmpc = nmpc - 1
                   exit ! from processing this mpc eqn
@@ -1826,7 +1831,7 @@ c
             else
              call errmsg( 319, 1, dums, dumr, dumd )
              call reset
-             if( true(dumi) ) call splunj
+             if( true(dumr) ) call splunj
              call incon_flushline
              nmpc = nmpc - 1
              exit ! from processing this mpc eqn
@@ -1845,7 +1850,7 @@ c
             if( now_dof. eq. 0 ) then
              call errmsg( 210, 1, dums, dumr, dumd )
              call reset
-             if( true(dumi) ) call splunj
+             if( true(dumr) ) call splunj
              call incon_flushline
              nmpc = nmpc - 1
              exit ! from processing this mpc eqn
@@ -1855,7 +1860,7 @@ c
 c                comma followed by eol is continuation of current mpc
 c
             if( matchs(',',1) ) then
-               if( endcrd(dumi) ) then
+               if( endcrd(dumr) ) then
                   call readsc
                   cycle  ! top of loop looking for terms in this mpc
                end if
@@ -1965,6 +1970,8 @@ c     ****************************************************************
 c
       use allocated_integer_list
 c
+      implicit none      
+c
       logical, external :: match_exact, true, iszlst
       integer :: errnum, list_size_a, lenlst_a, lenlst_b, param, 
      &           dumi, list_size_b, nodes_lst_a,
@@ -2019,7 +2026,7 @@ c
 c
       if( errnum .eq. 1 ) then
           call backsp(1)
-          if( true(dumi) ) call splunj
+          if( true(dumr) ) call splunj
       else
          write(out,9000)
          call die_abort
@@ -2052,7 +2059,7 @@ c
       end if
       if( errnum .eq. 1 ) then
           call backsp(1)
-          if( true(dumi) ) call splunj
+          if( true(dumr) ) call splunj
       else
          write(out,9000)
          call die_abort
@@ -2155,7 +2162,8 @@ c     ****************************************************************
 c
 
       subroutine incon_mpcs_resize( type, user_mpc_col_list )
-      use global_data ! old common.main
+c      
+      use global_data, only : max_mpc, new_constraints
       use main_data, only : modified_mpcs, force_solver_rebuild
       use mod_mpc, only : mpcs_exist, user_mpc_table, mpc_eqn, 
      &                    num_user_mpc
@@ -2336,18 +2344,13 @@ c
       subroutine incon_mpcs_store( nterm, const, node, dof, multi )
       use mod_mpc, only : num_user_mpc, user_mpc_table
       use global_data, only : out, max_mpc, dstmap, input_ok,
-     &                        num_error
+     &                        num_error, mxndof
       use main_data, only : cnstrn_in
 c
       implicit none
-      include 'param_def'
-c
-c              parameters
 c
       integer :: nterm, node(*), dof(*)
       real ::    const, multi(*)
-c
-c              locals
 c
       integer ::  err, dumi, idummy(1), i
       real ::     dumr, factor
@@ -2458,20 +2461,24 @@ c     ****************************************************************
 c
 c
       subroutine incon_flushline
-      integer  dum
-      logical  matchs, endcrd, true
+c
+      implicit none      
+c
+      integer :: dum
+      logical, external :: matchs, endcrd, true
+      real :: dumr
 c
       call readsc
       do
-         if (matchs(',',1)) then
-            if (endcrd(dum)) then
+         if( matchs(',',1) ) then
+            if( endcrd(dumr) ) then
                call readsc
                cycle
             end if
          end if
-         if (.not.matchs(',',1)) then
-            if (endcrd(dum)) return
-            if (true(dum)) then
+         if( .not.matchs(',',1) ) then
+            if( endcrd(dumr) ) return
+            if( true(dumr) ) then
                call splunj
                cycle
             end if

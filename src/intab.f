@@ -13,23 +13,23 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine intab( sbflg1, sbflg2, tabnum )                          
-      use global_data ! old common.main
-      use main_data, only : tables                                              
-      implicit integer (a-z)                                                    
+      subroutine intab( sbflg1, sbflg2, tabnum )            
+c                     
+      use global_data, only : max_tables
+      use main_data, only : tables         
+c                                           
+      implicit none                                                    
 c                                                                               
-c                       parameter declarations                                  
-c                                                                               
-      logical sbflg1, sbflg2                                                    
-c                                                                               
-c                       local declarations                                      
-c                                                                               
+      integer :: tabnum                                                                     
+      logical :: sbflg1, sbflg2                                                    
+c             
+      integer :: nc, tabn, nrows, ncols, dumi, ival, param, tabmark                                                                 
       double precision :: dumd                                          
       character :: name*80, lname*24, dums*1               
       logical, external :: matchs, endcrd, label, scanms, numi                  
-      logical :: debug, complete                                                
+      logical, parameter :: debug = .false.
+      logical :: complete
       real :: dumr                                                              
-      data debug / .false. /                                                    
 c                                                                               
       if ( debug ) write (*,*) ' >>> inside intab'                              
 c                                                                               
@@ -46,7 +46,7 @@ c *                                                                    *
 c **********************************************************************        
 c                                                                               
 c                                                                               
-      if( label(dummy) ) then                                                   
+      if( label(dumr) ) then                                                   
 c                                                                               
          name  = ' '                                                            
          lname = ' '                                                            
@@ -97,7 +97,7 @@ c
 c                                                                               
       else                                                                      
 c                                                                               
-         call errmsg(54,dum,dums,dumr,dumd)                                     
+         call errmsg(54,dumi,dums,dumr,dumd)                                     
          go to 9996                                                             
 c                                                                               
       end if                                                                    
@@ -121,11 +121,11 @@ c                 scan for high level command
 c                                                                               
       if (matchs('rows',4)) go to 851                                           
       if (matchs('type',4)) go to 852                                           
-      if (endcrd(dum))      go to 900                                           
+      if (endcrd(dumr))      go to 900                                           
 c                                                                               
 c                 there is no match with existing commands.                     
 c                                                                               
-      call errmsg(343,dum,dums,dumr,dumd)                                       
+      call errmsg(343,dumi,dums,dumr,dumd)                                       
       call scan                                                                 
       go to 850                                                                 
 c                                                                               
@@ -136,12 +136,12 @@ c
 c                                                                               
       if ( debug ) write(*,*) 'determining nrows'                               
       if ( .not. numi(ival) ) then                                              
-         call errmsg(103,dum,dums,dumr,dumd)                                    
+         call errmsg(103,dumi,dums,dumr,dumd)                                    
          call scan                                                              
          go to 850                                                              
       else if ( ival .lt. 2 ) then                                              
          if ( debug ) write(*,*) ival                                           
-         call errmsg(339,dum,dums,dumr,dumd)                                    
+         call errmsg(339,dumi,dums,dumr,dumd)                                    
          go to 850                                                              
       else                                                                      
          nrows = ival                                                           
@@ -160,7 +160,7 @@ c
          go to 850                                                              
       end if                                                                    
 c                                                                               
-      call errmsg(338,dum,dums,dumr,dumd)                                       
+      call errmsg(338,dumi,dums,dumr,dumd)                                       
       go to 9996                                                                
 c                                                                               
 c                 check that table type and the number of rows for this         
@@ -170,7 +170,7 @@ c
 c                                                                               
       if ( debug ) write(*,*) 'nrows, tabmark', nrows, tabmark                  
       if ( ( nrows .eq. 0 ) .or. ( tabmark .eq. -1 ) ) then                     
-         call errmsg(337,dum,dums,dumr,dumd)                                    
+         call errmsg(337,dumi,dums,dumr,dumd)                                    
          go to 9996                                                             
       end if                                                                    
 c                                                                               
@@ -184,7 +184,7 @@ c
          tables(tabnum)%table_type = 'PISTON  '                                 
          call table_piston( tabnum, nrows, complete )                           
          if ( complete ) go to 9997                                             
-         call errmsg(349,dum,dums,dumr,dumd)                                    
+         call errmsg(349,dumi,dums,dumr,dumd)                                    
          call die_gracefully                                                    
          stop                                                                   
       end if                                                                    
@@ -225,15 +225,18 @@ c     *     of the permanent table input structures                  *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine do_table_allo( tabnum, nrows, ncols, fill )                    
-      use global_data ! old common.main
-      use main_data, only : tables                                              
-      implicit integer (a-z)                                                    
-c                                                                               
-      double precision dzero                                                    
-      logical fill, debug                                                       
-c                                                                               
-      data zero, debug, dzero / 0.0, .false., 0.0d00 /                          
+      subroutine do_table_allo( tabnum, nrows, ncols, fill )   
+c
+      use main_data, only : tables  
+      use constants, only : zero, rzero
+c                                                   
+      implicit none
+c 
+      integer :: tabnum, nrows, ncols      
+c    
+      integer :: col, row                                                                           
+      logical :: fill
+      logical, parameter :: debug = .false.
 c                                                                               
       if ( debug ) write (*,*) ' >>> inside do_table_allo'                      
       if ( debug ) write (*,*) tabnum,  tables(tabnum)%num_rows,                
@@ -271,24 +274,24 @@ c
       tables(tabnum)%num_rows = nrows                                           
       tables(tabnum)%num_cols = ncols                                           
 c                                                                               
-c      if ( debug ) write(*,*) tables(tabnum)%num_rows,                         
-c     &     tables(tabnum)%num_cols                                             
-c      if ( debug ) then                                                        
-c         do row = 1,nrows                                                      
-c            do col = 1,ncols                                                   
-c               write(*,*),                                                     
-c     &              row, col, tables(tabnum)%table_values_sgl(row,col)         
-c            end do                                                             
-c         end do                                                                
-c      end if                                                                   
-c                                                                               
+      if ( debug ) write(*,*) tables(tabnum)%num_rows,                         
+     &     tables(tabnum)%num_cols                                             
+      if ( debug ) then                                                        
+         do row = 1,nrows                                                      
+            do col = 1,ncols                                                   
+               write(*,*),                                                     
+     &              row, col, tables(tabnum)%table_values_sgl(row,col)         
+            end do                                                             
+         end do                                                                
+      end if                                                                   
+c                                                                              
 c                 initialize tables vectors                                     
 c                                                                               
       if ( fill ) then                                                          
          do row = 1,nrows                                                       
             do col = 1,ncols                                                    
-               tables(tabnum)%table_values_sgl(row,col) = zero                  
-               tables(tabnum)%table_values_dbl(row,col) = dzero                 
+               tables(tabnum)%table_values_sgl(row,col) = rzero
+               tables(tabnum)%table_values_dbl(row,col) = zero                 
             end do                                                              
          end do                                                                 
       end if                                                                    
@@ -310,26 +313,23 @@ c     *     table given defined by the user                          *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine table_piston( tabnum, nrows, complete )                        
-      use global_data ! old common.main
-      use main_data, only : tables                                              
-      implicit integer (a-z)                                                    
+      subroutine table_piston( tabnum, nrows, complete )  
+c                            
+      use main_data, only : tables   
+      use constants, only : rzero       
+c                                           
+      implicit none
 c                                                                               
-c                       parameter declarations                                  
-c                                                                               
-      logical complete                                                          
-c                                                                               
-c                       local declarations                                      
-c                                                                               
-      double precision                                                          
-     &  dumd                                                                    
+      integer :: tabnum, nrows                                                                
+      logical :: complete                                                          
+c               
+      integer :: dum, row, col, i, k, pcol, pnow, pist_order(8)                                                              
+      double precision :: dumd                                                                    
       character :: dums*1                  
-      logical matchs, endcrd, true, numr, debug,                        
-     &     pist_def(8), consistent                                              
-      dimension pist_order(8)                                                   
-      real dumr, zero, pist_val,              
-     &  tnm1, tn, mx, my, mz, norm                                              
-      data debug, zero / .false., 0.0 /                                         
+      logical, external :: matchs, endcrd, true, numr
+      logical, parameter :: debug = .false.                        
+      logical :: pist_def(8), consistent                                              
+      real :: dumr, pist_val, tnm1, tn, mx, my, mz, norm                                              
 c                                                                               
       if ( debug ) write (*,*) ' >>> inside table_piston'                       
 c                                                                               
@@ -379,7 +379,7 @@ c
       else if ( matchs('zdirection',4) ) then                                   
          pcol = 8                                                               
          go to 1200                                                             
-      else if ( endcrd(dum) ) then                                              
+      else if ( endcrd(dumr) ) then                                              
          go to 1300                                                             
       else                                                                      
          go to 1400                                                             
@@ -469,7 +469,7 @@ c                 defined for piston tables in table module.
 c                                                                               
       if ( .not. numr(pist_val) ) then                                          
 c                                                                               
-         if (endcrd(dum)) then                                                  
+         if (endcrd(dumr)) then                                                  
             if ( debug ) write(*,*) pist_def, all( pist_def )                   
             if ( debug ) write(*,*)                                             
      &           row, (tables(tabnum)%table_values_sgl(row,k),k=1,8)            
@@ -516,7 +516,7 @@ c
  3000 continue                                                                  
 c                                                                               
       tnm1 = tables(tabnum)%table_values_sgl(1,1)                               
-      if ( tnm1 .ne. zero ) then                                                
+      if ( tnm1 .ne. rzero ) then                                                
          call errmsg(342,dum,dums,dumr,dumd)                                    
          consistent = .false.                                                   
       end if                                                                    
@@ -539,7 +539,7 @@ c
          mz = tables(tabnum)%table_values_sgl(i,8)                              
 c                                                                               
          norm = sqrt( mx*mx + my*my + mz*mz )                                   
-         if ( norm .eq. zero ) then                                             
+         if ( norm .eq. rzero ) then                                             
             call errmsg(340,dum,dums,dumr,dumd)                                 
             consistent = .false.                                                
          end if                                                                 
@@ -574,11 +574,16 @@ c     *          this subroutine prints out table entries            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine dump_table_piston( tabnum, nrows )                             
-      use global_data ! old common.main
-      use main_data, only : tables                                              
-      implicit integer (a-z)                                                    
-c                                                                               
+      subroutine dump_table_piston( tabnum, nrows )   
+c                                 
+      use main_data, only : tables
+c                                                     
+      implicit none                                                    
+c    
+      integer :: tabnum, nrows
+c 
+      integer :: i, j
+c 
       write (*,*) ' ==================='                                        
       write (*,*) '    DUMPING TABLE   '                                        
       write (*,*) ' ==================='                                        

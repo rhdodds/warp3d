@@ -14,17 +14,21 @@ c     * k_coeffs (through its various resizings)                     *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine  mpc_insert_terms(neqns, k_ptrs, k_diag, dstmap,               
-     &                             dof_eqn_map)                                 
+      subroutine  mpc_insert_terms( neqns, k_ptrs, k_diag, dstmap,               
+     &                              dof_eqn_map )                                 
 c                                                                               
-      use mod_mpc, only : nmpc, num_tied_con_mpc, num_user_mpc                  
-      implicit integer (a-z)                                                    
-      integer, allocatable, dimension(:) :: abs_ptr, abs_trm                    
+      use mod_mpc, only : nmpc, num_tied_con_mpc, num_user_mpc    
+c                     
+      implicit none
+c           
+      integer :: neqns, k_ptrs(*), dstmap(*), dof_eqn_map(*)
+      double precision :: k_diag(*)      
+c
+      integer :: dumi, err, max_dep, max_len
+      integer, allocatable :: abs_ptr(:), abs_trm(:)                    
       real ::  dumr                                                                
       double precision :: dumd                                                    
-      double precision :: k_diag                                                          
       character(len=1) :: dums                                                  
-      dimension  k_ptrs(*), k_diag(*), dstmap(*), dof_eqn_map(*)                
       logical, parameter :: ldebug = .false.                                                            
 c                                                                               
 c        allocate local variables                                               
@@ -95,9 +99,11 @@ c     *                   last modified : 12/5/2025 rhd              *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine mpc_chk_nan( iwhere )                                          
+      subroutine mpc_chk_nan( iwhere )    
+c 
       use stiffness_data, only : k_coeffs, dep_locations, ncoeff,               
-     &                           ind_locations, diag_locations                  
+     &                           ind_locations, diag_locations    
+c                    
       implicit none                                                             
       integer :: i, iwhere       
       logical, parameter :: run_check = .false.                                               
@@ -131,14 +137,19 @@ c
 c                                                                               
       use mod_mpc, only : num_tied_con_mpc, tied_con_mpc_table, nmpc,           
      &                    num_user_mpc, user_mpc_table, dep_check,              
-     &                    dep_dof, ind_dof, num_terms, multi_list               
-      implicit integer (a-z)                                                    
-      real  dumr                                                                
-      double precision  dumd                                                    
+     &                    dep_dof, ind_dof, num_terms, multi_list 
+c                   
+      implicit none
+c 
+      integer :: neqns, max_dep, abs_trm(*), dstmap(*), dof_eqn_map(*)
+c          
+      integer :: dep, dof, dumi, eqn, err, i, mpc, node, ntrms, pnt,
+     &           ptr, sdof, skip, trm    
+      real :: dumr                                                                
+      double precision :: dumd                                                    
       character(len=1) :: dums                                                  
-      logical  last_good                                                        
+      logical :: last_good                                                        
       logical, parameter :: local_debug = .false.                               
-      dimension  abs_trm(*), dstmap(*), dof_eqn_map(*)                          
 c                                                                               
 c        allocate module variables                                              
 c                                                                               
@@ -302,13 +313,19 @@ c
      &                    eqn_row, dep_check, dep_dof, ind_dof,                 
      &                    num_terms, dep_ptr, num_dep_trms, dep_trms,           
      &                    abs_dep_ptr, dep_trms_len                             
-      use stiffness_data, only : new_ptrs, k_indexes                            
-      implicit integer (a-z)                                                    
-      integer, allocatable, dimension(:) :: tmp_trms, eqn_tmp                   
-      real  dumr                                                                
-      double precision  dumd                                                    
+      use stiffness_data, only : new_ptrs, k_indexes 
+c                                  
+      implicit none
+c 
+      integer :: neqns, k_ptrs(*), abs_trm(*), max_dep, max_len 
+c
+      integer :: i, col, dep_idx, dlen, dptr, dumi, eqn, err, fin,
+     &           ind, jnrows, jsize, len, mpc, ntrms, idebug, ptr, 
+     &           row, tmp_idx, tmp_ptr, trm, trm_ptr 
+      integer, allocatable :: tmp_trms(:), eqn_tmp(:)                   
+      real  :: dumr                                                                
+      double precision :: dumd                                                    
       character(len=1) :: dums                                                  
-      dimension  k_ptrs(*), abs_trm(*)                                          
       intrinsic size                                                            
       logical, parameter :: local_debug = .false.                               
 c                                                                               
@@ -598,9 +615,9 @@ c
       integer :: eqn, old_len, new_len                                          
                                                                                 
       integer :: err, dumi                                                      
-      integer, allocatable, dimension (:) :: temp_loc                           
-      real  dumr                                                                
-      double precision  dumd                                                    
+      integer, allocatable :: temp_loc(:)                           
+      real  :: dumr                                                                
+      double precision ::  dumd                                                    
       character(len=1) :: dums                                                  
 c                                                                               
 c        allocate temp space                                                    
@@ -646,10 +663,13 @@ c     *                    last modified : 7/22/03                   *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine  mpc_heapsort(n, ra)                                           
+      subroutine  mpc_heapsort( n, ra )                                           
 c                                                                               
-      implicit integer (a-z)                                                    
-      dimension  ra(*)                                                          
+      implicit none
+c      
+      integer :: n, ra(*)    
+c
+      integer :: l, ir, rra, i, j, count                                                            
 c                                                                               
       if (n .lt. 2) then                                                        
          return                                                                 
@@ -725,17 +745,20 @@ c
      &                           newcount, new_ptrs, ind_temp,                  
      &                           cof_temp, big_ncoeff,                          
      &                           new_len, new_loc, new_ind                      
-      implicit integer (a-z)                                                    
+c
+      implicit none
 c                                                                               
-      integer :: k_ptrs(*), abs_ptr(*)                                          
-c                                                                               
+      integer :: neqns, k_ptrs(*), abs_ptr(*)                                          
+c                     
+      integer :: beg, cof_idx, dlen, dptr, dumi, end, eqn_len, err,
+     &           fin, i, ind_idx, eqn, len, new_idx, num, old_idx,
+     &           ptr_idx, tmp_idx, max_cof                                                
       logical, parameter :: local_debug = .false.                               
       integer, intrinsic :: size                                                
-      integer, allocatable, dimension(:) :: eqn_tmp, old_ind                    
-      real  dumr                                                                
-      double precision  dumd                                                    
-      double precision,                                                         
-     &          allocatable, dimension(:) :: old_cof                            
+      integer, allocatable :: eqn_tmp(:), old_ind(:)                    
+      real :: dumr                                                                
+      double precision :: dumd                                                    
+      double precision, allocatable :: old_cof(:)                            
       character(len=1) :: dums                                                  
 c                                                                               
 c        allocate temp storage space, copy old data to temp space               
@@ -940,15 +963,14 @@ c
 c                                                                               
       use stiffness_data, only : ind_temp, cof_temp, temp_len                   
       implicit none                                                             
-                                                                                
+c                                                                                
       integer :: neqns, eqn, len                                                
-                                                                                
+c                                                                                
       integer :: add, err, dumi, old_len                                        
-      integer, allocatable, dimension (:) :: itmp                               
+      integer, allocatable :: itmp(:)                               
       real  :: dumr                                                             
       double precision ::  dumd                                                 
-      double precision,                                                         
-     &          allocatable, dimension (:) :: dtmp                              
+      double precision, allocatable :: dtmp(:)                              
       character(len=1) :: dums                                                  
       logical, parameter :: local_debug = .false.                               
 c                                                                               
@@ -1028,16 +1050,11 @@ c
      &                           ind_loc, ind_len, dia_loc, dia_len             
       implicit none                                                             
 c                                                                               
-c                      parameter declarations                                   
-c                                                                               
       integer :: neqns, max_len                                                 
       integer :: k_ptrs(*), abs_ptr(*)                                          
       double precision :: k_diag(*)                                             
-                                                                                
 c                                                                               
-c                      local declarations                                       
-c                                                                               
-      integer, allocatable, dimension(:) :: dep_eqn_tmp                         
+      integer, allocatable:: dep_eqn_tmp(:)                        
       real :: dumr                                                              
       double precision ::  dumd                                                 
       character(len=1) :: dums                                                  
@@ -1196,16 +1213,21 @@ c     *                    last modified : 07/30/2016 rhd            *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine mpc_resize_vector(vec_ptr)                                     
+      subroutine mpc_resize_vector( vec_ptr )                                     
 c                                                                               
       use mod_mpc, only : dep_trms, dep_trms_len                                
       use stiffness_data, only : dep_loc, dep_len, ind_loc, ind_len,            
      &                           dia_loc, dia_len, new_loc, new_ind,            
      &                           new_len                                        
-      implicit integer (a-z)                                                    
-      integer, allocatable, dimension (:) :: temp_loc                           
-      real  dumr                                                                
-      double precision  dumd                                                    
+c 
+      implicit none
+c       
+      integer :: vec_ptr
+c      
+      integer :: dumi, err, len
+      integer, allocatable :: temp_loc(:)                          
+      real  :: dumr                                                                
+      double precision  :: dumd                                                    
       character(len=1) :: dums                                                  
 c                                                                               
 c        this routine is used to resize several different vectors               
@@ -1322,15 +1344,19 @@ c
       use mod_mpc, only : nmpc, dep_dof, ind_dof, num_terms, multi_list,        
      &                    dep_rhs, num_dep_trms                                 
       use stiffness_data, only : k_coeffs, dep_locations, ncoeff,               
-     &                           ind_locations, diag_locations                  
-      implicit integer (a-z)                                                    
-      real  dumr, mlt                                                           
-      double precision  dumd                                                    
-      double precision                                                          
-     &         dep_trm, k_diag, p_vec                                           
+     &                           ind_locations, diag_locations    
+c                    
+      implicit none
+c       
+      integer :: neqns
+      double precision :: k_diag(*), p_vec(*)                                                  
+c 
+      integer :: dep, dep_loc_idx, dep_loc_ptr, dep_ptr, dia_ptr,
+     &           dia_trm, dumi, err, ind, ind_loc_idx, ind_ptr, len,
+     &           mpc, ntrms, trm, trm_ptr 
+      real :: dumr                                                        
+      double precision :: dumd, dep_trm, mlt                                           
       character(len=1) :: dums                                                  
-      dimension  k_diag(*), p_vec(*)                                            
-                                                                                
 c                                                                               
 c        intialize counters, use the terms in the dep_locations to              
 c        modify those in the ind_locations                                      
@@ -1416,15 +1442,19 @@ c
      &                    ind_dof, num_terms, multi_list                        
       use stiffness_data, only : ncoeff, k_indexes, k_coeffs, newcount,         
      &                           new_locations, new_indexes, new_ptrs           
-      implicit integer (a-z)                                                    
-      integer, allocatable, dimension (:) :: ind_tmp                            
-      real  dumr                                                                
-      double precision  dumd                                                    
-      double precision,                                                         
-     &          allocatable, dimension (:) :: cof_tmp                           
+c 
+      implicit none
+c 
+      integer :: neqns, k_ptrs(*), dstmap(*), dof_eqn_map(*)                           
+c
+      integer :: cnt, dep, dumi, eqn, loc, mpc, new_ind, new_loc,
+     &           node, ntrms, pnt, ptr, trm, dof, err, sdof
+      integer, allocatable :: ind_tmp(:)                            
+      real  :: dumr                                                                
+      double precision :: dumd                                                    
+      double precision, allocatable :: cof_tmp(:)                           
       character(len=1) :: dums                                                  
-      logical  last_good                                                        
-      dimension  k_ptrs(*), dstmap(*), dof_eqn_map(*)                           
+      logical :: last_good                                                        
 c                                                                               
 c        allocate temp storage space, copy data into temp space                 
 c                                                                               
@@ -1557,16 +1587,19 @@ c
       subroutine  mpc_remove_dep_eqns(neqns, k_ptrs)                            
 c                                                                               
       use mod_mpc, only : dep_check                                             
-      use stiffness_data, only : ncoeff, k_indexes, k_coeffs                    
-      implicit integer (a-z)                                                    
-      integer, allocatable, dimension(:) :: ind_tmp                             
-      real  dumr                                                                
-      double precision  dumd                                                    
-      double precision,                                                         
-     &          allocatable, dimension(:) :: cof_tmp                            
+      use stiffness_data, only : ncoeff, k_indexes, k_coeffs  
+c                         
+      implicit none
+c 
+      integer :: neqns, k_ptrs(*)
+c 
+      integer :: cnt, dumi, eqn, err, idx, loc, num, ptr      
+      integer, allocatable :: ind_tmp(:)                           
+      real  :: dumr                                                                
+      double precision :: dumd                                                    
+      double precision, allocatable :: cof_tmp(:)                           
       character(len=1) :: dums                                                  
-      logical new_size                                                          
-      dimension  k_ptrs(*)                                                      
+      logical :: new_size                                                          
 c                                                                               
 c        allocate temp storage space                                            
 c                                                                               
@@ -1647,18 +1680,20 @@ c
      &                    num_dep_trms, dep_coef, dep_trms,                     
      &                    dep_dof, ind_dof, num_terms, multi_list,              
      &                    dep_rhs                                               
-      use stiffness_data, only : i_lagrange_forces                              
-      implicit integer (a-z)                                                    
-      real :: dumr, mlt                                                         
-      double precision :: dumd, zero                                            
-      double precision                                                          
-     &          x, cof                                                          
-      double precision,                                                         
-     &          allocatable, dimension (:) :: lagmlt                            
+      use stiffness_data, only : i_lagrange_forces   
+      use constants, only : zero
+c                                 
+      implicit none
+c      
+      integer :: neqns, nodof, cstmap(*)
+      double precision :: x(*)
+c 
+      integer :: err, dumi, ptr, mpc, dep, ntrms, trm, ind, dof, eqn   
+      real :: dumr                                                 
+      double precision :: dumd, mlt                                            
+      double precision :: cof                                                          
+      double precision, allocatable :: lagmlt(:)                            
       character(len=1) :: dums                                                  
-      dimension  x(*), cstmap(*)                                                
-      data zero / 0.0d00 /                                                      
-                                                                                
 c                                                                               
       allocate( lagmlt(neqns), stat=err)                                        
       if (err .ne. 0) then                                                      
