@@ -1,0 +1,136 @@
+# WARP3D feature terms
+# First term on each line is canonical.
+# Terms after | are aliases.
+
+@element
+l3disop | hex8
+ts9isop | hex9 | transition
+ts12isop | hex12 | transition
+ts15isop | hex15 | transition
+q3disop | hex20
+tet4 | tet
+tet10 | tet
+inter_8 | interface element
+trint6 | interface element
+trint12 | interface element
+bar2 | bar | spacetruss
+link2 | link
+
+@stress-strain
+plastic strain
+temperature
+rate |strain rate
+chip | pchip
+
+@material
+deformation | deformation plasticity
+bilinear | bilinear mises
+mises | j2 plasticity | von mises
+gurson | gurson-tvergaard | gt
+cohesive | cohesive material | PPR |Paulino-Park | exponential |mts
+cyclic | cyclic plasticity | armstrong | Frederick | generalized
+creep | Norton | power-law |secondary
+umat | user material | abaqus umat
+crystal voce 
+
+@material_option
+voce
+mts | mechanical threshold stress
+roters
+djgm
+user
+nonlinear_hardening
+generalized_plasticity
+ppr | paulino-park-roesler
+exponential
+exp1_intf
+
+@load
+nodal loads | nodal load
+element loads | element load
+step loads | step load
+displacement control loading | displacement control
+imposed temperatures | imposed temperature
+non-zero displacements | nonzero displacement
+deformation dependent applied element loads
+pressure
+traction
+crack face loading
+body force
+
+@constraint
+absolute constraints | absolute constraint
+non-global absolute constraints
+multi-point constraints | mpc | multipoint constraints
+tie-mesh constraints | tied mesh | tied contact | tied-contact | tied_contact
+release constraints
+
+@contact
+contact
+rigid contact
+penalty method
+contact surfaces
+
+@solution_control
+newton iterations 
+line search
+adaptive step size
+convergence tests
+displacement extrapolation
+wall clock time limit
+batch status messages
+
+@fracture
+domain | domain integral | j-integral | j integral
+interaction integral
+crack front
+crack front nodes
+crack front local coordinate system
+q function
+side grooves
+crack face loading
+k-values | k values | stress intensity factors | k-factors
+t-stress | t stress
+domain verification
+automatic j computation
+
+@crack_growth
+element deletion |element extinction
+user-directed element deletion
+gurson-tvergaard | gt
+critical plastic strain
+smcs
+node release
+traction-separation
+interface-cohesive elements | interface cohesive elements
+cohesive growth
+
+@output
+printed output
+binary packets
+patran results
+flat text
+stream binary
+patran neutral file
+flat model description
+energy file
+state variables
+stresses
+strains
+displacements
+reactions
+
+@workflow
+restart
+table
+parameter
+user named list
+patwarp
+neutral file
+flat model
+flat results
+residual strains
+residual stresses
+periodic boundary conditions | pbc
+python processing
+user routines
