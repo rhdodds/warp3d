@@ -9,12 +9,19 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine trwlist( sbflg1, sbflg2 )
-      use global_data ! old common.main
+c       
+      use global_data, only : max_user_lists, nonode, out, c
       use main_data, only : user_lists
-      implicit integer (a-z)
-      logical  :: debug, string, scanms, matchs, do_display,
-     &        found, matchs_exact, true, display_coords,
-     &        endcrd
+c 
+      implicit none
+c       
+      logical :: sbflg1, sbflg2
+c   
+      integer :: avail_col, i,list_col,nchars
+      logical :: do_display, found, display_coords, debug
+      logical, external :: string, scanms, matchs, matchs_exact, true,
+     &                     endcrd
+      real :: dumr
       character :: lname*24, name*80
 c
 c                 on entry, last scanner test was true (word
@@ -24,7 +31,7 @@ c
       debug = .false.
       if( matchs_exact( "debug" ) )  debug = .true.
       if( debug ) write(out,*) "...inside trwlist ..."
-      if( .not. string( idummy ) ) then
+      if( .not. string( dumr ) ) then
         call ulist_error( 1 ); call scan_flushline; return
       end if
 c
@@ -116,7 +123,7 @@ c                 the integer list. if nothing left on command,
 c                 error and leave. check for different forms
 c                 of list command, call lower routine to proess.
 c
-      if( endcrd() ) then
+      if( endcrd(dumr) ) then
         call ulist_error( 4 ); call scan_flushline; return
       end if
 c
@@ -131,7 +138,7 @@ c
       end if
       if( found ) then
         call backsp( 1 )
-        if( true( idummy ) ) call splunj
+        if( true( dumr ) ) call splunj
         call ulist_general( list_col, debug, do_display,
      &                      display_coords, nonode )
         go to 100
@@ -179,6 +186,7 @@ c     ****************************************************************
 c
       subroutine ulist_copy( list_col, avail_col, debug, out,
      &                       max_user_lists )
+c      
       use main_data, only : user_lists
 c
       implicit none
@@ -187,13 +195,14 @@ c
 c
       integer :: nchars, new_col, i, idummy, nlist
       logical, external :: string, scanms
+      real :: dumr
       character :: lname*24, name*80
 c
       if( debug ) write(out,*) "..ulist_copy called..."
 c
 c                 scan name of new list.
 c
-      if( .not. string( idummy ) ) then
+      if( .not. string( dumr ) ) then
         call ulist_error( 1 ); call scan_flushline; return
       end if
       lname(1:24) = ' '
@@ -242,12 +251,18 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine ulist_simple( list_col, debug, out )
+c       
       use main_data, only : user_lists
       use allocated_integer_list
 c
-      implicit integer (a-z)
-      logical debug
+      implicit none
+c
+      integer :: out, list_col     
+      logical :: debug
+c    
+      integer :: ierr, list_size, nlist     
       integer, allocatable :: local_list(:)
+      real :: dumr
 c
 c                 the default option for user defined integer list
 c                 when no geometric selection option is specified.
@@ -293,14 +308,20 @@ c     ****************************************************************
 c
       subroutine ulist_display( list_col, coords, display_coords,
      &                          debug, out )
+c      
       use main_data, only : user_lists, crdmap
-      implicit integer(a-z)
-      logical debug, display_coords
+c       
+      implicit none
+c       
+      integer :: list_col, out
+      logical :: debug, display_coords
       double precision :: coords(*)
 c
+      integer :: count, icn, iplist, length, line_no, next, node, 
+     &           nterms_in_list, position,  line(9)
       integer, external :: iszlst
-      integer line(9)
-      double precision ::  xcoord, ycoord, zcoord
+      real :: dumt
+      double precision :: xcoord, ycoord, zcoord
 c
       if( debug ) write(out,*) "...ulist_display is called..."
 c
@@ -314,7 +335,7 @@ c
 c                 loop to extract each entry from the compressed
 c                 integer list format. write 9 values per line
 c
-      icn = 0; iplist = 1;count = 0; line_no = 0
+      icn = 0; iplist = 1; count = 0; line_no = 0
       write(out,9000) nterms_in_list
 c
       do
@@ -372,8 +393,14 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine ulist_error( message )
-      use global_data ! old common.main
-      implicit integer(a-z)
+c       
+      use global_data, only : out, max_user_lists, num_error
+c       
+      implicit none
+c 
+      integer :: message
+c 
+      integer :: strlng      
       character(len=80) :: string
 c
       select case( message )
@@ -583,21 +610,26 @@ c     ****************************************************************
 c
       subroutine ulist_general( list_col, debug, do_display,
      &                          display_coords, max_list_size )
-      use global_data ! old common.main
+c      
+      use global_data, only : nonode, out, c 
+      use main_data, only : user_lists, crdmap
+      use constants, only : zero
+c
+      implicit none
+c
+      integer :: list_col, max_list_size
+      logical :: debug, do_display, display_coords
+c  
+      integer :: matchlist(max_list_size), count, flag, i, node,
+     &           position  
+      double precision ::
+     &   xvalue, yvalue, zvalue, tolerance, temp_t,
+     &   xcoord, ycoord, zcoord, x_toler, y_toler, z_toler
+      logical :: xdefined, ydefined, zdefined
+      logical, external :: matchs, numd, endcrd, matchs_exact
+      real :: dumr
 c
 c       list "list name" [x/y/z (=) _] (tolerance(=)_) (display)
-c
-      use main_data, only : user_lists, crdmap
-
-      implicit integer(a-z)
-c
-      double precision
-     &   xvalue, yvalue, zvalue, tolerance, temp_t, zero,
-     &   xcoord, ycoord, zcoord, x_toler, y_toler, z_toler
-      logical :: do_display, xdefined, ydefined, zdefined, matchs,
-     &           numd, endcrd, matchs_exact, debug, display_coords
-      dimension matchlist(max_list_size)
-      data zero /0.0d00/
 c
       if( debug ) write(out,*) "...in ulist_line_point..."
 c
@@ -610,7 +642,7 @@ c                 request at end will be handled by driver.
 c
       do
 c
-        if( endcrd())  exit  ! scan loop
+        if( endcrd(dumr))  exit  ! scan loop
         if( matchs_exact( "," ) ) call splunj
 c
         if( matchs_exact( "x" ) ) then
@@ -771,14 +803,10 @@ c
 c
       implicit none
 c
-c                 arguments
-c
       integer :: crdmap(*), out, nonode
       double precision ::
      & tolerance, x_toler, y_toler, z_toler, coords(*)
       logical :: debug
-c
-c                 locals
 c
       double precision ::
      &  xcoord, ycoord, zcoord, xmin, xmax, ymin, ymax,
@@ -837,25 +865,31 @@ c     ****************************************************************
 c
       subroutine ulist_cylinder( list_col, debug, do_display,
      &                           display_coords, max_list_size )
-      use global_data ! old common.main
-c
-c      list "list name" cylinder first x(=)_ y(=)_ z(=)_ second
-c             x(=)_ y(=)_ z(=)_ radius(=)_ (tolerance(=)_) (display)
-c
+c      
+      use global_data, only : nonode, out, c
       use main_data, only : user_lists, crdmap
-
-      implicit integer(a-z)
+      use constants, only : zero, one
 c
-      double precision
-     &   tolerance, temp_t, zero,
+      implicit none
+c
+      integer :: list_col, max_list_size 
+      logical :: debug, do_display, display_coords
+c 
+      integer :: matchlist(max_list_size), count, i, node, position 
+      double precision ::
+     &   tolerance, temp_t,
      &   pt1(3), pt2(3), pt3(3),
      &   radius, flag, axis(3), axis_length, radius_tol,
      &   dx, dy, dz, d13, nx13, ny13, nz13, cos_theta, perp_dist,
-     &   one, sin_theta
-      logical :: do_display, matchs, check,
-     &           numd, endcrd, matchs_exact, debug, display_coords
-      dimension matchlist(max_list_size)
-      data zero /0.0d00/, flag /-999999.0/, one /1.0d00/
+     &   sin_theta
+      logical :: check
+      logical, external :: matchs, numd, endcrd, matchs_exact
+      real :: dumr
+      data flag /-999999.0/
+c
+c
+c      list "list name" cylinder first x(=)_ y(=)_ z(=)_ second
+c             x(=)_ y(=)_ z(=)_ radius(=)_ (tolerance(=)_) (display)
 c
       if( debug ) write(out,*) "...in ulist_cylinder..."
 c
@@ -947,7 +981,7 @@ c
 c                  -- if not an end of input at this point,
 c                     we have an un-recognized item
 c
-      if( .not. endcrd() ) then
+      if( .not. endcrd(dumr) ) then
         call ulist_error( 15 ); call scan_flushline
           do_display = .false.; return
       end if
@@ -1065,24 +1099,30 @@ c     ****************************************************************
 c
       subroutine ulist_plane( list_col, debug, do_display,
      &                        display_coords, max_list_size )
-      use global_data ! old common.main
-c
-c     list "name" plane point x(=)_ y(=)_ z(=)_ normal
-c             nx(=)_ ny(=)_ nz(=)_ (tolerance(=)_) (display)
-c
+c      
+      use global_data, only : nonode, out, c
       use main_data, only : user_lists, crdmap
+      use constants, only : zero
 c
-      implicit integer(a-z)
+      implicit none
 c
-      double precision
-     &   tolerance, temp_t, zero, dot,
+      integer :: list_col, max_list_size 
+      logical :: debug, do_display, display_coords
+c
+      integer :: matchlist(max_list_size), count, i, node, position 
+      double precision ::
+     &   tolerance, temp_t, dot,
      &   x_toler, y_toler, z_toler, pt(3),
      &   flag, normvec(3), length, rel_tol,
      &   dx, dy, dz, norm_tol
-      logical :: do_display, matchs, check,
-     &           numd, endcrd, matchs_exact, debug, display_coords
-      dimension matchlist(max_list_size)
-      data zero /0.0d00/, flag /-999999.0/, norm_tol / 1.0d-10 /
+      logical :: check
+      logical, external :: matchs, numd, endcrd, matchs_exact
+      real :: dumr
+      data flag /-999999.0/, norm_tol / 1.0d-10 /
+c
+c
+c     list "name" plane point x(=)_ y(=)_ z(=)_ normal
+c             nx(=)_ ny(=)_ nz(=)_ (tolerance(=)_) (display)
 c
       if( debug ) write(out,*) "...in ulist_plane..."
 c
@@ -1160,7 +1200,7 @@ c
 c                  -- if not an end of input at this point,
 c                     we have an un-recognized item
 c
-      if( .not. endcrd() ) then
+      if( .not. endcrd(dumr) ) then
        call ulist_error( 22 ); call scan_flushline; do_display = .false.
        return
       end if
@@ -1268,22 +1308,24 @@ c
 c
       subroutine ulist_sphere( list_col, debug, do_display,
      &                         display_coords, max_list_size )
-      use global_data ! old common.main
-c
-c      list "list name" sphere origin x(=)_ y(=)_ z(=)_
-c            radius =   tolerance  display
-c
+c      
+      use global_data, only : nonode, out, c
       use main_data, only : user_lists, crdmap
-
-      implicit integer(a-z)
+      use constants, only : zero
 c
-      double precision
-     &   tolerance, temp_t, zero,
-     &   pt(3), radius, flag, radius_tol, dx, dy, dz, d12
-      logical :: do_display, matchs, check,
-     &           numd, endcrd, matchs_exact, debug, display_coords
-      dimension matchlist(max_list_size)
-      data zero /0.0d00/, flag /-999999.0/
+      implicit none
+c
+      integer :: list_col, max_list_size 
+      logical :: debug, do_display, display_coords
+c 
+      integer :: matchlist(max_list_size), count, i, node, position 
+      double precision ::
+     &   tolerance, temp_t, pt(3), radius, flag, radius_tol, 
+     &   dx, dy, dz, d12
+      logical :: check
+      logical, external :: matchs, numd, endcrd, matchs_exact
+      real :: dumr
+      data flag /-999999.0/
 c
       if( debug ) write(out,*) "...in ulist_sphere..."
 c
@@ -1349,7 +1391,7 @@ c
 c                  -- if not an end of input at this point,
 c                     we have an un-recognized item
 c
-      if( .not. endcrd() ) then
+      if( .not. endcrd(dumr) ) then
        call ulist_error( 15 ); call scan_flushline; do_display = .false.
        return
       end if

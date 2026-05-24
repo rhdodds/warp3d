@@ -12,8 +12,12 @@ c     *     at that point.                                           *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine shapef( etype, xi, eta, zeta, n )                              
-      implicit integer (a-z)                                                    
+      subroutine shapef( etype, xi, eta, zeta, n )       
+c 
+      use constants, only : half
+c                                   
+      implicit none
+      integer :: etype                                                    
       double precision ::  xi, eta, zeta, n(*)                                                  
 c                                                                               
 c                                                                               
@@ -132,15 +136,15 @@ c
 c                    2-node bar
 c                                                                               
 1800  continue 
-      n(1) = 0.5d0 
-      n(2) = 0.5d0                                                                
+      n(1) = half
+      n(2) = half
       return                                                                    
 c                                                                               
 c                    2-node link
 c                                                                               
 1900  continue 
-      n(1) = 0.5d0 
-      n(2) = 0.5d0                                                                
+      n(1) = half
+      n(2) = half
       return                                                                    
 c                                                                               
 c                                                                               
@@ -166,13 +170,14 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine shape1(r,s,t,n)                                                
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     n(*),r,s,t,rp1,rm1,sp1,sm1,tp1,tm1,                                  
-     &     one,half,fourth,eighth                                               
-c                                                                               
-      data one,half,fourth,eighth /1.0,0.5,0.25,0.125/                          
+      subroutine shape1(r,s,t,n)        
+c
+      use constants, only : one, half, pt25, eighth     
+c                                               
+      implicit none
+      double precision :: n(*), r, s, t
+c     
+      double precision :: rp1,rm1,sp1,sm1,tp1,tm1
 c                                                                               
       rp1 = one+r                                                               
       rm1 = one-r                                                               
@@ -189,18 +194,18 @@ c
       n(6)  = -rp1*sm1*(rm1 + sp1 + t)*tm1*eighth                               
       n(7)  = -rp1*sp1*(rm1 + sm1 + t)*tm1*eighth                               
       n(8)  = -rp1*sp1*(rm1 + sm1 - t)*tp1*eighth                               
-      n(9)  = rm1*sm1*tm1*tp1*fourth                                            
-      n(10) = rm1*sm1*sp1*tm1*fourth                                            
-      n(11) = rm1*sp1*tm1*tp1*fourth                                            
-      n(12) = rm1*sm1*sp1*tp1*fourth                                            
-      n(13) = rp1*sm1*tm1*tp1*fourth                                            
-      n(14) = rp1*sm1*sp1*tm1*fourth                                            
-      n(15) = rp1*sp1*tm1*tp1*fourth                                            
-      n(16) = rp1*sm1*sp1*tp1*fourth                                            
-      n(17) = rm1*rp1*sm1*tp1*fourth                                            
-      n(18) = rm1*rp1*sm1*tm1*fourth                                            
-      n(19) = rm1*rp1*sp1*tm1*fourth                                            
-      n(20) = rm1*rp1*sp1*tp1*fourth                                            
+      n(9)  = rm1*sm1*tm1*tp1*pt25                                            
+      n(10) = rm1*sm1*sp1*tm1*pt25                                            
+      n(11) = rm1*sp1*tm1*tp1*pt25                                            
+      n(12) = rm1*sm1*sp1*tp1*pt25                                            
+      n(13) = rp1*sm1*tm1*tp1*pt25                                            
+      n(14) = rp1*sm1*sp1*tm1*pt25                                            
+      n(15) = rp1*sp1*tm1*tp1*pt25                                            
+      n(16) = rp1*sm1*sp1*tp1*pt25                                            
+      n(17) = rm1*rp1*sm1*tp1*pt25                                            
+      n(18) = rm1*rp1*sm1*tm1*pt25                                            
+      n(19) = rm1*rp1*sp1*tm1*pt25                                            
+      n(20) = rm1*rp1*sp1*tp1*pt25                                            
 c                                                                               
       return                                                                    
       end                                                                       
@@ -220,11 +225,13 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine shape2( xi, eta, zeta, n )                                     
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     xi,eta,zeta,n(*),xp,ep,zp,xm,em,zm,one,eighth                        
-      data one, eighth /1.0, 0.125/                                             
+      subroutine shape2( xi, eta, zeta, n )          
+c
+      use constants, only : one, eighth                                 
+      implicit none                                                   
+      double precision :: xi, eta, zeta, n(*)
+      
+      double precision :: xp, ep, zp, xm, em, zm
 c                                                                               
 c                       set basic parameters                                    
 c            z                                                                  
@@ -265,13 +272,14 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine shape3(r,s,t,n)                                                
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     n(*),r,s,t,rp1,rm1,sp1,sm1,tp1,tm1,spt,smt,                          
-     &     one,fourth,eighth                                                    
-c                                                                               
-      data one,fourth,eighth /1.0,0.25,0.125/                                   
+      subroutine shape3(r,s,t,n)    
+c 
+      use constants, only : one, fourth, eighth                                                
+      implicit none
+c      
+      double precision :: n(*),r,s,t
+c      
+      double precision :: rp1,rm1,sp1,sm1,tp1,tm1,spt,smt
 c                                                                               
       rp1 = one+r                                                               
       rm1 = one-r                                                               
@@ -312,13 +320,14 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine shape4(r,s,t,n)                                                
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     n(*),r,s,t,rp1,rm1,sp1,sm1,tp1,tm1,spt,smt,rpt,rmt,                  
-     &     one,fourth,eighth                                                    
-c                                                                               
-      data one,fourth,eighth /1.0,0.25,0.125/                                   
+      subroutine shape4(r,s,t,n) 
+c
+      use constants, only : one, fourth, eighth                                                     
+      implicit none
+c                                                         
+      double precision :: n(*),r,s,t
+c
+      double precision :: rp1,rm1,sp1,sm1,tp1,tm1,spt,smt,rpt,rmt
 c                                                                               
       rp1 = one+r                                                               
       rm1 = one-r                                                               
@@ -364,13 +373,13 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine shape5(r,s,t,n)                                                
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     n(*),r,s,t,rp1,rm1,sp1,sm1,tp1,tm1,                                  
-     &     one,half,fourth,eighth                                               
-c                                                                               
-      data one,half,fourth,eighth /1.0,0.5,0.25,0.125/                          
+      subroutine shape5(r,s,t,n)  
+c
+      use constants, only : one,half,fourth,eighth   
+c                                                          
+      implicit none                                                    
+      double precision :: n(*),r,s,t
+      double precision :: rp1,rm1,sp1,sm1,tp1,tm1
 c                                                                               
       rp1 = one+r                                                               
       rm1 = one-r                                                               
@@ -444,20 +453,17 @@ c         s1 = 1 - s2 - s3 - s4 has been substituted into the shape functions;
 c         s1 appears in the shape functions for simplicity of evaluating the    
 c         values given a Gauss integration point coordinate set.                
 c                                                                               
-      subroutine shape6( s2, s3, s4, q )                                        
+      subroutine shape6( s2, s3, s4, q )     
+c
+      use constants, only : one, two, four                                         
       implicit none                                                             
-      double precision                                                          
-     &         s2,s3,s4,q(*)                                                    
+      double precision :: s2, s3, s4, q(*)   
+c
+      double precision :: s1                                                       
 c                                                                               
 c        s1 = fourth tetrahedron natural coordinate, used here to keep the      
 c             simplicity of the functions below                                 
 c                                                                               
-      double precision                                                          
-     &     one, two, four, s1                                                   
-c                                                                               
-      one  = 1.0D0                                                              
-      two  = 2.0D0                                                              
-      four = 4.0D0                                                              
       s1 = one - s2 - s3 - s4                                                   
 c                                                                               
 c        evaluate the shape functions at the current Gauss point,               
@@ -494,17 +500,11 @@ c     *     this subroutine is currently identical to shape10        *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine shape9( s1, s2, q )                                            
+      subroutine shape9( s1, s2, q )   
+c 
+      use constants, only : one, two, four                                                
       implicit none                                                             
-      double precision                                                          
-     &         s1, s2, q(*)                                                     
-c                                                                               
-      double precision                                                          
-     &         one, two, four                                                   
-c                                                                               
-      one  = 1.0D0                                                              
-      two  = 2.0D0                                                              
-      four = 4.0D0                                                              
+      double precision :: s1, s2, q(*)                                                     
 c                                                                               
 c        evaluate the shape functions at the current Gauss point                
 c                                                                               
@@ -536,16 +536,10 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
       subroutine shape10( s1, s2, q )                                           
+c 
+      use constants, only : one, two, four                                                
       implicit none                                                             
-      double precision                                                          
-     &         s1, s2, q(*)                                                     
-c                                                                               
-      double precision                                                          
-     &         one, two, four                                                   
-c                                                                               
-      one  = 1.0D0                                                              
-      two  = 2.0D0                                                              
-      four = 4.0D0                                                              
+      double precision :: s1, s2, q(*)                                                     
 c                                                                               
 c        evaluate the shape functions at the current Gauss point                
 c                                                                               
@@ -576,16 +570,11 @@ c     *                                                              *
 c     ****************************************************************          
 c                                                                               
 c                                                                               
-      subroutine shape11( s1, s2, s3, q )                                       
+      subroutine shape11( s1, s2, s3, q )  
+c 
+      use constants, only : two, four                                           
       implicit none                                                             
-      double precision                                                          
-     &          s1, s2, s3, q(*)                                                
-c                                                                               
-      double precision                                                          
-     &          two, four                                                       
-c                                                                               
-      two  = 2.0D0                                                              
-      four = 4.0D0                                                              
+      double precision :: s1, s2, s3, q(*)                                                
 c                                                                               
 c          evaluate the shape functions at the current Gauss point              
 c                                                                               
@@ -616,11 +605,12 @@ c     ****************************************************************
 c                                                                               
 c                                                                               
 c                                                                               
-      subroutine shape12( xi, eta, n )                                          
-      implicit integer (a-z)                                                    
-      double precision                                                          
-     &     xi,eta,n(*),xp,ep,xm,em,one,fourth                                   
-      data one, fourth /1.0, 0.25/                                              
+      subroutine shape12( xi, eta, n )     
+c 
+      use constants, only : one, fourth                                           
+      implicit none                                                    
+      double precision :: xi,eta,n(*)
+      double precision :: xp,ep,xm,em
 c                                                                               
 c                 set basic parameters                                          
 c     A plane interface element, nodes 1-4 are bottom                           
@@ -684,16 +674,12 @@ c         s1 = 1 - s2 - s3 - s4 has been substituted into the shape functions;
 c         s1 appears in the shape functions for simplicity of evaluating the    
 c         values given a Gauss integration point coordinate set.                
 c                                                                               
-      subroutine shape13( s2, s3, s4, q )                                       
+      subroutine shape13( s2, s3, s4, q )          
+c 
+      use constants, only : one                                   
       implicit none                                                             
-      double precision                                                          
-     &         s2,s3,s4,q(*)                                                    
-c                                                                               
-c                                                                               
-      double precision                                                          
-     &     one, s1                                                              
-c                                                                               
-      one  = 1.0D0                                                              
+      double precision :: s2, s3, s4, q(*), s1                                                    
+c
       s1 = one - s2 - s3 - s4                                                   
 c                                                                               
 c        evaluate the shape functions at the current Gauss point,               
@@ -749,15 +735,11 @@ c                           and 0 <= s1,s2,s3 <= 1
 c             Note: Only s1 and s2 are input to this subroutine.                
 c                   use s3 = 1 - s1 - s2.                                       
 c                                                                               
-      subroutine shape14( s1, s2, q )                                           
+      subroutine shape14( s1, s2, q )       
+c 
+      use constants, only : one, two, four                                            
       implicit none                                                             
-      double precision                                                          
-     &          s1, s2, s3, q(*)                                                
-c                                                                               
-      double precision                                                          
-     &          one, two, four                                                  
-c                                                                               
-      one  = 1.0d0                                                              
+      double precision :: s1, s2, s3, q(*)                                                
 c                                                                               
       s3 = one - s1 - s2                                                        
 c                                                                               
@@ -817,17 +799,11 @@ c             Note: Only s1 and s2 are input to this subroutine.
 c                   use s3 = 1 - s1 - s2.                                       
 c                                                                               
                                                                                 
-      subroutine shape15( s1, s2, q )                                           
+      subroutine shape15( s1, s2, q )       
+c
+      use constants, only : one, two, four                                          
       implicit none                                                             
-      double precision                                                          
-     &          s1, s2, s3, q(*)                                                
-c                                                                               
-      double precision                                                          
-     &          one, two, four                                                  
-c                                                                               
-      one  = 1.0d0                                                              
-      two  = 2.0d0                                                              
-      four = 4.0d0                                                              
+      double precision :: s1, s2, s3, q(*)                                                
 c                                                                               
       s3 = one - s1 - s2                                                        
 c                                                                               
@@ -865,16 +841,11 @@ c     *     integration point for the 4-node quadrillateral.         *
 c     *                                                              *          
 c     ****************************************************************          
 c                                                                               
-      subroutine shape16( s1, s2, q )                                           
+      subroutine shape16( s1, s2, q )      
+c 
+      use constants, only : one, four                                           
       implicit none                                                             
-      double precision                                                          
-     &         s1, s2, q(*)                                                     
-c                                                                               
-      double precision                                                          
-     &         one, four                                                        
-c                                                                               
-      one  = 1.0D0                                                              
-      four = 4.0D0                                                              
+      double precision :: s1, s2, q(*)                                                     
 c                                                                               
 c        evaluate the shape functions at the current Gauss point                
 c                                                                               

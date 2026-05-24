@@ -16,10 +16,12 @@ c
      &                             active_curve_set, num_seg_points,
      &                             curve_plseps_values
 c
-      implicit integer (a-z)
+      implicit none
 c
-      double precision
-     & eps_curve_pts(*)
+      integer :: curve_set, segmental_type
+      double precision :: eps_curve_pts(*)
+c 
+      integer :: first_curve, num_points_on_curves, i 
 c
 c          set the type of segmental stress-strain curve: curve_set
 c
@@ -73,27 +75,24 @@ c
 c
       use segmental_curves
 c
-      implicit integer (a-z)
+      implicit none
 c
-c                      parameter declarations
-c
-      double precision
-     & gp_temps(*), e_block(*), nu_block(*),
+      integer :: span, gpn, nrowd
+      double precision :: gp_temps(*), e_block(*), nu_block(*),
      & alpha_block(nrowd,*), gp_dtemps(*), gp_eps_rates(*),
      & e_block_n(*), nu_block_n(*), alpha_block_n(nrowd,*),
      & gp_sig_0_block(*), gp_h_u_block(*), gp_beta_u_block(*),
      & gp_delta_u_block(*), gp_sig_0_block_n(*), gp_h_u_block_n(*),
      & gp_beta_u_block_n(*), gp_delta_u_block_n(*)
 c
-c                      local declarations
-c
-      double precision
-     & linear_interpolate,  stress_val, big_num, point_temp_np1,
-     & point_temp_n, alpha, point_rate
-c
-      external linear_interpolate
-      logical local_debug
-      data local_debug, big_num / .false., 1.0e30 /
+      integer :: curve_no, curve_pt, curve_set, first_curve,
+     &           curve_set_type, i, ielem, j, ksize,
+     &           num_curves_in_set, num_points_on_curves 
+      double precision :: stress_val, big_num, point_temp_np1,
+     &                    point_temp_n, alpha, point_rate
+      double precision, external :: linear_interpolate
+      logical, parameter :: local_debug = .false.
+      data big_num / 1.0e30 /
 c
 c
 c          if stress-strain curve is temperature or strain rate
@@ -406,18 +405,13 @@ c
       use segmental_curves, only : sigma_curves, curve_plseps_values
 c
       implicit none
-      include 'param_def'
-c
-c                      parameter declarations
 c
       integer :: span, felem
       double precision :: h_block(*), sigyld_vec(*)
 c
-c                      local declarations
-c
       integer :: i
-      double precision ::  dsigma, depspls
-      logical, parameter ::  local_debug = .false.
+      double precision :: dsigma, depspls
+      logical, parameter :: local_debug = .false.
 c
       do i = 1, span
        dsigma        = sigma_curves(2,i) - sigma_curves(1,i)
@@ -455,28 +449,28 @@ c
       subroutine set_e_nu_for_block(
      &  span, nu_block, e_block, segmental, felem, etype, int_order,
      &  gpn, nnodel, temps_node_to_process, temps_node_blk )
-      use global_data ! old common.main
-c
+c 
+      use global_data, only : iprops, mxvl, mxndel
       use segmental_curves, only :
      &      seg_curve_table, curve_temps, curve_e_values,
      &      curve_alpha_values, seg_curves_value, seg_curves_type,
      &      seg_curves_ym, seg_curves_nu, curve_nu_values
+      use constants, only : zero
 c
-      implicit integer (a-z)
+      implicit none
 c
-c                parameter declarations
+      integer :: span, felem, etype, int_order, gpn, nnodel
+      double precision :: e_block(*), nu_block(*), 
+     &                    temps_node_blk(mxvl,*)
+      logical :: segmental, temps_node_to_process
 c
-      double precision
-     &   e_block(*), nu_block(*), temps_node_blk(mxvl,*)
-      logical segmental, temps_node_to_process
-c
-c                local declarations
-c
-      logical local_debug
-      double precision
-     &   sf(mxndel), xi, eta, zeta, weight, zero, gp_temps(mxvl),
-     &   point_temp, linear_interpolate
-      data local_debug, zero / .false., 0.0 /
+      integer :: curve_no, curve_set, enode, first_curve, i, ielem,
+     &           ksize, num_curves_in_set 
+      logical, parameter :: local_debug = .false.
+      double precision :: sf(mxndel), xi, eta, zeta, weight, 
+     &                    gp_temps(mxvl),
+     &                    point_temp
+      double precision, external :: linear_interpolate
 c
 c                we can only have temperature dependent elastic
 c                properties if the material has segmental stress-
@@ -602,22 +596,22 @@ c
       subroutine set_fgm_solid_props_for_block(
      &          span, felem, elem_type, gpn, nnode,
      &          blk_vec, shape, enode_mat_props, matcol, blk_fgm_flags )
-      implicit integer (a-z)
-      include 'param_def'
+c 
+      use global_data, only : mxndel, mxvl  
+      use constants, only : zero
+c           
+      implicit none
 c
-c                parameter declarations
+      integer :: span, felem, elem_type, gpn, nnode, matcol
+      double precision :: blk_vec(*), shape(*), 
+     &                    enode_mat_props(mxndel,mxvl,*),
+     &                    blk_fgm_flags(*)
 c
-      double precision
-     &   blk_vec(*), shape(*), enode_mat_props(mxndel,mxvl,*),
-     &   blk_fgm_flags(*)
-c
-c                local declarations
-c
-      logical local_debug, fgm
-      double precision
-     &   zero, fgm_mark, fgm_tol
-      data local_debug, zero, fgm_mark, fgm_tol
-     &     / .false., 0.0, 99.0, 1.0 /
+      integer :: i, j, ielem, node
+      logical, parameter :: local_debug = .false.
+      logical :: fgm
+      double precision :: fgm_mark, fgm_tol
+      data fgm_mark, fgm_tol / 99.0d0, 1.0d0 /
 c
       do i = 1, span
 c

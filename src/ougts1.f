@@ -81,7 +81,6 @@ c
 c                       small strains                                           
 c                                                                               
            do gpn = 1, ngp      
-!$omp simd                                                           
              do i = 1, span                                                     
                elestr(i,1,gpn) = ddtse(i,1,gpn)                                 
                elestr(i,2,gpn) = ddtse(i,2,gpn)                                 
@@ -154,8 +153,7 @@ c
 c                       bilinear mises model                                    
 c                                                                               
            do gpn = 1, ngp                                                      
-!$omp simd
-              do i = 1, span                                                    
+              do i = 1, span       
                 elestr(i,10,gpn) = elem_hist(i,2,gpn)*root3                     
                 elestr(i,9,gpn)  = urcs_blk_n(i,9,gpn)                          
                 dword            = elem_hist(i,4,gpn)                           
@@ -168,7 +166,6 @@ c
 c                       power-law deformation plasticity model                  
 c                                                                               
            do gpn = 1, ngp                                                      
-!$omp simd
               do i = 1, span                                                    
                 elestr(i,9,gpn) =  urcs_blk_n(i,9,gpn)                          
                end do                                                           
@@ -179,7 +176,6 @@ c
 c                       general mises and gurson-tvergaard model                
 c                                                                               
            do gpn = 1, ngp                                                      
-!$omp simd
               do i = 1, span                                                    
                 elestr(i,9,gpn)  = elem_hist(i,1,gpn) !urcs_blk_n(i,9,gpn)                          
                 elestr(i,10,gpn) = elem_hist(i,2,gpn)                           
@@ -252,7 +248,6 @@ c
       case (10 )                                                                
 c                                                                               
           do gpn = 1, ngp                                                       
-!$omp simd
               do i = 1, span                                                    
                 elestr(i,9,gpn)  = urcs_blk_n(i,7,gpn) -                        
      &                             urcs_blk_n(i,8,gpn)                          
@@ -271,7 +266,6 @@ c                 here we set the porosity to be equal to a small number
 c                 so that patran will print the non-gurson elements.            
 c                                                                               
            do gpn = 1, ngp                                                      
-!$omp simd
               do i = 1, span                                                    
                 elestr(i,11,gpn) = small_number                                 
               end do                                                            

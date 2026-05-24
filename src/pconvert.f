@@ -26,20 +26,21 @@ c     ****************************************************************
 c
 c
       subroutine pconvdriv
+c       
       use global_data ! old common.main
       use main_data, only: packet_file_no, packet_file_name,
      &                   ascii_packet_file_no, ascii_packet_file_name
       use pvars
 c
-      implicit integer (a-z)
-
-      integer dumi, dot
-      real dumr
-      double precision
-     &   dumd
+      implicit none
+c 
+      integer :: dumi, dot, nc
+      real :: dumr, dummy
+      double precision ::dumd
       character :: dums
-      logical duml, matchs, endcrd, numd, label, integr
-      logical string, packets_requested, all_packets
+      logical, external :: matchs, endcrd, numd, label, integr, string
+      logical :: duml
+      logical :: packets_requested, all_packets
       integer, dimension(1:max_packet_types,1:2) :: ou_packet_control
 c
 c             Initialize Packet Control Variable
@@ -158,21 +159,20 @@ c
 c
 c
       subroutine pconv(ou_packet_control, all_packets)
-      use global_data ! old common.main
-c
+c       
+      use global_data, only : max_packet_types, out
       use main_data, only: packet_file_name, packet_file_no,
      &                  ascii_packet_file_name, ascii_packet_file_no
       use pvars
-      implicit integer (a-z)
-
-      integer dumi
-      real dumr
-      double precision
-     &   dumd
+      implicit none
+c
+      integer :: dumi
+      real :: dumr
+      double precision :: dumd
       character :: dums
-      logical duml, binary_file_was_open, all_packets
-      integer ios,type,num_lines,step,iter,lines_read
-      integer output_set,last_step,last_iter
+      logical :: duml, binary_file_was_open, all_packets
+      integer :: ios, type, num_lines, step, iter, lines_read
+      integer ::output_set,last_step,last_iter
       integer, dimension(1:max_packet_types,1:2) :: ou_packet_control
 c
 c             Initialize some variables.
@@ -400,13 +400,14 @@ c *                                                                    *
 c **********************************************************************
 c
       subroutine closer(file)
-      use global_data ! old common.main
-
+c       
+      use global_data, only : out
       use main_data, only: packet_file_no, ascii_packet_file_no
-      implicit integer (a-z)
-
+c 
+      implicit none
+c 
       integer, intent(in):: file
-      logical connected
+      logical :: connected
 c
       inquire( unit=file, opened=connected)
       if( connected )then
@@ -434,16 +435,16 @@ c **********************************************************************
 c
 c
       subroutine open_output_file
-      use global_data ! old common.main
-
+c       
+      use global_data, only : out
+c
       use main_data, only: ascii_packet_file_name, ascii_packet_file_no
-      implicit integer (a-z)
-
-      integer ios,dot
-      integer dumi
-      real dumr
-      double precision
-     &   dumd
+      implicit none
+c
+      integer :: ios, dot
+      integer :: dumi
+      real :: dumr
+      double precision :: dumd
       character :: dums
 c
 c         open the text results file
@@ -482,12 +483,12 @@ c
       implicit none
 c
 c
-      integer, intent(in)::type,num_lines,step,iter
+      integer, intent(in):: type, num_lines, step, iter
 c
-      integer ios, lines_read, elem, i, node
-      logical connected
-      double precision crit_angle, init_crit_angle, ctoa_range,
-     &                 angle
+      integer :: ios, lines_read, elem, i, node
+      logical :: connected
+      double precision :: crit_angle, init_crit_angle, ctoa_range,
+     &                    angle
 c
       inquire( unit=ascii_packet_file_no, opened=connected)
       if( .not. connected ) call open_output_file
@@ -551,12 +552,12 @@ c
       implicit none
 c
 c
-      integer, intent(in)::type,num_lines,step,iter
+      integer, intent(in) :: type, num_lines, step, iter
 c
-      integer ios, lines_read, elem, i, node
-      logical connected
-      double precision crit_angle, init_crit_angle, ctoa_range,
-     &                 angle
+      integer :: ios, lines_read, elem, i, node
+      logical :: connected
+      double precision :: crit_angle, init_crit_angle, ctoa_range,
+     &                    angle
 c
       inquire( unit=ascii_packet_file_no, opened=connected)
       if( .not. connected ) call open_output_file

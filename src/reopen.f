@@ -13,7 +13,6 @@ c
       subroutine reopen( resnam, resfil, sbflg1, sbflg2 )
 c
       use global_data
-      use main_data
       use elem_block_data, only : nonlocal_flags, nonlocal_data_n,
      &                            nonlocal_data_n1
       use elem_load_data
@@ -966,7 +965,8 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine history_cep_init( fileno, proc_type )
-      use global_data ! old common.main
+c       
+      use global_data, only : out, nelblk, elblks, iprops
 c
       use elem_block_data, only : history_blocks, history1_blocks,
      &                            history_blk_list, gausspts_blk_list,
@@ -979,7 +979,6 @@ c
       integer :: alloc_stat, blk, felem, span, ngp, block_size,
      &           cep_size, hist_size  
       double precision :: dummy(1)
-      logical :: myblk
 c
 c            proc_type :  = 1, create data arrays only and zero
 c                         = 2, create and read from save file
@@ -1045,18 +1044,6 @@ c            loop over all element blocks. allocate blocks and
 c            zero or read from restart file.
 c
       do blk = 1, nelblk
-c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-        myblk = myid .eq. elblks(2,blk)
-        if( root_processor ) myblk = .true.
-        if( .not. myblk ) cycle
 c
         felem      = elblks(1,blk)
         span       = elblks(0,blk)
@@ -1149,15 +1136,16 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine cdest_init
-      use global_data ! old common.main
-c
+c       
+      use global_data, only : out, nelblk, noelem, elblks, iprops                          
       use elem_block_data, only : cdest_blocks, cdest_blk_list
-      use main_data,       only : incid, incmap, elems_to_blocks,
-     &                            crdmap
+      use main_data, only : incid, incmap, elems_to_blocks, crdmap
 c
-      implicit integer (a-z)
-      integer, dimension (:,:), pointer :: cdest
-      logical :: myblk
+      implicit none
+c       
+      integer :: blk, felem, node, span, num_enode_dof, totdof, elem, 
+     &           rel_elem, incptr, j, alloc_stat, nnode
+      integer, pointer :: cdest(:,:)
 c
 c            the data structure is a vector for each element
 c            block (dynamically allocated). the vectors are
@@ -1185,18 +1173,6 @@ c            loop over all element blocks. allocate blocks.
 c
       do blk = 1, nelblk
 c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-         myblk = myid .eq. elblks(2,blk)
-         if(root_processor) myblk = .true.
-         if(.not. myblk) cycle
-c
          felem         = elblks(1,blk)
          span          = elblks(0,blk)
          nnode         = iprops(2,felem)
@@ -1219,19 +1195,7 @@ c            index pointers.
 c
       do elem = 1, noelem
 c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, don't compute
-c                         the terms unless we own the block. For root,
-c                         compute all the terms.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
          blk            = elems_to_blocks(elem,1)
-         myblk = myid .eq. elblks(2,blk)
-         if(root_processor) myblk = .true.
-         if(.not. myblk) cycle
-c
          rel_elem       = elems_to_blocks(elem,2)
          nnode          = iprops(2,elem)
          incptr         = incmap(elem)
@@ -1264,15 +1228,17 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine edest_init
-      use global_data ! old common.main
-c
+c       
+      use global_data, only : out, noelem, elblks, iprops, dstmap, 
+     &                        nelblk
       use elem_block_data, only : edest_blocks, edest_blk_list
-      use main_data,       only : incid, incmap, elems_to_blocks
+      use main_data, only : incid, incmap, elems_to_blocks
 c
-      implicit integer (a-z)
-c
-      integer, dimension (:,:), pointer :: edest
-      logical :: myblk
+      implicit none
+c       
+      integer :: blk, felem, node, span, num_enode_dof, totdof, elem, 
+     &           rel_elem, incptr, j, alloc_stat, nnode
+      integer, pointer :: edest(:,:)
 c
 c            the data structure is a vector for each element
 c            block (dynamically allocated). the vectors are
@@ -1300,18 +1266,6 @@ c            loop over all element blocks. allocate blocks.
 c
       do blk = 1, nelblk
 c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-         myblk = myid .eq. elblks(2,blk)
-         if(root_processor) myblk = .true.
-         if(.not. myblk) cycle
-c
          felem         = elblks(1,blk)
          span          = elblks(0,blk)
          nnode         = iprops(2,felem)
@@ -1334,19 +1288,7 @@ c            index pointers.
 c
       do elem = 1, noelem
 c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, don't compute
-c                         the terms unless we own the block. For root,
-c                         compute all the terms.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
          blk            = elems_to_blocks(elem,1)
-         myblk = myid .eq. elblks(2,blk)
-         if(root_processor) myblk = .true.
-         if(.not. myblk) cycle
-c
          rel_elem       = elems_to_blocks(elem,2)
          nnode          = iprops(2,elem)
          incptr         = incmap(elem)
@@ -1380,14 +1322,17 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine strains_init( fileno, proc_type )
-      use global_data ! old common.main
-c
+c       
+      use global_data, only : out, nelblk, nstr, elblks, iprops
       use elem_block_data, only : eps_n_blocks, eps_n1_blocks,
      &                            eps_blk_list
 c
-      implicit integer (a-z)
+      implicit none
+c    
+      integer :: fileno, proc_type 
+c          
+      integer :: blk, felem, ngp, span, alloc_stat, block_size
       double precision :: dummy(1)
-      logical :: myblk
 c
 c
 c            proc_type :  = 1, create data arrays only and zero
@@ -1429,18 +1374,6 @@ c            loop over all element blocks. allocate blocks and
 c            zero or read from restart file.
 c
       do blk = 1, nelblk
-c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-        myblk = myid .eq. elblks(2,blk)
-        if(root_processor) myblk = .true.
-        if(.not. myblk) cycle
 c
         felem      = elblks(1,blk)
         span       = elblks(0,blk)
@@ -1502,15 +1435,18 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine stresses_init( fileno, proc_type )
-      use global_data ! old common.main
+c 
+      use global_data, only : out, nelblk, nstrs, elblks, iprops 
 c
       use elem_block_data, only : urcs_n_blocks, urcs_n1_blocks,
      &                            urcs_blk_list
 c
-      implicit integer (a-z)
+      implicit none
+c     
+      integer :: fileno, proc_type
+c 
+      integer :: alloc_stat, blk, block_size, felem, ngp, span        
       double precision :: dummy(1)
-      logical :: myblk
-c
 c
 c            proc_type :  = 1, create data arrays only and zero
 c                         = 2, create and read from save file
@@ -1552,18 +1488,6 @@ c            zero or read from restart file.
 c
       do blk = 1, nelblk
 c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-        myblk = myid .eq. elblks(2,blk)
-        if(root_processor) myblk = .true.
-        if(.not. myblk) cycle
-c
         felem      = elblks(1,blk)
         span       = elblks(0,blk)
         ngp        = iprops(6,felem)
@@ -1588,7 +1512,7 @@ c
         endif
 c
         if( proc_type .eq. 1 ) then
-         call zero_vector( urcs_n_blocks(blk)%ptr, block_size )
+          call zero_vector( urcs_n_blocks(blk)%ptr, block_size )
           call zero_vector( urcs_n1_blocks(blk)%ptr, block_size )
         end if
         if( proc_type .eq. 2 ) then
@@ -1625,13 +1549,16 @@ c     ****************************************************************
 c
       subroutine element_volumes_init( fileno, proc_type )
 c
-      use global_data ! old common.main
+      use global_data, only : out, nelblk, elblks
       use elem_block_data, only : element_vol_blocks
       use constants, only : zero 
 c
-      implicit integer (a-z)
+      implicit none
+c 
+      integer :: fileno, proc_type      
+c 
+      integer :: blk, felem, span, block_size, alloc_stat      
       double precision :: model_volume
-      logical :: myblk
 c
 c
 c            proc_type :  = 1, create data arrays only and zero
@@ -1658,18 +1585,6 @@ c
       model_volume = zero
       do blk = 1, nelblk
 c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-        myblk = myid .eq. elblks(2,blk)
-        if( root_processor ) myblk = .true.
-        if( .not. myblk ) cycle
-c
         felem      = elblks(1,blk)
         span       = elblks(0,blk)
         block_size = span
@@ -1692,7 +1607,6 @@ c
         end if
 c
       end do
-
       return
 c
  9900 format('>>> FATAL ERROR: memory allocate failure...')
@@ -1713,7 +1627,8 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine initial_state_read( fileno )
-      use global_data ! old common.main
+c 
+      use global_data, only : nelblk, out, elblks, iprops
 c
       use elem_block_data, only : initial_state_data
 c
@@ -1788,15 +1703,20 @@ c     ****************************************************************
 c
       subroutine rotation_init( fileno, proc_type )
 c
-      use global_data ! old common.main
+      use global_data, only : out, nelblk, elblks, lprops, iprops
       use elem_block_data, only : rot_n_blocks, rot_n1_blocks,
      &                            rot_blk_list
       use constants, only : zero, one
-      implicit integer (a-z)
+c       
+      implicit none
+c       
+      integer :: fileno, proc_type
+c 
+      integer :: alloc_stat, blk, felem, block_size, i, j, low, ngp,
+     &           span, up       
       double precision :: rot_init(9), dummy(1)
       logical :: geo_non_flg
       logical, parameter :: local_debug = .false.
-      logical :: myblk
 c
 c
 c            proc_type :  = 1, create data arrays only and zero
@@ -1864,18 +1784,6 @@ c
 c
 c
       do blk = 1, nelblk
-c
-c                       if we are using MPI:
-c                         elblks(2,blk) holds which processor owns the
-c                         block.  For slave processors, if we don't own
-c                         the block, don't allocate it.  For root,
-c                         allocate everything.
-c                       if we are using the serial version:
-c                         the serial process is root, so allocate all blocks.
-c
-        myblk = myid .eq. elblks(2,blk)
-        if(root_processor) myblk = .true.
-        if(.not. myblk) cycle
 c
         felem       = elblks(1,blk)
         geo_non_flg = lprops(18,felem)
@@ -1946,10 +1854,16 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine init_maps( fileno, proc_type )
-      use global_data ! old common.main
+c       
+      use global_data, only : out, nodof, noelem, nonode
       use main_data, only : invdst, repeat_incid,
      &                      inverse_incidences, inverse_dof_map
-      implicit integer (a-z)
+c      
+      implicit none
+c 
+      integer :: fileno, proc_type   
+c 
+      integer :: alloc_stat, ecount, i, j, k, stnd         
 c
 c
 c            fileno:      = file number to read to recover data
@@ -2088,10 +2002,14 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine init_eblock_map
-      use global_data ! old common.main
-      use main_data
-      implicit integer (a-z)
-
+c 
+      use global_data, only : nelblk, noelem, elblks, out
+      use main_data, only : elems_to_blocks
+c 
+      implicit none
+c
+      integer :: alloc_stat, blk, felem, i, span
+c      
       if( allocated( elems_to_blocks ) ) then
            write(out,9900)
            write(out,9910) 1
@@ -2139,15 +2057,17 @@ c     *     the saved data.                                          *
 c     *                                                              *
 c     ****************************************************************
 c
-c
-c
       subroutine allo_trnmat( node, status, fileno )
 c
-      use global_data ! old common.main
-      use main_data
+      use global_data, only : out
+      use main_data, only : trnmat
       use constants, only : zero
 c      
-      implicit integer (a-z)
+      implicit none
+c 
+      integer :: node, status, fileno
+c
+      integer :: alloc_stat            
 c
 c              status values:
 c                1 -- allocate trnmat(node)%mat
@@ -2205,6 +2125,7 @@ c
       subroutine chk_data_key( fileno, level1, level2 )
 c
       use global_data, only : out
+c       
       implicit none
 c
       integer, intent(in) :: fileno, level1, level2
@@ -2288,6 +2209,7 @@ c
 c
       return
       end
+      
 
 c     ****************************************************************
 c     *                                                              *
@@ -2304,24 +2226,25 @@ c     ****************************************************************
 c
 c
       subroutine solid_cohes_init
-      use global_data ! old common.main
-c
+c       
+      use global_data, only : out, mxelpr, nelblk, elblks, iprops,
+     &                        noelem, nonlocal_shared_state_size 
       use main_data, only : cohesive_ele_types, nonlocal_analysis
-c
       use elem_block_data, only : solid_interface_lists,
      &                            nonlocal_flags, nonlocal_data_n,
      &                            nonlocal_data_n1
-      use constants
+      use constants, only : zero
 c
-      implicit integer (a-z)
+      implicit none
 c
-      logical :: local_debug
+      integer :: blk, bottom_solid, top_solid, count, i, eletype, 
+     &           elem_cohes, felem, nsize, nnodes, span
+      logical, parameter :: local_debug = .false.
 c
 c          global nonlocal flag must have be set in user input to
 c          include all data structures for nonlocal analyses of
 c          cohesive elements
 c
-      local_debug = .false.
       if( local_debug ) write(out,9000)
       if( .not. nonlocal_analysis ) return
 c
@@ -2464,7 +2387,7 @@ c
  9350 format(5x,'number of model elements with nonlocal state vector:',
      &   i8 )
 c
-      end
+      end      
 c     ****************************************************************
 c     *                                                              *
 c     *                 subroutine solid_cohes_init_a                *
@@ -2490,8 +2413,9 @@ c
      &                      cohesive_ele_types
 c
       implicit none
+c       
       integer :: mxelpr, elem, bottom_solid, top_solid, iout
-      integer iprops(mxelpr,*)
+      integer :: iprops(mxelpr,*)
 c
 c          elem = absolute number for a cohesive-interface element
 c
@@ -2500,11 +2424,11 @@ c            (one or both could be zero)
 c
 c          locals -- sizes are plenty big
 c
-      integer cohes_nodes(30), top_nodes(15), bottom_nodes(15)
-      integer nnodes, i, nface, coh_node, num_connected,
+      integer :: cohes_nodes(30), top_nodes(15), bottom_nodes(15)
+      integer :: nnodes, i, nface, coh_node, num_connected,
      &        connected_elem, eletype, num_node_solid
-      logical solid_cohes_init_b ! supporting search function
-      logical local_debug
+      logical :: solid_cohes_init_b ! supporting search function
+      logical, parameter :: local_debug = .false.
 c
 c
       nnodes = iprops(2,elem)  ! on cohesive element
@@ -2517,7 +2441,6 @@ c
         bottom_nodes(i) = cohes_nodes(i)
         top_nodes(i)    = cohes_nodes(nface+i)
       end do
-      local_debug = .false.
       if( local_debug ) then
         write(iout,*) ' ';write(iout,*) ' '
         write(iout,*) '.. solid_cohes_init_a, nface:, ',nface
@@ -2634,12 +2557,11 @@ c
       logical function solid_cohes_init_b( nface, cohes_list, nsolid,
      &                                     solid_list )
       implicit none
-      integer nface, cohes_list(*), nsolid, solid_list(*)
+c       
+      integer :: nface, cohes_list(*), nsolid, solid_list(*)
 c
-c          locals
-c
-      integer i, cohes_node, j
-      logical found(20) ! plenty big enough
+      integer :: i, cohes_node, j
+      logical :: found(20) ! plenty big enough
 c
 c          nface:   num nodes on surface of cohes element
 c          cohes_list: (structure) nodes on surface
@@ -2677,7 +2599,6 @@ c
 c
       return
       end
-
 c
 c     ****************************************************************
 c     *                                                              *
@@ -2693,15 +2614,17 @@ c     *                                                              *
 c     ****************************************************************
 c
       subroutine read_alloc_cry( fileno )
-      use global_data 
-      use crystal_data, only:
-     &      c_array, crystal_data_offset,  angle_input,
+c       
+      use global_data, only : max_crystals, noelem 
+      use crystal_data, only: c_array, crystal_data_offset,
      &      crystal_input, srequired, nangles, simple_angles,
-     &      mc_array, defined_crystal
-      implicit integer (a-z)
+     &      mc_array, defined_crystal,  angle_input
+c      
+      implicit none
+c      
       integer, intent(in) :: fileno
 c
-      integer :: nelem
+      integer :: nelem, cry_multiplier, mxcry
 c
       read(fileno) defined_crystal
 c
