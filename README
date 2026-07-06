@@ -3,6 +3,28 @@
            Highest Level README File for WARP3D
            ====================================
 
+            Last Update: July 6, 2026
+
+              Release 5120 for Linux and Windows.
+              Build date July 5, 2026
+                          
+            - Updated compiler (ifx) and Pardiso (in MKL)
+              to 2026.1 on Windows and Linux.
+              
+            - Pardiso is now faster on multi-threaded reordering,
+              symbolic factorization and numeric factorization.
+              
+            - Reordering and symbolic factorization show the most %
+              decrease in runtime - but these operations on are done
+              infrequently. Once at step 1 and whenever the constraints
+              change
+              
+            - Tests on 12 threads show ~4-5% runtime decrease in factorization
+              walltime for a 1.4M equation system.  
+              
+            - No changes for macOS Intel and Apple silicon builds.  
+            
+
             Last Update: May 5, 2026 
             
               Retains release number 5110.
