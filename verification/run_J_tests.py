@@ -258,7 +258,7 @@ def initialize():
  	 exit(0)
 #
  if windows :
-   continuation = '&'
+   continuation = ' & '
    warp_name = '%WARP3D_HOME%"/run_windows/warp3d.exe" '
    print(">>> Platform: Windows\n" )
 #
@@ -284,10 +284,25 @@ def initialize():
    print(">>> Platform: Cygwin (Windows). Only Intel Fortran version supported\n" )
    warp_name = '$WARP3D_HOME"/run_windows/warp3d.exe" '
 #
- str_threads = str(input(">>> Number of threads to use: " )  )
- threads = 'export OMP_NUM_THREADS='+str_threads + continuation + \
-           'export MKL_NUM_THREADS='+str_threads
+ str_threads = input(">>> Number of threads to use: ").strip()
+ if not str_threads.isdigit():
+    print("\n>>> Invalid thread count:", repr(str_threads))
+    exit(1)
+
+ if windows:
+    threads = (
+        'set OMP_NUM_THREADS=' + str_threads + continuation +
+        'set MKL_NUM_THREADS=' + str_threads
+    )
+ else:
+    threads = (
+        'export OMP_NUM_THREADS=' + str_threads + continuation +
+        'export MKL_NUM_THREADS=' + str_threads
+    )
+
  run_warp = threads + continuation + warp_name
+
+
 # 
  print("\n>>> Note: comparison and output values may be" \
                " different in the last 1 or 2")
