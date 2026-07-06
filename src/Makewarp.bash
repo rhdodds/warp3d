@@ -66,37 +66,56 @@ return
 #   Function: Check Linux Intel ifx Fortran compiler exists & version
 #
 # ****************************************************************************
-#
+
 function check_Linux
 {
-#
-hash ifx 2>&- || {
-printf "[ERROR]\n"
-printf "... Cannot find the Intel Fortran compiler (ifx) in your PATH.\n"
-printf "... See Intel Fortran install documentation. Most often a line of\n"
-printf "... the form: source /opt/intel/... is placed\n"
-printf "... in the /etc/bashrc our your ~/.bashrc file.\n"
-printf "Quitting...\n\n"
-exit 1
-}
-/bin/rm zqq03 >& /dev/null
-ifx --version  >zqq03
-sed -i -e '2,$d' zqq03
-echo -e "\n... Intel Fortran (ifx) detected:" `cat zqq03`
-count2=`grep "2025" zqq03 |wc -l`
-/bin/rm zqq03*
-ok=0
-if [ $count2 -eq "1" ]; then
-   ok=1
-fi
-if [ $ok -eq "0" ]; then
-    printf "\n... ERROR: ifx must be one of these versions:"
-    printf "\n... 2025 or newer"
-    printf "\n... Quitting...\n\n"
-    exit 1
-fi
-#
-return
+    local ifx_line
+    local ifx_year
+
+    #
+    # Check that ifx is in PATH
+    #
+    if ! command -v ifx >/dev/null 2>&1 ; then
+        printf "[ERROR]\n"
+        printf "... Cannot find the Intel Fortran compiler (ifx) in your PATH.\n"
+        printf "... See Intel Fortran install documentation. Most often a line of\n"
+        printf "... the form: source /opt/intel/... is placed\n"
+        printf "... in the /etc/bashrc or your ~/.bashrc file.\n"
+        printf "Quitting...\n\n"
+        exit 1
+    fi
+
+    #
+    # Get first line of version output
+    #
+    ifx_line=$(ifx --version 2>/dev/null | head -n 1)
+
+    printf "\n... Intel Fortran (ifx) detected: %s\n" "$ifx_line"
+
+    #
+    # Extract a 4-digit year/version such as 2025, 2026, ...
+    #
+    ifx_year=$(printf "%s\n" "$ifx_line" | grep -oE '20[0-9][0-9]' | head -n 1)
+
+    if [ -z "$ifx_year" ]; then
+        printf "\n... ERROR: Could not determine ifx version year from:\n"
+        printf "... %s\n" "$ifx_line"
+        printf "... ifx must be version 2025 or newer.\n"
+        printf "... Quitting...\n\n"
+        exit 1
+    fi
+
+    #
+    # Require 2025 or newer
+    #
+    if [ "$ifx_year" -lt 2025 ]; then
+        printf "\n... ERROR: ifx must be version 2025 or newer.\n"
+        printf "... Detected version year: %s\n" "$ifx_year"
+        printf "... Quitting...\n\n"
+        exit 1
+    fi
+
+    return 0
 }
 # ****************************************************************************
 #

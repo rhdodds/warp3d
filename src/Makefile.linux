@@ -5,7 +5,7 @@
 #
 #   Invoked by:    Makewarp.bash script
 #
-#   Updated:   MArch 25, 2026
+#   Updated:   July 5, 2026
 #              ** now using Intel ifx compiler **
 #              ** MPI deprecated **
 #
@@ -58,7 +58,7 @@
 #       HARDWARE_SPECIFIC option set rather than the ALL_PROCESSORS set
 #       defined below.
 #
-MAKEFLAGS += -rR
+MAKEFLAGS += -rRf
 .SUFFIXES:
 #
 OD = ././../obj_linux
@@ -72,7 +72,7 @@ LIBMKL = -Wl,--start-group ${MKL_LIBS}/libmkl_intel_lp64.a \
          -Wl,--end-group   ${MKL_LIBS}/libiomp5.so -lpthread -lm -ldl
 #
 OSNAME   := Linux
-BUILDNUM := 5100
+BUILDNUM := 5120
 MKL      := MKL
 O        = .o
 RMC      = /bin/rm -f

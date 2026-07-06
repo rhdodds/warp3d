@@ -7,7 +7,7 @@
 #
 #   Developer: rdodds
 #
-#   Last modifications: 3/25/2026 rhd
+#   Last modifications: 7/6/2026 rhd
 #
 #    Makefile for WARP3D on systems running Windows 10/11
 #    on x8664 Processors (64-bit mode).
@@ -17,9 +17,8 @@
 #    mode for use here)
 #
 #    Tested with:
-#         Intel(R) Fortran ifx 2025.3.0 Build 20251010
-#
-#         Intel MKL 2025.3.0 Build 20251010
+#         Intel(R) Fortran ifx 2026.1
+#         Intel MKL 2026.1
 #
 #    The generated executable is statically linked to enable use on
 #    Windows machines w/o the Intel compiler suite.
@@ -73,7 +72,7 @@ XXX = abc
 !ENDIF
 #
 OSNAME   = Windows
-BUILDNUM = 5000
+BUILDNUM = 5120
 #
 ODIR   = .\.\..\obj_windows
 EXEDIR = .\..\run_windows
@@ -91,8 +90,10 @@ STACKSIZE  = /F400000000
 #
 HARDWARE_MACHINE_TYPE = /QxHOST /align:array64byte /Qopt-zmm-usage:high 
 #
-PART3 = /QaxAVX,CORE-AVX2,COMMON-AVX512 /QxIVYBRIDGE 
-PART4 = /Qopt-zmm-usage:high /align:array64byte
+PART3 = /QaxCOMMON-AVX512,CORE-AVX2,AVX
+PART4 = /align:array64byte
+#PART3 = /QaxAVX,CORE-AVX2,COMMON-AVX512 /QxIVYBRIDGE 
+#PART4 = /Qopt-zmm-usage:high /align:array64byte
 ALL_PROCESSORS = $(PART3) $(PART4)
 #
 MACHINE_TYPE = $(ALL_PROCESSORS) #  $(HARDWARE_MACHINE_TYPE)  # $(ALL_PROCESSORS)

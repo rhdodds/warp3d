@@ -300,7 +300,7 @@ ifeq ($(PLATFORM),silicon)
 
     PRODUCTION = -DOSX -DBuild=$(BUILDNUM) -Dgfortran -I$(OD) -J$(OD) \
       -O3 -Wno-unused-dummy-argument  -Wno-argument-mismatch \
-      -fbacktrace -fmax-errors=1 -fno-strict-overflow \
+      -fbacktrace -fmax-errors=20 -fno-strict-overflow \
        -Wno-unused-variable -Wno-unused-parameter \
       -Wline-truncation -Wno-unused-label\
       -fno-range-check -Wno-compare-reals \
@@ -324,7 +324,7 @@ ifeq ($(PLATFORM),silicon)
 #   
     DEBUG2 = -DOSX -DBuild$(BUILDNUM) -Dgfortran -I$(OD) -J$(OD) \
       -O0 -g -Wno-unused-dummy-argument  -Wno-argument-mismatch \
-      -fbacktrace -fmax-errors=1 \
+      -fbacktrace -fmax-errors=10 \
        -Wno-unused-variable -Wno-unused-parameter \
       -Wline-truncation -Wno-unused-label\
       -fno-range-check -Wno-compare-reals \
