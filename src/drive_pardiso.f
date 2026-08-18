@@ -314,7 +314,10 @@ c              symbolic factorization.
 c
       iparm(1:64) = 0
       iparm(1) = 1 ! no solver default
-      iparm(2) = 3 ! 3 ! parallel reordering
+      iparm(2) = 43 ! change for mkl 2026
+#ifdef OSX      
+      iparm(2) = 3 ! 3 ! parallel reordering for older MKL
+#endif      
       iparm(3) = 0 ! numbers of processors. MKL_NUM_THREADS overrides
       iparm(4) = 0 ! no iterative-direct algorithm
       if( use_iterative ) iparm(4) = 52
@@ -339,6 +342,10 @@ c                     Try iparm(13) = 1 in case of inappropriate accuracy
       iparm(21) = 2  ! pivoting strategy. = 2 seems best
       iparm(23) = 0  ! will have # negative eigenvalues
       iparm(24) = 1 ! use 2 level factorization
+      iparm(24) = 0 ! change for mkl 2026 together with iparm(2)
+#ifdef OSX      
+      iparm(24) = 1 ! use 2 level factorization
+#endif
       iparm(25) = 2 ! parallel forward-backward solve
       iparm(27) = 0 !  check input matrix for errors (=1)
       iparm(60) = mkl_ooc_flag

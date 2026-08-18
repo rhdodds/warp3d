@@ -107,7 +107,10 @@ c
 c
       iparm(1:64) = 0
       iparm(1) = 1 ! No solver default...
-      iparm(2) = 3 ! Parallel fill-in reducing
+      iparm(2) = 43 ! change for mkl 2026
+#ifdef OSX      
+      iparm(2) = 3 ! 3 ! parallel reordering for older MKL
+#endif      
       iparm(3) = 0 ! numbers of processors. set by direct calls
       iparm(4) = 0 ! no iterative-direct algorithm
       if( use_iterative ) iparm(4) = 81 ! Unless we want it less strict
@@ -128,7 +131,10 @@ c                     non-symmetric matrices
       iparm(19) = -1 ! return: Mflops for LU factorization
       iparm(20) = -1 ! return: Numbers of CG Iterations
       iparm(21) = 0 ! Different pivoting not available
-      iparm(24) = 1 ! use 2-level parallelism for triangulation
+      iparm(24) = 0 ! change for mkl 2026 together with iparm(2)
+#ifdef OSX      
+      iparm(24) = 1 ! use 2 level factorization
+#endif
       iparm(25) = 2 ! Parallel backsolve
       iparm(27) = 0 ! Don't check matrices
       iparm(28) = 0 ! double precision
