@@ -1,0 +1,180 @@
+  domain front_1
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 5985 5894 5633 quadratic verify
+   function type a
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+  compute domain interaction integrals
+!
+  domain front_2
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 5985 5894 5633 5542 5281 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_3
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 5633 5542 5281 5190 4929 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_4
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 5281 5190 4929 4838 4577 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_5
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 4929 4838 4577 4486 4225 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_6
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 4577 4486 4225 4134 3873 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_7
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 4225 4134 3873 3782 3521 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_8
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 3873 3782 3521 3430 3169 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_9
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 3521 3430 3169 3078 2817 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_10
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 3169 3078 2817 2726 2465 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_11
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 2817 2726 2465 2374 2113 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+! compute domain interaction integrals
+!
+  domain front_12
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 2465 2374 2113 2022 1761 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_13
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 2113 2022 1761 1670 1409 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_14
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 1761 1670 1409 1318 1057 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_15
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 1409 1318 1057 966 705 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_16
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 1057 966 705 614 353 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_17
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 705 614 353 262 1 quadratic verify
+   function type b
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+!  compute domain interaction integrals
+!
+  domain front_18
+   symmetric
+   normal plane nx 0 ny 0 nz 1
+   front nodes 353 262 1 quadratic verify
+   function type c
+   q-values automatic rings 1-6
+   plane strain output for interaction integral
+   crack face tractions tx 0 ty 0 tz 1
+  compute domain interaction integrals
+!

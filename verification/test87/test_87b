@@ -1,0 +1,39 @@
+ structure crack
+!
+!  converted from a CrackGen Abaqus deck by cg2warp.py 
+!  (plate.inp, loads of step 1)
+!
+ material mat1
+   properties bilinear e 30000 nu 0.3 yld_pt 1.0e20 tan_e 1.0 alpha 0.0
+!
+ number of nodes 24794 elements 5400
+!
+ elements
+   1-5400 type q3disop linear material mat1 order 2x2x2 center_output short
+!
+ *input from "test_87b_coord_inc.inp"
+ blocking automatic
+ *input from "test_87b_cons.inp"
+ *input from "test_87b_loading.inp"
+!
+ loading test
+  nonlinear
+    step 1 crackface 1.0
+!
+ nonlinear analysis parameters
+   solution technique sparse direct
+   time step 1.0e06
+   maximum iterations 5
+   minimum iterations 1
+   convergence test norm res tol 0.0001
+   nonconvergent solutions stop
+   adaptive off
+!
+ compute displacements for loading test step 1
+!
+!  output displacements 1-24794
+!  output patran formatted displacements
+!
+ *input from "test_87b_domain_define.inp"
+ !
+stop
