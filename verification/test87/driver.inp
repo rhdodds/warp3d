@@ -36,19 +36,22 @@ Test 87 (T-stress. face loading. surface cracked plate)
 #
 #    number of problems
 #
- 1
+ 2
 #
 #    list of problem titles for output
 #
 test_87
+test_87b
 *
 *   list of output files
 *
 test_87_out
+test_87b_out
 *
 *    list of input files
 *
 test_87
+test_87b
 *
 *        check results problem 1
 *
@@ -58,3 +61,11 @@ test_87
  -1
 0.4130E-04 
  0
+*
+*        check results problem 2
+*
+1                               
+' crack front tangential strain'
+ 0
+-0.508188E-05
+ 8
