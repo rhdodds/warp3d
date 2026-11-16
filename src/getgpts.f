@@ -793,7 +793,7 @@ c
 c                                                                               
       if( .not. valid ) then                                                    
         write(*,9000) order                                                     
-        stop                                                                    
+        call die_abort                                                                    
       end if                                                                    
 c                                                                               
 c         get the Gauss point coordinates and weights.                          
@@ -2143,11 +2143,11 @@ c     *                      subroutine line3                        *
 c     *                                                              *          
 c     *                       written by : mcw                       *          
 c     *                                                              *          
-c     *                   last modified : 10/10/03                   *          
+c     *                   last modified : 11/15/2026 rhd             *          
 c     *                                                              *          
 c     *     given the gauss point number and the order of            *          
 c     *     integration, this subroutine assigns the coordinates     *          
-c     *     of the gauss point and its itegration weight for         *          
+c     *     of the gauss point and its integration weight for        *          
 c     *     a quadratic line element                                 *          
 c     *                                                              *          
 c     ****************************************************************          
@@ -2155,18 +2155,33 @@ c
 c                                                                               
       subroutine line3( order, gpn, xi, w )    
 c 
-      use constants, only : op2=>pt_two, p6=>ptsix, zero, one, two, 
-     &                      three, four, five, six, seven,              
-     &                      eight, nine  
-c 
-      implicit none                                                             
-c 
-      integer :: order, gpn                                                        
-      double precision :: xi, w                                                     
+      use constants, only : zero, one, two, 
+     &                      three
+c
+      integer, intent (in) :: order, gpn                                                        
+      double precision, intent(out) :: xi, w       
+      double precision, parameter :: gp3(3) = [
+     &    -0.7745966692414834d0,
+     &     0.0000000000000000d0,
+     &     0.7745966692414834d0 ]
+      double precision, parameter :: gw3(3) = [
+     &     0.5555555555555556d0,
+     &     0.8888888888888889d0,
+     &     0.5555555555555556d0 ]    
+      double precision, parameter :: gp4(4) = [
+     &    -0.8611363115940526d0,
+     &    -0.3399810435848563d0,
+     &     0.3399810435848563d0,
+     &     0.8611363115940526d0 ]
+      double precision, parameter :: gw4(4) = [
+     &     0.3478548451374539d0,
+     &     0.6521451548625461d0,
+     &     0.6521451548625461d0,
+     &     0.3478548451374539d0 ]                                           
 c                                                                               
-      if( order.lt.1 .or. order.gt.4 ) then                                    
+      if( order < 1 .or. order > 4 ) then                                    
          write(*,9000) order                                                    
-         stop                                                                   
+         call die_abort
       end if                                                                    
 c                                                                               
 c             branch on the order of quadrature. possible                       
@@ -2182,85 +2197,39 @@ c
       if( order .eq. 1 ) then                                                   
          xi = zero                                                              
          w  = two                                                               
-         go to 9999                                                             
+         return
       end if                                                                    
 c                                                                               
 c             2 point rule                                                      
 c                                                                               
-      if( order .eq. 2 ) then                                                   
-c                                                                               
-c             branch on gauss point number to get the proper                    
-c             information.                                                      
-c                                                                               
-         go to ( 210, 220 ) gpn                                                 
-c                                                                               
- 210     xi = - one/sqrt(three)                                                 
-         w  = one                                                               
-         go to 9999                                                             
-c                                                                               
- 220     xi = one/sqrt(three)                                                   
-         w  = one                                                               
-         go to 9999                                                             
-c                                                                               
+      if( order .eq. 2 ) then     
+         w = one                                              
+         if( gpn == 1 ) then
+           xi = -0.5773502691896258d0
+         else
+           xi = 0.5773502691896258d0
+         end if
+         return                                                                          
       end if                                                                    
 c                                                                               
 c             3 point rule                                                      
 c                                                                               
       if( order .eq. 3 ) then                                                   
-c                                                                               
-c             branch on gauss point number to get the proper                    
-c             information.                                                      
-c                                                                               
-         go to ( 310, 320, 330 ) gpn                                            
-c                                                                               
- 310     xi = - sqrt(p6)                                                        
-         w  = five / nine                                                       
-         go to 9999                                                             
-c                                                                               
- 320     xi = zero                                                              
-         w  = eight / nine                                                      
-         go to 9999                                                             
-c                                                                               
- 330     xi = sqrt(p6)                                                          
-         w  = five / nine                                                       
-         go to 9999                                                             
-c                                                                               
-      end if                                                                    
+         xi = gp3(gpn)
+         w  = gw3(gpn)         
+         return                                                                     
+      end if                                                                                                                          
 c                                                                               
 c             4 point rule                                                      
 c                                                                               
       if( order .eq. 4 ) then                                                   
-c                                                                               
-c             branch on gauss point number to get the proper                    
-c             information.                                                      
-c                                                                               
-         go to ( 410, 420, 430, 440 ) gpn                                       
-c                                                                               
- 410     xi = - sqrt(three + two * sqrt(op2) / seven)                           
-         w  = one / two - one / (six * sqrt(op2))                               
-         go to 9999                                                             
-c                                                                               
- 420     xi = - sqrt(three - two * sqrt(op2) / seven)                           
-         w  = one / two + one / (six * sqrt(op2))                               
-         go to 9999                                                             
-c                                                                               
- 430     xi = sqrt(three - two * sqrt(op2) / seven)                             
-         w  = one / two + one / (six * sqrt(op2))                               
-         go to 9999                                                             
-c                                                                               
- 440     xi = sqrt(three + two * sqrt(op2) / seven)                             
-         w  = one / two - one / (six * sqrt(op2))                               
-         go to 9999                                                             
-c                                                                               
-      end if                                                                    
-c                                                                               
- 9999 continue                                                                  
-      return                                                                    
+         xi = gp4(gpn)
+         w  = gw4(gpn)                                                                              
+         return 
+      end if
 c                                                                               
  9000 format('>> FATAL ERROR: invalid integration order for',                   
      & /,    '                3-node line element. order= ',i3,                 
      & /,    '                job terminated.',//)                              
 c                                                                               
       end                                                                       
-c                                                                               
-c                                                                               
